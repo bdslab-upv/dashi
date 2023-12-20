@@ -42,6 +42,7 @@ def estimate_data_temporal_map(
 
     # TODO: check classes
     if not all(data[column].dtype.name in VALID_TYPES for column in data.columns):
+        print(data.dtypes)
         raise ValueError(f'The classes of input columns must be one of the following: {", ".join(VALID_TYPES)}')
 
     if start_date is not None and not isinstance(start_date, pd.Timestamp):
@@ -157,24 +158,24 @@ def estimate_data_temporal_map(
             date_columns = data_types == VALID_DATE_TYPE
             categorical_columns = data_types == VALID_CATEGORICAL_TYPE
 
-        # TODO: To test
+        # TODO: To test, define category of NA/None
         if np.any(categorical_columns & supports_to_estimate_columns):
-            # data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns].apply(lambda x: [x] if pd.notna(x) else [None])
-            #
-            # selected_columns = data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns]
-            # levels = selected_columns.apply(lambda col: col.cat.categories)
-            # supports[categorical_columns & supports_to_estimate_columns] = levels
             # Crear categoría para los NA, missings
-            data_without_date_column.loc[
-            :, categorical_columns & supports_to_estimate_columns
-            ] = data_without_date_column.loc[
-                :, categorical_columns & supports_to_estimate_columns
-                ].apply(lambda col: col.add(pd.NA, fill_value=None))
+            data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns] = data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns].apply(lambda col: col.cat.add_categories([MISSING_VALUE]) if col.isnull().any() else col)
+            data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns] = data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns].apply(lambda col: col.fillna(MISSING_VALUE) if col.isnull().any() else col)
 
             # Extract levels and assign them to supports
-            supports[categorical_columns & supports_to_estimate_columns] = data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns].apply(lambda col: col.astype('category').cat.categories)
+            selected_columns = data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns]
+            levels = selected_columns.apply(lambda col: col.cat.categories)
+            supports.update(
+                {
+                    column: levels[column]
+                    for column
+                    in data_without_date_column.columns[categorical_columns & supports_to_estimate_columns]
+                }
+            )
 
-        # TODO: TO TEST
+        # Tested
         if np.any(float_columns & supports_to_estimate_columns):
             minimums = data_without_date_column.loc[:, float_columns & supports_to_estimate_columns].apply(np.nanmin, axis=0)
             maximums = data_without_date_column.loc[:, float_columns & supports_to_estimate_columns].apply(np.nanmax, axis=0)
@@ -195,8 +196,8 @@ def estimate_data_temporal_map(
                     }
                 )
 
-        #DUDA
-        # TODO: test
+        # DUDA if
+        # Tested
         if np.any(integer_columns & supports_to_estimate_columns):
             minimums = data_without_date_column.loc[:, integer_columns & supports_to_estimate_columns].apply(np.nanmin, axis=0)
             maximums = data_without_date_column.loc[:, integer_columns & supports_to_estimate_columns].apply(np.nanmax, axis=0)
@@ -240,9 +241,9 @@ def estimate_data_temporal_map(
             )
 
         # Convert factor variables to characters, as used by the xts Objects
-        # TODO: needed??
         if np.any(categorical_columns):
-            data_without_date_column.loc[:, categorical_columns] = data_without_date_column.loc[:, categorical_columns].applymap(str)
+            converted_columns = data_without_date_column.loc[:, categorical_columns].astype(VALID_CONVERSION_STRING_TYPE)
+            data_without_date_column = data_without_date_column.assign(**converted_columns)
 
         # Exclude from the analysis those variables with a single value, if any
         support_lengths = [len(supports[column]) for column in data_without_date_column.columns]
@@ -264,7 +265,7 @@ def estimate_data_temporal_map(
             raise ValueError('Zero remaining variables to be analyzed.')
 
         # Estimate the Data Temporal Map
-        posterior_data_classes = data.dtypes
+        posterior_data_classes = data_without_date_column.dtypes
         results = {}
 
         if verbose:
@@ -340,7 +341,13 @@ def estimate_data_temporal_map(
                     print(f'-\'{column}\': no date gaps, date gap smoothing was not applied')
 
             counts_map = mapped_data.values
-            probability_map = np.divide(counts_map, counts_map.sum(axis=0, keepdims=True))
+
+            probability_arrays = []
+            for array in counts_map:
+                probability_arrays.append(
+                    np.divide(array, array.sum())
+                )
+            probability_map = np.array(probability_arrays)
 
             if data_types[column] == VALID_DATE_TYPE:
                 support = pd.DataFrame(pd.to_datetime(supports[column]))
