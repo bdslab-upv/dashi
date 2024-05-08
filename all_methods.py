@@ -81,7 +81,7 @@ def plot_data_temporal_map(
     counts_subarray = list(zip(*counts_subarray))  # Transpose the matrix
 
     if mode == 'heatmap':
-        figure = go.figureure(
+        figure = go.Figure(
             data=go.Heatmap(
                 x=dates,
                 y=support[start_value:end_value],
@@ -112,7 +112,7 @@ def plot_data_temporal_map(
             figure.update_layout(title=plot_title)
 
     else:  # mode == 'series'
-        figure = go.figureure()
+        figure = go.Figure()
         max_colors = 6
 
         for i in range(start_value, end_value):
