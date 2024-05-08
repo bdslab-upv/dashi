@@ -7,6 +7,7 @@ from all_constants import VALID_STRING_TYPE, VALID_DEFAULT_STRING_TYPE
 from all_methods import plot_data_temporal_map
 from estimate_data_temporal_map import estimate_data_temporal_map
 from format_date import format_date
+from igt_projection import estimate_igt_projection
 
 # URL to the dataset
 url = 'http://github.com/hms-dbmi/EHRtemporalVariability-DataExamples/raw/master/nhdsSubset.csv'
@@ -51,15 +52,24 @@ prob_maps = estimate_data_temporal_map(
 )
 
 plot_data_temporal_map(
+     data_temporal_map=prob_maps['diagcode1'],
+     start_value=0,
+     end_value=20,
+     start_date=min(prob_maps['diagcode1'].dates),
+     end_date=max(prob_maps['diagcode1'].dates),
+     color_palette='Spectral',
+     absolute=True,
+     sorting_method='frequency',
+     mode='heatmap',
+     plot_title='BULERIA BULERIA, MÁS TE QUIERO CADA DÍA'
+ )
+
+estimate_igt_projection(
     data_temporal_map=prob_maps['age'],
-    start_value=0,
-    end_value=20,
-    start_date=min(prob_maps['age'].dates),
-    end_date=max(prob_maps['age'].dates),
-    color_palette='Spectral',
-    absolute=False,
-    sorting_method='frequency',
-    mode='series',
-    #plot_title='BULERIA BULERIA, MÁS TE QUIERO CADA DÍA'
+    dimensions=2,
+    #start_date='2000-01-01',
+    #end_date='2010-12-31'
+    embedding_type='nonmetricmds'
 )
+
 
