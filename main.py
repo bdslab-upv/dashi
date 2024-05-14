@@ -3,8 +3,9 @@ import io
 import pandas as pd
 import requests
 
+import all_constants
 from all_constants import VALID_STRING_TYPE, VALID_DEFAULT_STRING_TYPE
-from all_methods import plot_data_temporal_map
+from all_methods import plot_data_temporal_map, plot_IGT_projection
 from estimate_data_temporal_map import estimate_data_temporal_map
 from format_date import format_date
 from igt_projection import estimate_igt_projection
@@ -46,30 +47,36 @@ dataset_formatted = format_date(dataframe, 'date', date_format='%y/%m', verbose=
 prob_maps = estimate_data_temporal_map(
     data=dataset_formatted,
     date_column_name='date',
-    period='month',
+    period=all_constants.TEMPORAL_PERIOD_MONTH,
     verbose=True,
-    numeric_smoothing=False
+    numeric_smoothing=True
 )
 
-plot_data_temporal_map(
-     data_temporal_map=prob_maps['diagcode1'],
-     start_value=0,
-     end_value=20,
-     start_date=min(prob_maps['diagcode1'].dates),
-     end_date=max(prob_maps['diagcode1'].dates),
-     color_palette='Spectral',
-     absolute=True,
-     sorting_method='frequency',
-     mode='heatmap',
-     plot_title='BULERIA BULERIA, MÁS TE QUIERO CADA DÍA'
- )
+# plot_data_temporal_map(
+#     data_temporal_map=prob_maps['diagcode1'],
+#     start_value=0,
+#     end_value=20,
+#     start_date=min(prob_maps['diagcode1'].dates),
+#     end_date=max(prob_maps['diagcode1'].dates),
+#     color_palette='Spectral',
+#     absolute=False,
+#     sorting_method='frequency',
+#     mode='heatmap',
+#     plot_title='BULERIA BULERIA, MÁS TE QUIERO CADA DÍA'
+# )
 
-estimate_igt_projection(
-    data_temporal_map=prob_maps['age'],
+igt_projection = estimate_igt_projection(
+    data_temporal_map=prob_maps['diagcode1'],
     dimensions=2,
-    #start_date='2000-01-01',
-    #end_date='2010-12-31'
-    embedding_type='nonmetricmds'
+    # start_date='2000-01-01',
+    # end_date='2010-12-31'
+    # embedding_type='nonmetricmds'
 )
 
-
+# TODO test dimensions with dates, colors and trajectory
+# TODO to check, in 3d red up blue down, David
+plot_IGT_projection(
+    igt_projection=igt_projection,
+    dimensions=2,
+    trajectory=True # TODO trajectory
+)

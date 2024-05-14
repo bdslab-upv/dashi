@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Union, List
 from dataclasses import dataclass
 
@@ -15,7 +16,7 @@ class DataTemporalMap:
     # ]
     probability_map: Union[List[List[float]], None] = None
     counts_map: Union[List[List[int]], None] = None
-    dates: Union[List[str], None] = None
+    dates: Union[List[datetime], None] = None
     support: Union[List[str], None] = None
     variable_name: Union[str, None] = None
     variable_type: Union[str, None] = None

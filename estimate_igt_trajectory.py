@@ -8,21 +8,27 @@ def estimate_igt_trajectory(igt_projection: IGTProjection, number_of_points=None
     if igt_projection is None:
         raise ValueError("An input IGT projection object is required.")
     if number_of_points is None:
-        number_of_points = len(igt_projection.projection) * 10
+        number_of_points = igt_projection.projection.shape[0] * 10
 
-    dimensions = len(igt_projection.projection.columns)
-    batches = len(igt_projection.projection)
+    dimensions = igt_projection.projection.shape[1]
+    batches = igt_projection.projection.shape[0]
 
     t = np.arange(1, batches + 1)
     tt = np.linspace(1, batches, num=number_of_points)
 
     trajectory_function = {}
-    points = pd.DataFrame(np.zeros((number_of_points, dimensions)), columns=[f"D{i + 1}" for i in range(dimensions)])
-    dates = np.linspace(min(igt_projection.data_temporal_map.dates),
-                        max(igt_projection.data_temporal_map.dates), num=number_of_points)
+    points = pd.DataFrame(
+        np.zeros((number_of_points, dimensions)),
+        columns=[f"D{i + 1}" for i in range(dimensions)]
+    )
+    dates = pd.date_range(
+        start=min(igt_projection.data_temporal_map.dates),
+        end=max(igt_projection.data_temporal_map.dates),
+        periods=number_of_points
+    )
 
     for i in range(dimensions):
-        spline = UnivariateSpline(t, igt_projection.projection.iloc[:, i])
+        spline = UnivariateSpline(x=t, y=igt_projection.projection[:, i], s=2)
         trajectory_function[f"D{i + 1}"] = spline
         points.iloc[:, i] = spline(tt)
 
