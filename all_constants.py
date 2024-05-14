@@ -8,14 +8,18 @@ VALID_TEMPORAL_PERIODS = [TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_
 VALID_DATE_TYPE = 'datetime64[ns]'
 VALID_FLOAT_TYPE = 'float64'
 VALID_INTEGER_TYPE = 'int64'
-VALID_DEFAULT_STRING_TYPE = 'object' # recommended string type, more efficient than object
-VALID_STRING_TYPE = 'object' # recommended string type, more efficient than object # string
-VALID_CONVERSION_STRING_TYPE = 'object' # recommended string type, more efficient than object #string
-VALID_CATEGORICAL_TYPE = 'category' # ?
+VALID_DEFAULT_STRING_TYPE = 'object'  # recommended string type, more efficient than object
+VALID_STRING_TYPE = 'object'  # recommended string type, more efficient than object # string
+VALID_CONVERSION_STRING_TYPE = 'object'  # recommended string type, more efficient than object #string
+VALID_CATEGORICAL_TYPE = 'category'  # ?
 # TODO: check categorical instead of R factor
-VALID_TYPES_WITHOUT_DATE = [VALID_INTEGER_TYPE, VALID_STRING_TYPE, VALID_FLOAT_TYPE, VALID_CATEGORICAL_TYPE]  # Pandas types
+VALID_TYPES_WITHOUT_DATE = [VALID_INTEGER_TYPE, VALID_STRING_TYPE, VALID_FLOAT_TYPE,
+                            VALID_CATEGORICAL_TYPE]  # Pandas types
 VALID_TYPES = VALID_TYPES_WITHOUT_DATE + [VALID_DATE_TYPE]  # Pandas types
-
 
 # Missings
 MISSING_VALUE = 'NA'
+
+# Months
+MONTH_SHORT_ABBREVIATIONS = ['J', 'F', 'M', 'A', 'm', 'j', 'x', 'a', 'S', 'O', 'N', 'D']
+MONTH_LONG_ABBREVIATIONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

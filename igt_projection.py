@@ -48,11 +48,11 @@ def igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='cl
     embedding_results = None
     # TODO: PCA,
     if embedding_type == 'classicalmds':
-        mds = MDS(n_components=dimensions, dissimilarity='precomputed')
+        mds = MDS(n_components=dimensions, dissimilarity='euclidean', random_state=42)
         # Que pasa con los NA
         embedding_results = mds.fit_transform(dissimilarity_matrix)
     elif embedding_type == 'nonmetricmds':
-        embedding_results = MDS(n_components=dimensions, dissimilarity='precomputed', metric=False).fit_transform(dissimilarity_matrix)
+        embedding_results = MDS(n_components=dimensions, dissimilarity='euclidean', metric=False).fit_transform(dissimilarity_matrix)
 
 
     # stress_value = 1 - embedding_results.stress_ if embedding_type == 'classicalmds' else embedding_results.stress_
@@ -91,6 +91,9 @@ def estimate_igt_projection(data_temporal_map, dimensions, start_date=None, end_
     if embedding_type not in ['classicalmds', 'nonmetricmds']: #TODO: PCA, AutoEncoder
         raise ValueError('embeddingType must be one of classicalmds or nonmetricmds')
 
-    value = igt_projection_core(data_temporal_map=data_temporal_map, dimensions=dimensions,
-                                embedding_type=embedding_type)
+    value = igt_projection_core(
+        data_temporal_map=data_temporal_map,
+        dimensions=dimensions,
+        embedding_type=embedding_type
+    )
     return value
