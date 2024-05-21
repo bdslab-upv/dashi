@@ -49,7 +49,7 @@ prob_maps = estimate_data_temporal_map(
     date_column_name='date',
     period=all_constants.TEMPORAL_PERIOD_MONTH,
     verbose=True,
-    numeric_smoothing=True
+    numeric_smoothing=False
 )
 
 # plot_data_temporal_map(
@@ -70,7 +70,7 @@ igt_projection = estimate_igt_projection(
     dimensions=2,
     # start_date='2000-01-01',
     # end_date='2010-12-31'
-    # embedding_type='nonmetricmds'
+    # embedding_type='pca'
 )
 
 # TODO test dimensions with dates, colors and trajectory
@@ -78,5 +78,5 @@ igt_projection = estimate_igt_projection(
 plot_IGT_projection(
     igt_projection=igt_projection,
     dimensions=2,
-    trajectory=True # TODO trajectory
+    trajectory=True
 )
