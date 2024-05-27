@@ -1,4 +1,6 @@
 # Temporal periods
+from enum import Enum
+
 TEMPORAL_PERIOD_WEEK = 'week'
 TEMPORAL_PERIOD_MONTH = 'month'
 TEMPORAL_PERIOD_YEAR = 'year'
@@ -23,3 +25,22 @@ MISSING_VALUE = 'NA'
 # Months
 MONTH_SHORT_ABBREVIATIONS = ['J', 'F', 'M', 'A', 'm', 'j', 'x', 'a', 'S', 'O', 'N', 'D']
 MONTH_LONG_ABBREVIATIONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+
+# Temporal map plotting sorting method
+class DataTemporalMapPlotSortingMethod(Enum):
+    Frequency = 'frequency'
+    Alphabetical = 'alphabetical'
+
+
+class DataTemporalMapPlotMode(Enum):
+    Heatmap = 'heatmap'
+    Series = 'series'
+
+
+class PlotColorPalette(Enum):
+    Spectral = 'Spectral'
+    Viridis = 'Viridis'
+    Viridis_reversed = 'Viridis_r'
+    Magma = 'Magma'
+    Magma_reversed = 'Magma_r'

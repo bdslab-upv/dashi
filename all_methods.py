@@ -8,48 +8,48 @@ import plotly.express as px
 from matplotlib.cm import get_cmap
 from matplotlib.colors import to_hex
 
-from all_classes import IGTProjection
+from all_classes import IGTProjection, DataTemporalMap
 from all_constants import VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, TEMPORAL_PERIOD_YEAR, TEMPORAL_PERIOD_WEEK, \
-    TEMPORAL_PERIOD_MONTH, MONTH_SHORT_ABBREVIATIONS, MONTH_LONG_ABBREVIATIONS
+    TEMPORAL_PERIOD_MONTH, MONTH_SHORT_ABBREVIATIONS, MONTH_LONG_ABBREVIATIONS, DataTemporalMapPlotSortingMethod, \
+    DataTemporalMapPlotMode, PlotColorPalette
 from estimate_igt_trajectory import estimate_igt_trajectory
+from utils import trim_data_temporal_map
 
 
 def plot_data_temporal_map(
-        data_temporal_map,
-        absolute,
-        start_value,
-        end_value,
-        start_date,
-        end_date,
-        sorting_method,
-        color_palette,
-        mode,
-        plot_title=None
+        data_temporal_map: DataTemporalMap,
+        absolute: bool = False,
+        start_value: int = 1,
+        end_value: int = None,
+        start_date: datetime = None,
+        end_date: datetime = None,
+        sorting_method: DataTemporalMapPlotSortingMethod = DataTemporalMapPlotSortingMethod.Frequency,
+        color_palette: PlotColorPalette = PlotColorPalette.Spectral,
+        mode: DataTemporalMapPlotMode = DataTemporalMapPlotMode.Heatmap,
+        plot_title: str = None
 ):
-    if mode not in ['heatmap', 'series']:
-        raise ValueError('mode must be one of heatmap or series')
+    if not isinstance(mode, DataTemporalMapPlotMode) or \
+            mode.name not in [mode.name for mode in DataTemporalMapPlotMode]:
+        raise ValueError(f'mode must be one of the defined in DataTemporalMapPlotMode')
 
-    if color_palette not in ['Spectral', 'Viridis', 'Magma', 'Viridis-reversed', 'Magma-reversed']:
-        raise ValueError('color_palette must be one of Spectral, Viridis, Magma, Viridis-reversed or Magma-reversed')
+    if not isinstance(color_palette, PlotColorPalette) or \
+            color_palette.name not in [palette.name for palette in PlotColorPalette]:
+        raise ValueError('color_palette must be one of the defined in PlotColorPalette')
 
     if not isinstance(absolute, bool):
         raise ValueError('absolute must be a logical value')
 
-    # TODO: check this
-    # if start_value < 1:
-    #     raise ValueError('start_value must be greater or equal than 1')
+    if not isinstance(start_value, int) and start_value < 1:
+        raise ValueError('start_value must be greater or equal than 1')
 
-    if sorting_method not in ['frequency', 'alphabetical']:
-        raise ValueError('sorting_method must be one of frequency or alphabetical')
+    if not isinstance(sorting_method, DataTemporalMapPlotSortingMethod) or \
+            sorting_method.name not in [method.name for method in DataTemporalMapPlotSortingMethod]:
+        raise ValueError('sorting_method must be one of the defined in DataTemporalMapPlotSortingMethod')
 
     # TODO: check color scales for heatmap and series
-    color_scale = {
-        'Spectral': 'Spectral',
-        'Viridis': 'Viridis',
-        'Magma': 'Magma',
-        'Viridis-reversed': 'Viridis_r',
-        'Magma-reversed': 'Magma_r'
-    }[color_palette]
+    color_scale = color_palette.value
+
+    data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date, end_date)
 
     if absolute:
         temporal_map = data_temporal_map.counts_map
@@ -64,7 +64,7 @@ def plot_data_temporal_map(
     variable_type = data_temporal_map.variable_type
 
     if variable_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
-        if sorting_method == 'frequency':
+        if sorting_method == DataTemporalMapPlotSortingMethod.Frequency:
             support_order = np.argsort(np.sum(temporal_map, axis=0))[::-1]
         else:
             support_order = np.argsort(support)
@@ -79,7 +79,7 @@ def plot_data_temporal_map(
         if any_supp_na.any():
             support[any_supp_na] = '<NA>'
 
-    if end_value > temporal_map.shape[0]:
+    if not end_value or end_value > temporal_map.shape[0]:
         end_value = temporal_map.shape[0]
 
     font = dict(size=18, color='#7f7f7f')
@@ -88,7 +88,7 @@ def plot_data_temporal_map(
     counts_subarray = [row[start_value:end_value] for row in temporal_map]
     counts_subarray = list(zip(*counts_subarray))  # Transpose the matrix
 
-    if mode == 'heatmap':
+    if mode == DataTemporalMapPlotMode.Heatmap:
         figure = go.Figure(
             data=go.Heatmap(
                 x=dates,
@@ -119,7 +119,7 @@ def plot_data_temporal_map(
                 'Absolute frequencies data temporal heatmap'
             figure.update_layout(title=plot_title)
 
-    else:  # mode == 'series'
+    elif mode == DataTemporalMapPlotMode.Series:
         figure = go.Figure()
         max_colors = 6
 
@@ -162,7 +162,7 @@ def plot_IGT_projection(
         dimensions: int = 3,
         start_date: datetime = None,
         end_date: datetime = None,
-        color_palette: str = "Spectral",
+        color_palette: PlotColorPalette = PlotColorPalette.Spectral,
         trajectory: bool = False
 ):
     # Validate dimensions
@@ -170,11 +170,9 @@ def plot_IGT_projection(
         raise ValueError(
             'Currently IGT plot can only be made on 2 or 3 dimensions, please set dimensions parameter accordingly')
 
-    # TODO To check
-    # Validate color palette
-    valid_palettes = ["Spectral", "Viridis", "Magma", "Viridis-reversed", "Magma-reversed"]
-    if color_palette not in valid_palettes:
-        raise ValueError("color_palette must be one of " + ", ".join(valid_palettes))
+    if not isinstance(color_palette, PlotColorPalette) or \
+            color_palette.name not in [palette.name for palette in PlotColorPalette]:
+        raise ValueError('color_palette must be one of the defined in PlotColorPalette')
 
     if not start_date:
         start_date = min(igt_projection.data_temporal_map.dates)

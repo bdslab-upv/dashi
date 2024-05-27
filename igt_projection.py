@@ -1,9 +1,11 @@
+import datetime
+
 import numpy as np
 from scipy.spatial.distance import jensenshannon
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 
-from all_classes import IGTProjection
+from all_classes import IGTProjection, DataTemporalMap
 
 import numpy as np
 from scipy.linalg import eigh
@@ -39,6 +41,7 @@ def classical_mds_precomputed(dist_matrix, n_components=2):
     X_transformed = eigvecs.dot(L)
 
     return X_transformed
+
 
 def cmdscale(d, k=2, eig=False, add=False, x_ret=False, list_=None):
     if np.any(np.isnan(d)):
@@ -118,24 +121,6 @@ def cmdscale(d, k=2, eig=False, add=False, x_ret=False, list_=None):
 # d = your_distance_matrix_here
 # result = cmdscale(d)
 # print(result)
-
-def trim_data_temporal_map(data_temporal_map, start_date=None, end_date=None):
-    if start_date is None:
-        start_date = data_temporal_map.dates.min()
-    if end_date is None:
-        end_date = data_temporal_map.dates.max()
-
-    # TODO: duda de fechas
-    start_index = data_temporal_map.dates.get_loc(start_date)
-    end_index = data_temporal_map.dates.get_loc(end_date)
-
-    temporal_map = data_temporal_map.probability_map[start_index:end_index]
-    temporal_counts_map = data_temporal_map.counts_map[start_index:end_index]
-
-    data_temporal_map.probability_map = temporal_map
-    data_temporal_map.counts_map = temporal_counts_map
-
-    return data_temporal_map
 
 
 # TODO: comprobar nan y  s
