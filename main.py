@@ -1,3 +1,4 @@
+import datetime
 import io
 
 import pandas as pd
@@ -52,31 +53,39 @@ prob_maps = estimate_data_temporal_map(
     numeric_smoothing=False
 )
 
-# plot_data_temporal_map(
+plot_data_temporal_map(
+    data_temporal_map=prob_maps['diagcode1'],
+    start_value=0,
+    end_value=20,
+    # start_date=min(prob_maps['diagcode1'].dates),
+    # end_date=max(prob_maps['diagcode1'].dates),
+    # start_date=datetime.datetime(year=2000, month=1, day=2),
+    # end_date=datetime.datetime(year=2005, month=12, day=31),
+    color_palette=all_constants.PlotColorPalette.Spectral,
+    absolute=False,
+    sorting_method=all_constants.DataTemporalMapPlotSortingMethod.Frequency,
+    mode=all_constants.DataTemporalMapPlotMode.Heatmap,
+    plot_title='BULERIA BULERIA, MÁS TE QUIERO CADA DÍA'
+)
+
+# igt_projection = estimate_igt_projection(
 #     data_temporal_map=prob_maps['diagcode1'],
-#     start_value=0,
-#     end_value=20,
-#     start_date=min(prob_maps['diagcode1'].dates),
-#     end_date=max(prob_maps['diagcode1'].dates),
-#     color_palette='Spectral',
-#     absolute=False,
-#     sorting_method='frequency',
-#     mode='heatmap',
-#     plot_title='BULERIA BULERIA, MÁS TE QUIERO CADA DÍA'
+#     dimensions=2,
+#     start_date=datetime.datetime(year=2000, month=1, day=2),
+#     end_date=datetime.datetime(year=2005, month=12, day=31),
+#     # embedding_type='pca'
+# )
+#
+# # TODO test dimensions with dates, colors and trajectory
+# # TODO to check, in 3d red up blue down, David
+# plot_IGT_projection(
+#     igt_projection=igt_projection,
+#     dimensions=2,
+#     trajectory=True
 # )
 
-igt_projection = estimate_igt_projection(
-    data_temporal_map=prob_maps['diagcode1'],
-    dimensions=2,
-    # start_date='2000-01-01',
-    # end_date='2010-12-31'
-    # embedding_type='pca'
-)
+# TODO Los phw esos
+# TODO Mirar colorinchis
 
-# TODO test dimensions with dates, colors and trajectory
-# TODO to check, in 3d red up blue down, David
-plot_IGT_projection(
-    igt_projection=igt_projection,
-    dimensions=2,
-    trajectory=True
-)
+# TODO Condiciconadas
+# TODO Pasar datos y modelos en un periodo
