@@ -1,7 +1,8 @@
 import datetime
 
 import numpy as np
-from scipy.spatial.distance import jensenshannon
+from scipy.optimize import minimize
+from scipy.spatial.distance import jensenshannon, squareform, pdist
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 
@@ -12,6 +13,8 @@ from scipy.linalg import eigh
 
 import numpy as np
 from scipy.linalg import eigh
+
+from utils import trim_data_temporal_map
 
 
 def classical_mds_precomputed(dist_matrix, n_components=2):
@@ -117,6 +120,46 @@ def cmdscale(d, k=2, eig=False, add=False, x_ret=False, list_=None):
         return points
 
 
+def isoMDS(d, y=None, k=2, maxit=50, trace=True, tol=1e-3, p=2):
+    if np.any(~np.isfinite(d)) and y is None:
+        raise ValueError("An initial configuration must be supplied with NA/Infs in 'd'")
+
+    if y is None:
+        y = cmdscale(d, k=k)
+    if not isinstance(y, np.ndarray) or y.ndim != 2:
+        raise ValueError("'y' must be a 2D matrix")
+
+    n = d.shape[0] if hasattr(d, 'shape') else len(d)
+
+    if not hasattr(d, 'shape') or len(d.shape) == 1:
+        d = squareform(d)
+
+    if d.shape[0] != d.shape[1]:
+        raise ValueError("Distances must be a square matrix")
+
+    if y.shape != (n, k):
+        raise ValueError("Invalid initial configuration")
+
+    if np.any(~np.isfinite(y)):
+        raise ValueError("Initial configuration must be complete")
+
+    def stress_func(y_flat, d, n, k, p):
+        y = y_flat.reshape((n, k))
+        d_hat = pdist(y, metric='minkowski', p=p)
+        d_hat = squareform(d_hat)
+        np.fill_diagonal(d_hat, 0)
+        return np.sum((d - d_hat) ** 2)
+
+    y_flat = y.flatten()
+    result = minimize(stress_func, y_flat, args=(d, n, k, p), method='BFGS',
+                      options={'maxiter': maxit, 'gtol': tol, 'disp': trace})
+
+    y_final = result.x.reshape((n, k))
+    stress = result.fun
+
+    return {'points': y_final, 'stress': stress}
+
+
 # Example usage:
 # d = your_distance_matrix_here
 # result = cmdscale(d)
@@ -143,7 +186,7 @@ def igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='cl
     for i in range(number_of_dates - 1):
         for j in range(i + 1, number_of_dates):
             dissimilarity_matrix[i, j] = np.sqrt(js_divergence(temporal_map[i, :], temporal_map[j, :]))
-            # dissimilarity_matrix[i, j] = np.sqrt(jensenshannon(temporal_map[i, :], temporal_map[j, :], keepdims=True))
+            # dissimilarity_matrix[i, j] = np.sqrt(jensenshannon(temporal_map[i, :], temporal_map[j, :]))
             dissimilarity_matrix[j, i] = dissimilarity_matrix[i, j]
 
     embedding_results = None
@@ -154,8 +197,9 @@ def igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='cl
         # mds = classical_mds_precomputed(dissimilarity_matrix)
         embedding_results = mds
     elif embedding_type == 'nonmetricmds':
-        mds = MDS(n_components=dimensions, dissimilarity='euclidean', metric=False)
-        embedding_results = mds.fit_transform(dissimilarity_matrix)
+        # mds = MDS(n_components=dimensions, dissimilarity='euclidean', metric=False)
+        # embedding_results = mds.fit_transform(dissimilarity_matrix)
+        embedding_results = isoMDS(dissimilarity_matrix, trace=False, k=dimensions)['points']
     elif embedding_type == 'pca':
         pca = PCA(n_components=dimensions)
         embedding_results = pca.fit_transform(dissimilarity_matrix)

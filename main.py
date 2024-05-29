@@ -68,21 +68,21 @@ plot_data_temporal_map(
     plot_title='BULERIA BULERIA, MÁS TE QUIERO CADA DÍA'
 )
 
-# igt_projection = estimate_igt_projection(
-#     data_temporal_map=prob_maps['diagcode1'],
-#     dimensions=2,
-#     start_date=datetime.datetime(year=2000, month=1, day=2),
-#     end_date=datetime.datetime(year=2005, month=12, day=31),
-#     # embedding_type='pca'
-# )
-#
+igt_projection = estimate_igt_projection(
+    data_temporal_map=prob_maps['diagcode1'],
+    dimensions=2,
+    # start_date=datetime.datetime(year=2000, month=1, day=2),
+    # end_date=datetime.datetime(year=2005, month=12, day=31),
+    embedding_type='nonmetricmds'
+)
+
 # # TODO test dimensions with dates, colors and trajectory
 # # TODO to check, in 3d red up blue down, David
-# plot_IGT_projection(
-#     igt_projection=igt_projection,
-#     dimensions=2,
-#     trajectory=True
-# )
+plot_IGT_projection(
+    igt_projection=igt_projection,
+    dimensions=2,
+    trajectory=True
+)
 
 # TODO Los phw esos
 # TODO Mirar colorinchis

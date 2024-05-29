@@ -200,10 +200,10 @@ def plot_IGT_projection(
     period_colors = []
 
     if period == TEMPORAL_PERIOD_YEAR:
-        color_map = get_cmap(color_palette)
+        color_map = get_cmap(color_palette.value)
         colors = [to_hex(color_map(i / len(dates))) for i in range(len(dates) + 1)]
     elif period in [TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK]:
-        color_map = get_cmap(color_palette, 128)
+        color_map = get_cmap(color_palette.value, 128)
         color_list = __matplotlib_to_plotly(color_map)
         color_list.reverse()
 
