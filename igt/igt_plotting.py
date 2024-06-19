@@ -1,160 +1,14 @@
 from datetime import datetime
 
-import matplotlib
-import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
-import plotly.express as px
 from matplotlib.cm import get_cmap
 from matplotlib.colors import to_hex
 
-from all_classes import IGTProjection, DataTemporalMap
-from all_constants import VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, TEMPORAL_PERIOD_YEAR, TEMPORAL_PERIOD_WEEK, \
-    TEMPORAL_PERIOD_MONTH, MONTH_SHORT_ABBREVIATIONS, MONTH_LONG_ABBREVIATIONS, DataTemporalMapPlotSortingMethod, \
-    DataTemporalMapPlotMode, PlotColorPalette
-from estimate_igt_trajectory import estimate_igt_trajectory
-from utils import trim_data_temporal_map
-
-
-def plot_data_temporal_map(
-        data_temporal_map: DataTemporalMap,
-        absolute: bool = False,
-        start_value: int = 1,
-        end_value: int = None,
-        start_date: datetime = None,
-        end_date: datetime = None,
-        sorting_method: DataTemporalMapPlotSortingMethod = DataTemporalMapPlotSortingMethod.Frequency,
-        color_palette: PlotColorPalette = PlotColorPalette.Spectral,
-        mode: DataTemporalMapPlotMode = DataTemporalMapPlotMode.Heatmap,
-        plot_title: str = None
-):
-    if not isinstance(mode, DataTemporalMapPlotMode) or \
-            mode.name not in [mode.name for mode in DataTemporalMapPlotMode]:
-        raise ValueError(f'mode must be one of the defined in DataTemporalMapPlotMode')
-
-    if not isinstance(color_palette, PlotColorPalette) or \
-            color_palette.name not in [palette.name for palette in PlotColorPalette]:
-        raise ValueError('color_palette must be one of the defined in PlotColorPalette')
-
-    if not isinstance(absolute, bool):
-        raise ValueError('absolute must be a logical value')
-
-    if not isinstance(start_value, int) and start_value < 1:
-        raise ValueError('start_value must be greater or equal than 1')
-
-    if not isinstance(sorting_method, DataTemporalMapPlotSortingMethod) or \
-            sorting_method.name not in [method.name for method in DataTemporalMapPlotSortingMethod]:
-        raise ValueError('sorting_method must be one of the defined in DataTemporalMapPlotSortingMethod')
-
-    # TODO: check color scales for heatmap and series
-    color_scale = color_palette.value
-
-    data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date, end_date)
-
-    if absolute:
-        temporal_map = data_temporal_map.counts_map
-    else:
-        temporal_map = data_temporal_map.probability_map
-
-    temporal_map_type = data_temporal_map.variable_type
-
-    dates = data_temporal_map.dates
-
-    support = np.array(data_temporal_map.support.iloc[:, 0].tolist())
-    variable_type = data_temporal_map.variable_type
-
-    if variable_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
-        if sorting_method == DataTemporalMapPlotSortingMethod.Frequency:
-            support_order = np.argsort(np.sum(temporal_map, axis=0))[::-1]
-        else:
-            support_order = np.argsort(support)
-
-        support = support[support_order]
-
-        # Resort temporal map by support_order
-        temporal_map = [row[support_order] for row in temporal_map]
-        temporal_map = np.array(temporal_map)
-
-        any_supp_na = pd.isnull(support)
-        if any_supp_na.any():
-            support[any_supp_na] = '<NA>'
-
-    if not end_value or end_value > temporal_map.shape[0]:
-        end_value = temporal_map.shape[0]
-
-    font = dict(size=18, color='#7f7f7f')
-    x_axis = dict(title='Date', titlefont=font, type='date')
-
-    counts_subarray = [row[start_value:end_value] for row in temporal_map]
-    counts_subarray = list(zip(*counts_subarray))  # Transpose the matrix
-
-    if mode == DataTemporalMapPlotMode.Heatmap:
-        figure = go.Figure(
-            data=go.Heatmap(
-                x=dates,
-                y=support[start_value:end_value],
-                z=counts_subarray,
-                colorscale=color_scale,
-                reversescale=True
-            )
-        )
-
-        y_axis = dict(
-            title=data_temporal_map.variable_name,
-            titlefont=font,
-            automargin=True,
-        )
-
-        figure.update_layout(xaxis=x_axis, yaxis=y_axis)
-
-        # Avoid type casting in plotly
-        if temporal_map_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
-            figure.update_layout(yaxis_type='category')
-
-        if plot_title is not None:
-            figure.update_layout(title=plot_title)
-        else:
-            plot_title = 'Probability distribution data temporal heatmap'
-            if absolute:
-                'Absolute frequencies data temporal heatmap'
-            figure.update_layout(title=plot_title)
-
-    elif mode == DataTemporalMapPlotMode.Series:
-        figure = go.Figure()
-        max_colors = 6
-
-        for i in range(start_value, end_value):
-            trace = go.Scatter(
-                x=dates,
-                y=counts_subarray[i],
-                mode='lines',
-                name=support[i]
-            )
-            figure.add_trace(trace)
-
-        if absolute:
-            y_axis_title = 'Absolute frequency'
-        else:
-            y_axis_title = 'Relative frequency'
-
-        y_axis = dict(
-            title=y_axis_title,
-            titlefont=font,
-            automargin=True,
-        )
-
-        figure.update_layout(
-            xaxis=x_axis,
-            yaxis=y_axis,
-        )
-
-        if plot_title is not None:
-            figure.update_layout(title=plot_title)
-        else:
-            figure.update_layout(title='Evolution of ' + data_temporal_map.variable_name)
-
-    figure.show()
-    return figure
+from constants import *
+from igt.igt_projection import IGTProjection
+from igt.igt_trajectory_estimator import estimate_igt_trajectory
+from utils import matplotlib_to_plotly, format_date_for_year, format_date_for_month, format_date_for_week
 
 
 def plot_IGT_projection(
@@ -204,7 +58,7 @@ def plot_IGT_projection(
         colors = [to_hex(color_map(i / len(dates))) for i in range(len(dates) + 1)]
     elif period in [TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK]:
         color_map = get_cmap(color_palette.value, 128)
-        color_list = __matplotlib_to_plotly(color_map)
+        color_list = matplotlib_to_plotly(color_map)
         color_list.reverse()
 
         days_of_period = 12 if period == TEMPORAL_PERIOD_MONTH else 53
@@ -230,7 +84,7 @@ def plot_IGT_projection(
                         marker=dict(
                             color=colors[i]
                         ),
-                        text=__format_date_for_year(dates[i]),
+                        text=format_date_for_year(dates[i]),
                         textposition="top center",
                         textfont_color=colors[i]
                     )
@@ -247,7 +101,7 @@ def plot_IGT_projection(
                             color=period_colors[dates[i].month - 1]
                         ),
                         hovertext=f"{dates[i].strftime('%Y')}-{MONTH_LONG_ABBREVIATIONS[dates[i].month - 1]}",
-                        text=__format_date_for_month(dates[i]),
+                        text=format_date_for_month(dates[i]),
                         textposition="top center",
                         textfont_color=period_colors[dates[i].month - 1]
                     )
@@ -263,7 +117,7 @@ def plot_IGT_projection(
                         marker=dict(
                             color=period_colors[dates[i].isoweekday() - 1]
                         ),
-                        text=__format_date_for_week(dates[i]),
+                        text=format_date_for_week(dates[i]),
                         textposition="top center",
                         textfont_color=period_colors[dates[i].isoweekday() - 1]
                     )
@@ -293,7 +147,7 @@ def plot_IGT_projection(
                         marker=dict(
                             color=colors[i]
                         ),
-                        text=__format_date_for_year(dates[i]),
+                        text=format_date_for_year(dates[i]),
                         textposition="top center",
                         textfont_color=colors[i]
                     )
@@ -310,7 +164,7 @@ def plot_IGT_projection(
                         marker=dict(
                             color=period_colors[dates[i].month - 1]
                         ),
-                        text=__format_date_for_month(dates[i]),
+                        text=format_date_for_month(dates[i]),
                         textposition="top center",
                         textfont_color=period_colors[dates[i].month - 1]
                     )
@@ -327,7 +181,7 @@ def plot_IGT_projection(
                         marker=dict(
                             color=period_colors[dates[i].isoweekday() - 1]
                         ),
-                        text=__format_date_for_week(dates[i]),
+                        text=format_date_for_week(dates[i]),
                         textposition="top center",
                         textfont_color=period_colors[dates[i].isoweekday() - 1]
                     )
@@ -391,34 +245,3 @@ def plot_IGT_projection(
         zerolinecolor='black'
     )
     fig.show()
-
-
-def __format_date_for_year(date: datetime) -> str:
-    year_part = date.strftime('%y')
-
-    return year_part
-
-
-def __format_date_for_month(date: datetime) -> str:
-    year_part = date.strftime('%y')
-    month_part = MONTH_SHORT_ABBREVIATIONS[date.month - 1]
-
-    return year_part + month_part
-
-
-def __format_date_for_week(date: datetime) -> str:
-    year_part = date.strftime('%y')
-    month_part = MONTH_SHORT_ABBREVIATIONS[date.month - 1]
-    day_part = str(date.isoweekday())
-
-    return year_part + month_part + day_part
-
-
-def __matplotlib_to_plotly(cmap):
-    pl_colorscale = []
-
-    for k in range(128):
-        C = np.array([cmap(k)[0] * 255, cmap(k)[1] * 255, cmap(k)[2] * 255])
-        pl_colorscale.append(f'rgb({C[0]}, {C[1]}, {C[2]})')
-
-    return pl_colorscale
