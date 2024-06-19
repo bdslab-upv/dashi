@@ -1,12 +1,102 @@
-from typing import List, Union, Dict
-
-import pandas as pd
-import numpy as np
 import warnings
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Union, List, Dict
+
+import numpy as np
+import pandas as pd
 from scipy.stats import gaussian_kde
 
-from all_classes import DataTemporalMap
-from all_constants import *
+from constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, \
+    VALID_INTEGER_TYPE, VALID_FLOAT_TYPE, \
+    VALID_DATE_TYPE, TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_YEAR, VALID_CONVERSION_STRING_TYPE, \
+    MISSING_VALUE, VALID_TYPES_WITHOUT_DATE
+
+
+@dataclass
+class DataTemporalMap:
+    # TODO: change types
+    # Example
+    # probability_map = [
+    #   [ 0, 1, 2...],
+    #   [ 0, 1, 2...],
+    #   [ 0, 1, 2...]
+    # ]
+    probability_map: Union[List[List[float]], None] = None
+    counts_map: Union[List[List[int]], None] = None
+    dates: Union[List[datetime], None] = None
+    support: Union[List[str], None] = None
+    variable_name: Union[str, None] = None
+    variable_type: Union[str, None] = None
+    period: Union[str, None] = None
+
+    def check(self) -> Union[List[str], bool]:
+        errors = []
+
+        # TODO: Quizás hacer log de los errores en vez de devolver varios tipos y sacar solo boolean
+
+        # Check if the dimensions of probability_map and counts_map match
+        if self.probability_map is not None and self.counts_map is not None:
+            if (len(self.probability_map) != len(self.counts_map)
+                    or any(len(probability_row) != len(count_row) for probability_row, count_row in
+                           zip(self.probability_map, self.counts_map))):
+                errors.append("the dimensions of probability_map and counts_map do not match")
+
+        # Check if the length of dates matches the rows of probability_map
+        if self.dates is not None and self.probability_map is not None:
+            if len(self.dates) != len(self.probability_map):
+                errors.append("the length of dates must match the rows of probability_map")
+
+        # Check if the length of dates matches the rows of counts_map
+        if self.dates is not None and self.counts_map is not None:
+            if len(self.dates) != len(self.counts_map):
+                errors.append("the length of dates must match the rows of counts_map")
+
+        # Check if the length of support matches the columns of probability_map
+        if self.support is not None and self.probability_map is not None:
+            if len(self.support) != len(self.probability_map):
+                errors.append("the length of support must match the columns of probability_map")
+
+        # Check if the length of support matches the columns of counts_map
+        if self.support is not None and self.counts_map is not None:
+            if len(self.support) != len(self.counts_map):
+                errors.append("the length of support must match the columns of counts_map")
+
+        # Check if period is one of the valid periods
+        if self.period is not None and self.period not in VALID_TEMPORAL_PERIODS:
+            errors.append(f"period must be one of the following: {', '.join(VALID_TEMPORAL_PERIODS)}")
+
+        # Check if variableType is one of the valid types
+        # TODO: duda, variable type es de uno?
+        if self.variable_type is not None and self.variable_type not in VALID_TYPES:
+            errors.append(f"variable_type must be one of the following: {', '.join(VALID_TYPES)}")
+
+        return errors if errors else True
+
+
+def trim_data_temporal_map(
+        data_temporal_map: DataTemporalMap,
+        start_date: datetime = None,
+        end_date: datetime = None
+) -> DataTemporalMap:
+    if start_date is None:
+        start_date = data_temporal_map.dates.min()
+    else:
+        start_date = data_temporal_map.dates[data_temporal_map.dates >= start_date].min()
+
+    if end_date is None:
+        end_date = data_temporal_map.dates.max()
+    else:
+        end_date = data_temporal_map.dates[data_temporal_map.dates <= end_date].max()
+
+    start_index = data_temporal_map.dates.get_loc(start_date)
+    end_index = data_temporal_map.dates.get_loc(end_date)
+
+    data_temporal_map.probability_map = data_temporal_map.probability_map[start_index:end_index]
+    data_temporal_map.counts_map = data_temporal_map.counts_map[start_index:end_index]
+    data_temporal_map.dates = data_temporal_map.dates[start_index:end_index]
+
+    return data_temporal_map
 
 
 def estimate_data_temporal_map(
@@ -143,8 +233,10 @@ def estimate_data_temporal_map(
         # Exclude from the analysis those variables with no finite values, if any
         if any(all_na):
             if verbose:
-                print(f'Removing variables with no finite values: {", ".join(data_without_date_column.columns[all_na])}')
-            warnings.warn(f'Removing variables with no finite values: {", ".join(data_without_date_column.columns[all_na])}')
+                print(
+                    f'Removing variables with no finite values: {", ".join(data_without_date_column.columns[all_na])}')
+            warnings.warn(
+                f'Removing variables with no finite values: {", ".join(data_without_date_column.columns[all_na])}')
 
             data_without_date_column = data_without_date_column.loc[:, ~all_na]
             number_of_columns = len(data_without_date_column.columns)
@@ -161,8 +253,14 @@ def estimate_data_temporal_map(
         # TODO: To test, define category of NA/None
         if np.any(categorical_columns & supports_to_estimate_columns):
             # Crear categoría para los NA, missings
-            data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns] = data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns].apply(lambda col: col.cat.add_categories([MISSING_VALUE]) if col.isnull().any() else col)
-            data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns] = data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns].apply(lambda col: col.fillna(MISSING_VALUE) if col.isnull().any() else col)
+            data_without_date_column.loc[:,
+            categorical_columns & supports_to_estimate_columns] = data_without_date_column.loc[:,
+                                                                  categorical_columns & supports_to_estimate_columns].apply(
+                lambda col: col.cat.add_categories([MISSING_VALUE]) if col.isnull().any() else col)
+            data_without_date_column.loc[:,
+            categorical_columns & supports_to_estimate_columns] = data_without_date_column.loc[:,
+                                                                  categorical_columns & supports_to_estimate_columns].apply(
+                lambda col: col.fillna(MISSING_VALUE) if col.isnull().any() else col)
 
             # Extract levels and assign them to supports
             selected_columns = data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns]
@@ -177,13 +275,16 @@ def estimate_data_temporal_map(
 
         # Tested
         if np.any(float_columns & supports_to_estimate_columns):
-            minimums = data_without_date_column.loc[:, float_columns & supports_to_estimate_columns].apply(np.nanmin, axis=0)
-            maximums = data_without_date_column.loc[:, float_columns & supports_to_estimate_columns].apply(np.nanmax, axis=0)
+            minimums = data_without_date_column.loc[:, float_columns & supports_to_estimate_columns].apply(np.nanmin,
+                                                                                                           axis=0)
+            maximums = data_without_date_column.loc[:, float_columns & supports_to_estimate_columns].apply(np.nanmax,
+                                                                                                           axis=0)
             supports.update(
                 {
                     column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
                     for column, minimum, maximum
-                    in zip(data_without_date_column.columns[float_columns & supports_to_estimate_columns], minimums, maximums)
+                    in zip(data_without_date_column.columns[float_columns & supports_to_estimate_columns], minimums,
+                           maximums)
                 }
             )
             if np.any(minimums == maximums):
@@ -199,14 +300,18 @@ def estimate_data_temporal_map(
         # DUDA if
         # Tested
         if np.any(integer_columns & supports_to_estimate_columns):
-            minimums = data_without_date_column.loc[:, integer_columns & supports_to_estimate_columns].apply(np.nanmin, axis=0)
-            maximums = data_without_date_column.loc[:, integer_columns & supports_to_estimate_columns].apply(np.nanmax, axis=0)
+            minimums = data_without_date_column.loc[:, integer_columns & supports_to_estimate_columns].apply(np.nanmin,
+                                                                                                             axis=0)
+            maximums = data_without_date_column.loc[:, integer_columns & supports_to_estimate_columns].apply(np.nanmax,
+                                                                                                             axis=0)
             if np.sum(integer_columns & supports_to_estimate_columns) == 1:
                 supports.update(
                     {
                         column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
                         for column, minimum, maximum
-                        in zip(data_without_date_column.columns[integer_columns & supports_to_estimate_columns], minimums, maximums)
+                        in
+                        zip(data_without_date_column.columns[integer_columns & supports_to_estimate_columns], minimums,
+                            maximums)
                     }
                 )
             else:
@@ -214,7 +319,9 @@ def estimate_data_temporal_map(
                     {
                         column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
                         for column, minimum, maximum
-                        in zip(data_without_date_column.columns[integer_columns & supports_to_estimate_columns], minimums, maximums)
+                        in
+                        zip(data_without_date_column.columns[integer_columns & supports_to_estimate_columns], minimums,
+                            maximums)
                     }
                 )
 
@@ -230,19 +337,23 @@ def estimate_data_temporal_map(
 
         # TODO: To test
         if np.any(date_columns & supports_to_estimate_columns):
-            minimums = data_without_date_column.loc[:, date_columns & supports_to_estimate_columns].apply(np.nanmin, axis=0)
-            maximums = data_without_date_column.loc[:, date_columns & supports_to_estimate_columns].apply(np.nanmax, axis=0)
+            minimums = data_without_date_column.loc[:, date_columns & supports_to_estimate_columns].apply(np.nanmin,
+                                                                                                          axis=0)
+            maximums = data_without_date_column.loc[:, date_columns & supports_to_estimate_columns].apply(np.nanmax,
+                                                                                                          axis=0)
             supports.update(
                 {
                     column: pd.date_range(minimum, maximum, periods=numeric_variables_bins).tolist()
                     for column, minimum, maximum
-                    in zip(data_without_date_column.columns[date_columns & supports_to_estimate_columns], minimums, maximums)
+                    in zip(data_without_date_column.columns[date_columns & supports_to_estimate_columns], minimums,
+                           maximums)
                 }
             )
 
         # Convert factor variables to characters, as used by the xts Objects
         if np.any(categorical_columns):
-            converted_columns = data_without_date_column.loc[:, categorical_columns].astype(VALID_CONVERSION_STRING_TYPE)
+            converted_columns = data_without_date_column.loc[:, categorical_columns].astype(
+                VALID_CONVERSION_STRING_TYPE)
             data_without_date_column = data_without_date_column.assign(**converted_columns)
 
         # Exclude from the analysis those variables with a single value, if any
@@ -250,8 +361,10 @@ def estimate_data_temporal_map(
         support_singles_indexes = np.array(support_lengths) < 2
         if np.any(support_singles_indexes):
             if verbose:
-                print(f'Removing variables with less than two distinct values in their supports: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
-            print(f'The following variable/s have less than two distinct values in their supports and were excluded from the analysis: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
+                print(
+                    f'Removing variables with less than two distinct values in their supports: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
+            print(
+                f'The following variable/s have less than two distinct values in their supports and were excluded from the analysis: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
             data_without_date_column = data_without_date_column.loc[:, ~support_singles_indexes]
             supports = {
                 column: supports[column]
@@ -357,7 +470,8 @@ def estimate_data_temporal_map(
                 support = pd.DataFrame(supports[column])
 
             if date_gaps_smoothing_done and np.any(np.isnan(probability_map)):
-                print(f'Date gaps smoothing was performed in \'{column}\' variable but some gaps will still be reflected in the resultant probabilityMap (this is generally due to temporal heatmap sparsity)')
+                print(
+                    f'Date gaps smoothing was performed in \'{column}\' variable but some gaps will still be reflected in the resultant probabilityMap (this is generally due to temporal heatmap sparsity)')
 
             data_temporal_map = DataTemporalMap(
                 probability_map=probability_map,
@@ -409,7 +523,8 @@ def estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fal
                     data = data[~np.isnan(data)]
                     ndata = np.sum(~np.isnan(data))
 
-                kde = gaussian_kde(data) # combina muchas gaussianas, una por punto, kdtree, revisar criterio de bandwith, semilla aleatoria, silverman
+                kde = gaussian_kde(
+                    data)  # combina muchas gaussianas, una por punto, kdtree, revisar criterio de bandwith, semilla aleatoria, silverman
                 map_data = kde(support) * ndata
 
     elif varclass == VALID_INTEGER_TYPE:
