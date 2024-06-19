@@ -1,7 +1,8 @@
-from all_classes import IGTProjection
 import numpy as np
 import pandas as pd
 from scipy.interpolate import UnivariateSpline
+
+from igt.igt_projection import IGTProjection
 
 
 def estimate_igt_trajectory(igt_projection: IGTProjection, number_of_points=None):
