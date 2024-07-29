@@ -6,13 +6,14 @@ import plotly.graph_objs as go
 
 from constants import DataTemporalMapPlotSortingMethod, PlotColorPalette, \
     DataTemporalMapPlotMode, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
-from data_temporal_map.data_temporal_map import DataTemporalMap
+from data_temporal_map.data_temporal_map import DataTemporalMap, trim_data_temporal_map
 
 
 def plot_data_temporal_map(
         data_temporal_map: DataTemporalMap,
         absolute: bool = False,
-        start_value: int = 1,
+        log_transform: bool = False,
+        start_value: int = 0,
         end_value: int = None,
         start_date: datetime = None,
         end_date: datetime = None,
@@ -32,6 +33,9 @@ def plot_data_temporal_map(
     if not isinstance(absolute, bool):
         raise ValueError('absolute must be a logical value')
 
+    if not isinstance(log_transform, bool):
+        raise ValueError('log_transform must be a logical value')
+
     if not isinstance(start_value, int) and start_value < 1:
         raise ValueError('start_value must be greater or equal than 1')
 
@@ -48,8 +52,6 @@ def plot_data_temporal_map(
         temporal_map = data_temporal_map.counts_map
     else:
         temporal_map = data_temporal_map.probability_map
-
-    temporal_map_type = data_temporal_map.variable_type
 
     dates = data_temporal_map.dates
 
@@ -73,10 +75,16 @@ def plot_data_temporal_map(
             support[any_supp_na] = '<NA>'
 
     if not end_value or end_value > temporal_map.shape[0]:
-        end_value = temporal_map.shape[0]
+        end_value = temporal_map.shape[1]
+
+    if start_value > temporal_map.shape[0]:
+        start_value = temporal_map.shape[1]
 
     font = dict(size=18, color='#7f7f7f')
     x_axis = dict(title='Date', titlefont=font, type='date')
+
+    if log_transform:
+        temporal_map = np.log(temporal_map)
 
     counts_subarray = [row[start_value:end_value] for row in temporal_map]
     counts_subarray = list(zip(*counts_subarray))  # Transpose the matrix
@@ -101,7 +109,7 @@ def plot_data_temporal_map(
         figure.update_layout(xaxis=x_axis, yaxis=y_axis)
 
         # Avoid type casting in plotly
-        if temporal_map_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
+        if variable_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
             figure.update_layout(yaxis_type='category')
 
         if plot_title is not None:
@@ -114,14 +122,13 @@ def plot_data_temporal_map(
 
     elif mode == DataTemporalMapPlotMode.Series:
         figure = go.Figure()
-        max_colors = 6
 
         for i in range(start_value, end_value):
             trace = go.Scatter(
                 x=dates,
                 y=counts_subarray[i],
                 mode='lines',
-                name=support[i]
+                name=str(support[i])
             )
             figure.add_trace(trace)
 
@@ -139,6 +146,8 @@ def plot_data_temporal_map(
         figure.update_layout(
             xaxis=x_axis,
             yaxis=y_axis,
+            paper_bgcolor='white',
+            plot_bgcolor='white'
         )
 
         if plot_title is not None:

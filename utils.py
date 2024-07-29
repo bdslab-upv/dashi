@@ -7,7 +7,7 @@ from constants import MONTH_SHORT_ABBREVIATIONS, VALID_DATE_TYPE
 
 
 def format_date_for_year(date: datetime) -> str:
-    year_part = date.strftime('%y')
+    year_part = date.strftime('%Y')
 
     return year_part
 
