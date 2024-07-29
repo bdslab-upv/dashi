@@ -139,7 +139,6 @@ def estimate_data_temporal_map(
     if start_date is not None and not isinstance(start_date, pd.Timestamp):
         raise ValueError('The specified start date must be of type pandas.Timestamp')
 
-
     if end_date is not None and not isinstance(end_date, pd.Timestamp):
         raise ValueError('The specified end date must be of type pandas.Timestamp')
 
@@ -543,6 +542,7 @@ def estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fal
 
     return map_data
 
+
 def estimate_multidim_data_temporal_map(
         data: pd.DataFrame,
         dates: datetime.date,
@@ -555,7 +555,6 @@ def estimate_multidim_data_temporal_map(
     if period not in VALID_TEMPORAL_PERIODS:
         raise ValueError(f'Period must be one of the following: {", ".join(VALID_TEMPORAL_PERIODS)}')
 
-
     xmin = data.min(axis=0)
     xmax = data.max(axis=0)
 
@@ -565,21 +564,42 @@ def estimate_multidim_data_temporal_map(
     elif period == TEMPORAL_PERIOD_YEAR:
         dates_for_batching = pd.to_datetime(dates).dt.year
         unique_dates = dates_for_batching.unique()
-        unique_dates = pd.Series([f'{year}-01-01' for year in unique_dates])
+        unique_dates = pd.to_datetime([f'{year}-01-01' for year in unique_dates])
     elif period == TEMPORAL_PERIOD_WEEK:
         dates_for_batching = pd.to_datetime(dates).to_period('W')
         unique_dates = sorted(dates_for_batching.unique())
 
-    kde2 = data.groupby(dates_for_batching).apply(lambda group: compute_kde(data.loc[group.index, [0, 1]], xmin[:2], xmax[:2], binsize)).tolist()
-    probability_map_2d = np.column_stack([process_kde(kde).flatten() for kde in kde2])
-    probability_map_2d = pd.DataFrame(data=probability_map_2d, columns=unique_dates)
+    kde2 = data.groupby(dates_for_batching).apply(lambda group: __compute_kde(data.loc[group.index, [0, 1]], xmin[:2],
+                                                                              xmax[:2], binsize)).tolist()
+    probability_map_2d = np.column_stack([__process_kde(kde).flatten() for kde in kde2]).T
+
+    dtm2d = DataTemporalMap(
+        probability_map=probability_map_2d,
+        counts_map=probability_map_2d,
+        dates=unique_dates,
+        support=pd.DataFrame(range(0, binsize ** 2)),
+        variable_name='Dim.reduded.2D',
+        variable_type='float64',
+        period=period
+    )
+
+    kde3 = data.groupby(dates_for_batching).apply(lambda group: __compute_kde(data.loc[group.index, 0:4], xmin, xmax,
+                                                                              binsize)).tolist()
+    probability_map_3d = np.column_stack([__process_kde(kde).flatten() for kde in kde3]).T
+
+    dtm3d = DataTemporalMap(
+        probability_map=probability_map_3d,
+        counts_map=probability_map_3d,
+        dates=pd.to_datetime(unique_dates),
+        support=pd.DataFrame(range(0, binsize ** 3)),
+        variable_name='Dim.reduded.3D',
+        variable_type='float64',
+        period=period
+    )
+    return dtm2d, dtm3d
 
 
-    kde3 = data.groupby(dates_for_batching).apply(lambda group: compute_kde(data.loc[group.index, 0:4], xmin, xmax, binsize)).tolist()
-
-    print(kde3)
-
-def compute_kde(data_subset, xmin, xmax, binsize):
+def __compute_kde(data_subset, xmin, xmax, binsize):
     kde = gaussian_kde(data_subset.T, bw_method='silverman')
     grid = [np.linspace(start, stop, binsize) for start, stop in zip(xmin, xmax)]
     mesh = np.meshgrid(*grid)
@@ -588,7 +608,7 @@ def compute_kde(data_subset, xmin, xmax, binsize):
 
     return kde_values
 
-def process_kde(kde_values):
-    kde_values = np.maximum(kde_values, 0) #Set negative values to 0
-    return kde_values / np.sum(kde_values)
 
+def __process_kde(kde_values):
+    kde_values = np.maximum(kde_values, 0)  # Set negative values to 0
+    return kde_values / np.sum(kde_values)  # Normalize
