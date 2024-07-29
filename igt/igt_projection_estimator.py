@@ -1,8 +1,8 @@
 import numpy as np
-from numpy.linalg import eigh
-from scipy.optimize import minimize
-from scipy.spatial.distance import squareform, pdist
+from scipy.linalg import eigh
 from sklearn.decomposition import PCA
+from sklearn.manifold import MDS
+from sklearn.preprocessing import MinMaxScaler
 
 from data_temporal_map.data_temporal_map import trim_data_temporal_map
 from igt.igt_projection import IGTProjection
@@ -26,33 +26,90 @@ def __js_divergence(p, q):
     return result
 
 
-def __cmdscale(D):
-    """
-    Classical multidimensional scaling (MDS)
-    D   : array [n x n]
-        Symmetric distance matrix.
+def __cmdscale(d, k=2, eig=False, add=False, x_ret=False):
+    # Check for NA values (Not Applicable in numpy, but we can check for NaN)
+    if np.isnan(d).any():
+        raise ValueError("NA values not allowed in 'd'")
 
-    Returns
-    Y   : array [n x p]
-        Configuration matrix. Each column represents a dimension.
-    """
-    n = len(D)
+    list_ = eig or add or x_ret
 
+    if not list_:
+        if eig:
+            print("Warning: eig=TRUE is disregarded when list_=FALSE")
+        if x_ret:
+            print("Warning: x_ret=TRUE is disregarded when list_=FALSE")
+
+    if not isinstance(d, np.ndarray) or len(d.shape) != 2 or d.shape[0] != d.shape[1]:
+        if add:
+            d = np.array(d)
+        x = np.array(d ** 2, dtype=np.double)
+        n = x.shape[0]
+        if n != x.shape[1]:
+            raise ValueError("distances must be result of 'dist' or a square matrix")
+        rn = np.arange(n)
+    else:
+        n = d.shape[0]
+        rn = np.arange(n)
+        x = np.zeros((n, n))
+        if add:
+            d0 = x.copy()
+        triu_indices = np.triu_indices_from(x, 1)
+        x[triu_indices] = d[triu_indices] ** 2
+        x += x.T
+        if add:
+            d0[triu_indices] = d[triu_indices]
+            d = d0 + d0.T
+
+    if not isinstance(n, int) or n > 46340:
+        raise ValueError("invalid value of 'n'")
+
+    if k > n - 1 or k < 1:
+        raise ValueError("'k' must be in {1, 2, ..  n - 1}")
+
+    # Double centering
     H = np.eye(n) - np.ones((n, n)) / n
-    B = -H.dot(D ** 2).dot(H) / 2
+    B = -0.5 * H.dot(x).dot(H)
 
-    evals, evecs = np.linalg.eigh(B)
+    if add:
+        i2 = n + np.arange(n)
+        Z = np.zeros((2 * n, 2 * n))
+        Z[np.arange(n), i2] = -1
+        Z[i2, np.arange(n)] = -x
+        Z[i2, i2] = 2 * d
+        e = np.linalg.eigvals(Z)
+        add_c = np.max(np.real(e))
+        x = np.zeros((n, n), dtype=np.double)
+        non_diag = np.triu_indices_from(d, 1)
+        x[non_diag] = (d[non_diag] + add_c) ** 2
+        x = -0.5 * H.dot(x).dot(H)
 
-    idx = np.argsort(evals)[::-1]
-    evals = evals[idx]
-    evecs = evecs[:, idx]
+    e_vals, e_vecs = eigh(B)
+    idx = np.argsort(e_vals)[::-1]
+    e_vals = e_vals[idx]
+    e_vecs = e_vecs[:, idx]
 
-    w, = np.where(evals > 0)
-    L = np.diag(np.sqrt(evals[w]))
-    V = evecs[:, w]
-    Y = V.dot(L)
+    ev = e_vals[:k]
+    evec = e_vecs[:, :k]
+    k1 = np.sum(ev > 0)
 
-    return Y
+    if k1 < k:
+        print(f"Warning: only {k1} of the first {k} eigenvalues are > 0")
+        evec = evec[:, ev > 0]
+        ev = ev[ev > 0]
+
+    points = evec * np.sqrt(ev)
+
+    if list_:
+        evalus = e_vals
+        return {
+            'points': points,
+            'eig': evalus if eig else None,
+            'x': B if x_ret else None,
+            'ac': add_c if add else 0,
+            'GOF': np.sum(ev) / np.array([np.sum(np.abs(evalus)), np.sum(np.maximum(evalus, 0))])
+        }
+    else:
+        return points
 
 
 def igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='classicalmds'):
@@ -68,21 +125,29 @@ def igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='cl
             dissimilarity_matrix[j, i] = dissimilarity_matrix[i, j]
 
     embedding_results = None
+    stress_value = None
     # TODO: to test PCA
     if embedding_type == 'classicalmds':
-        mds = __classical_mds(dissimilarity_matrix)
+        mds = __cmdscale(dissimilarity_matrix, k=dimensions)
 
         embedding_results = mds
     elif embedding_type == 'nonmetricmds':
-        # embedding_results, _ = isoMDS(d=dissimilarity_matrix, k=dimensions)
-        raise NotImplementedError
-    elif embedding_type == 'pca':
-        pca = PCA(n_components=dimensions)
-        embedding_results = pca.fit_transform(dissimilarity_matrix)
+        nonMDS = MDS(n_components=dimensions,
+                     metric=False,
+                     random_state=112,
+                     dissimilarity='precomputed',
+                     normalized_stress='auto',
+                     n_init=1)
+        embedding_results = nonMDS.fit_transform(dissimilarity_matrix,
+                                                 init=(__cmdscale(dissimilarity_matrix, k=dimensions)))
+        stress_value = nonMDS.stress_
 
-    # stress_value = 1 - embedding_results.stress_ if embedding_type == 'classicalmds' else embedding_results.stress_
-    # TODO: check for stress of MDS
-    stress_value = 0
+    elif embedding_type == 'pca':
+        scaler = MinMaxScaler()
+        scaled_temporal_map = scaler.fit_transform(temporal_map)
+        pca = PCA(n_components=dimensions)
+        embedding_results = pca.fit_transform(scaled_temporal_map)
+
 
     igt_projection = IGTProjection(
         data_temporal_map=data_temporal_map,
@@ -100,18 +165,25 @@ def estimate_igt_projection(data_temporal_map, dimensions, start_date=None, end_
         raise ValueError('dataTemporalMap of class DataTemporalMap must be provided')
 
     if dimensions < 2 or dimensions > len(data_temporal_map.dates):
-        raise ValueError('dimensions must be between 2 and length(dataTemporalMap@dates)')
-
-    # TODO: comprobar fechas en rango del data temporal map
+        raise ValueError('dimensions must be between 2 and len(dataTemporalMap.dates)')
 
     if start_date is not None or end_date is not None:
         if start_date is not None and end_date is not None:
-            data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date=start_date, end_date=end_date)
+            if start_date and end_date in data_temporal_map.dates:
+                data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date=start_date, end_date=end_date)
+            else:
+                raise ValueError('start_date and end_date must be in the range of dataTemporalMap.dates')
         else:
             if start_date is not None:
-                data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date=start_date)
+                if start_date in data_temporal_map.dates:
+                    data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date=start_date)
+                else:
+                    raise ValueError('start_date must be in the range of dataTemporalMap.dates')
             if end_date is not None:
-                data_temporal_map = trim_data_temporal_map(data_temporal_map, end_date=end_date)
+                if end_date in data_temporal_map.dates:
+                    data_temporal_map = trim_data_temporal_map(data_temporal_map, end_date=end_date)
+                else:
+                    raise ValueError('end_date must be in the range of dataTemporalMap.dates')
 
     if embedding_type not in ['classicalmds', 'nonmetricmds', 'pca']:  # TODO: PCA, AutoEncoder
         raise ValueError('embeddingType must be one of classicalmds, nonmetricmds or pca')
