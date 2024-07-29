@@ -81,6 +81,7 @@ def plot_IGT_projection(
                         x=[x],
                         y=[y],
                         mode='text',
+                        hoverinfo='text',
                         marker=dict(
                             color=colors[i]
                         ),
@@ -97,6 +98,7 @@ def plot_IGT_projection(
                         x=[x],
                         y=[y],
                         mode='text',
+                        hoverinfo='text',
                         marker=dict(
                             color=period_colors[dates[i].month - 1]
                         ),
@@ -114,6 +116,7 @@ def plot_IGT_projection(
                         x=[x],
                         y=[y],
                         mode='text',
+                        hoverinfo='text',
                         marker=dict(
                             color=period_colors[dates[i].isoweekday() - 1]
                         ),
@@ -144,6 +147,7 @@ def plot_IGT_projection(
                         y=[y],
                         z=[z],
                         mode='text',
+                        hoverinfo='text',
                         marker=dict(
                             color=colors[i]
                         ),
@@ -161,6 +165,8 @@ def plot_IGT_projection(
                         y=[y],
                         z=[z],
                         mode='text',
+                        hoverinfo='text',
+                        hovertext=f"{dates[i].strftime('%Y')}-{MONTH_LONG_ABBREVIATIONS[dates[i].month - 1]}",
                         marker=dict(
                             color=period_colors[dates[i].month - 1]
                         ),
@@ -178,6 +184,7 @@ def plot_IGT_projection(
                         y=[y],
                         z=[z],
                         mode='text',
+                        hoverinfo='text',
                         marker=dict(
                             color=period_colors[dates[i].isoweekday() - 1]
                         ),
@@ -195,7 +202,7 @@ def plot_IGT_projection(
                     z=trajectory_points['D3'],
                     mode='lines',
                     line=dict(
-                        color=np.arange(0, len(trajectory_points)),  # Color based on row index
+                        color="#21908C", width=1.3,  # Color based on row index
                         showscale=False
                     ),
                     hovertext=[f"Approx. date: {date}" for date in trajectory_dates]
@@ -204,6 +211,13 @@ def plot_IGT_projection(
 
     fig.update_layout(
         plot_bgcolor='white',
+        showlegend=False,
+        title={
+            'text': 'Information Geometric Temporal (IGT) projection',
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top',
+        },
         scene=dict(
             xaxis=dict(
                 title='D1',
