@@ -49,7 +49,7 @@ dataset_formatted = format_date(dataframe, 'date', date_format='%y/%m', verbose=
 prob_maps = estimate_data_temporal_map(
     data=dataset_formatted,
     date_column_name='date',
-    period=constants.TEMPORAL_PERIOD_MONTH,
+    period=constants.TEMPORAL_PERIOD_YEAR,
     numeric_smoothing=False,
     verbose=True
 )
