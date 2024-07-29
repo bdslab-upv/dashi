@@ -40,7 +40,7 @@ class DataTemporalMapPlotMode(Enum):
 
 class PlotColorPalette(Enum):
     Spectral = 'Spectral'
-    Viridis = 'Viridis'
-    Viridis_reversed = 'Viridis_r'
-    Magma = 'Magma'
-    Magma_reversed = 'Magma_r'
+    Viridis = 'viridis'
+    Viridis_reversed = 'viridis_r'
+    Magma = 'magma'
+    Magma_reversed = 'magma_r'

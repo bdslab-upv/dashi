@@ -19,9 +19,19 @@ def __classical_mds(dist_matrix, n_components=2):
     return eigvecs * np.sqrt(eigvals)
 
 
-def __js_divergence(p, q):
+def __js_divergence(p, q, epsilon=1e-10):
+    p = np.asarray(p)
+    q = np.asarray(q)
+
+    p = np.where(p < epsilon, epsilon, p)
+    q = np.where(q < epsilon, epsilon, q)
+
     m = 0.5 * (p + q)
-    result = 0.5 * (np.nansum(p * (np.log2(p / m)), axis=0) + np.nansum(q * (np.log2(q / m)), axis=0))
+
+    kl_p_m = np.where(p != 0, p * np.log2(p / m), 0)
+    kl_q_m = np.where(q != 0, q * np.log2(q / m), 0)
+
+    result = 0.5 * (np.nansum(kl_p_m) + np.nansum(kl_q_m))
 
     return result
 
@@ -121,12 +131,11 @@ def igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='cl
     for i in range(number_of_dates - 1):
         for j in range(i + 1, number_of_dates):
             dissimilarity_matrix[i, j] = np.sqrt(__js_divergence(temporal_map[i, :], temporal_map[j, :]))
-            # dissimilarity_matrix[i, j] = np.sqrt(jensenshannon(temporal_map[i, :], temporal_map[j, :]))
+            #dissimilarity_matrix[i, j] = jensenshannon(temporal_map[i, :], temporal_map[j, :])
             dissimilarity_matrix[j, i] = dissimilarity_matrix[i, j]
 
     embedding_results = None
     stress_value = None
-    # TODO: to test PCA
     if embedding_type == 'classicalmds':
         mds = __cmdscale(dissimilarity_matrix, k=dimensions)
 
@@ -148,7 +157,6 @@ def igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='cl
         pca = PCA(n_components=dimensions)
         embedding_results = pca.fit_transform(scaled_temporal_map)
 
-
     igt_projection = IGTProjection(
         data_temporal_map=data_temporal_map,
         projection=embedding_results,
@@ -159,7 +167,7 @@ def igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='cl
     return igt_projection
 
 
-def estimate_igt_projection(data_temporal_map, dimensions, start_date=None, end_date=None,
+def estimate_igt_projection(data_temporal_map, dimensions=2, start_date=None, end_date=None,
                             embedding_type='classicalmds'):
     if data_temporal_map is None:
         raise ValueError('dataTemporalMap of class DataTemporalMap must be provided')
