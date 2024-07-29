@@ -29,7 +29,7 @@ def estimate_igt_trajectory(igt_projection: IGTProjection, number_of_points=None
     )
 
     for i in range(dimensions):
-        spline = UnivariateSpline(x=t, y=igt_projection.projection[:, i], s=0)
+        spline = UnivariateSpline(x=t, y=igt_projection.projection[:, i], s=0.008, k=3)
         trajectory_function[f"D{i + 1}"] = spline
         points.iloc[:, i] = spline(tt)
 
