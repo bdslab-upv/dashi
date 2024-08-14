@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datashift"
+version = "0.1.0"
+description = "A description of my library"
+authors = [{name = "Your Name", email = "youremail@example.com"}]
+dependencies = [""]
