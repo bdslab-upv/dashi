@@ -52,11 +52,11 @@ def arrange_metrics(*, metrics: Dict[str, float], metric_name: str) -> DataFrame
         raise TypeError('Metric identifier needs to be specified as a string.')
 
     # Selection of the metrics relative to the test set
-    metrics_test = {(combination[0], combination[1]): metrics[metric_name]
+    metrics_test = {(combination[0], combination[1]): metrics_[metric_name]
                     for combination, metrics_ in metrics.items() if combination[2] == 'test'}
 
     # Data formatting
-    metrics_test_frame = Series(metrics_test).unstack()
+    metrics_test_frame = Series(metrics_test).unstack(sort=False)
 
     # Metrics test frame formatting
     metrics_test_frame.index = metrics_test_frame.index.map(_correct_index)
@@ -66,7 +66,7 @@ def arrange_metrics(*, metrics: Dict[str, float], metric_name: str) -> DataFrame
 
 
 # FUNCTION FOR INDEX CORRECTION
-def _correct_index(*, index_value: Union[str, float, Tuple]) -> Union[str, float]:
+def _correct_index(index_value: Union[str, float, Tuple]) -> Union[str, float]:
 
     """
     Corrects the index values when learning was based on a cumulative learning strategy.
