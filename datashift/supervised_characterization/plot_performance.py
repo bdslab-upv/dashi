@@ -1,57 +1,85 @@
 """
-DESCRIPTION: main function for results exploration.
+DESCRIPTION: main function for multi-batch metrics exploration.
 AUTHOR: Pablo Ferri-Borredà
 DATE: 17/10/24
 """
 
 # MODULES IMPORT
-import tkinter as tk
-
-import matplotlib as mpl_
-
-mpl_.use('TkAgg')
 from typing import Dict
-import matplotlib.pyplot as mpl
-from seaborn import heatmap
-from pandas import Series
+
+import plotly.graph_objects as go
+import plotly.io as pio
+
+from .arrange_metrics import arrange_metrics
 
 # SETTINGS
 FONTSIZE = 14
 
 
-# FUNCTION DEFINITION
-def plot_multi_batch_models(*, metrics: Dict[str, float], metric_identifier: str) -> None:
-    # Inputs checking
-    if type(metrics) is not dict:
-        raise TypeError('Metrics should be specified in a dictionary.')
-    if type(metric_identifier) is not str:
-        raise TypeError('Metric identifier needs to be specified as a string.')
+def plot_multi_batch_models(*, metrics: Dict[str, float], metric_name: str) -> None:
+    """
+    Plots a heatmap visualizing the specified metric for multiple batches of training and test models.
 
-    # Selection of the metrics relative to the test set
-    metrics_test = {(combination[0], combination[1]): metrics_[metric_identifier] for combination, metrics_ in
-                    metrics.items() if combination[2] == 'test'}
+    The function takes a dictionary of metrics and filters them based on the metric identifier.
+    It then generates a heatmap where the x-axis represents the test batches,
+    the y-axis represents the training batches, and the color scale indicates the
+    values of the specified metric.
 
-    # Data formatting
-    metrics_test_frame = Series(metrics_test).unstack()
+    The plot is interactive and can be explored (zoomed, hovered, etc.) using Plotly.
 
-    # Plotting
-    root = tk.Tk()
-    mpl.rc('font', family='serif')
-    mpl.figure()
+    Parameters
+    ----------
+    metrics : dict
+        A dictionary where keys are tuples of (training_batch, test_batch, dataset_type),
+        and values are the metric values for the corresponding combination.
+        The `dataset_type` should be `'test'` to include the metric in the heatmap.
 
-    heatmap_plot = heatmap(
-        metrics_test_frame.iloc[::-1], annot=True, fmt=".3f", cmap='RdYlGn', annot_kws={'size': FONTSIZE - 2}
+    metric_name : str
+        The name of the metric to visualize (e.g., 'accuracy', 'loss', etc.).
+        The function will filter metrics based on this identifier and only plot those for the 'test' set.
+
+    Returns
+    -------
+    None
+        This function generates and displays an interactive heatmap using Plotly,
+        and does not return any value. The heatmap is displayed directly in the output
+        environment (e.g., Jupyter notebook, web browser).
+
+    Raises
+    ------
+    TypeError
+        If the `metrics` parameter is not a dictionary or if `metric_identifier` is not a string.
+    """
+
+    # Metrics arrangement
+    metrics_test_frame = arrange_metrics(metrics=metrics, metric_name=metric_name)
+
+    # Plotting using Plotly
+    heatmap_data = go.Heatmap(
+        z=metrics_test_frame.iloc[::-1].values,  # Values for the heatmap (reversed rows)
+        x=metrics_test_frame.columns,  # Columns as x-axis
+        y=metrics_test_frame.index,  # Rows as y-axis
+        colorscale='RdYlGn',  # Color scale
+        colorbar=dict(title=metric_name),  # Colorbar label
+        zmid=0,  # Center color (0 value centered)
+        hovertemplate="%{y}<br>%{x}: %{z:.3f}",  # Tooltip on hover
+        showscale=True  # Display colorbar scale
     )
 
-    cax = heatmap_plot.figure.axes[-1]
-    cax.tick_params(labelsize=FONTSIZE - 2)
+    # Layout of the plot
+    layout = go.Layout(
+        title=f'{metric_name.lower().capitalize()} heatmap',
+        xaxis=dict(title='Test Batch', tickangle=45, tickfont=dict(size=FONTSIZE - 2)),
+        yaxis=dict(title='Training Batch', tickfont=dict(size=FONTSIZE - 2)),
+        font=dict(size=FONTSIZE, family="serif"),
+        template="plotly_white"  # Optional: use a clean white background template
+    )
 
-    mpl.xticks(fontsize=FONTSIZE - 2, fontname='serif', rotation=45)
-    mpl.xlabel('Test Batch', fontsize=FONTSIZE)
+    # Set the Plotly renderer for Jupyter or standalone use
+    # pio.renderers.default = 'notebook'  # For Jupyter Notebooks (use 'notebook' or 'jupyterlab')
+    # For standalone (non-Jupyter) use, you can also use:
+    pio.renderers.default = 'browser'
 
-    mpl.yticks(rotation=0, fontsize=FONTSIZE - 2, fontname='serif')
-    mpl.ylabel('Training Batch', fontsize=FONTSIZE)
-    mpl.title(f'{metric_identifier.lower().capitalize()} heatmap', fontsize=FONTSIZE + 2)
-
-    mpl.show()
-    root.mainloop()
+    # Create the figure and plot
+    fig = go.Figure(data=[heatmap_data], layout=layout)
+    fig.show()
