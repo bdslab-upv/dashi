@@ -5,7 +5,11 @@ from scipy.interpolate import UnivariateSpline
 from datashift.igt.igt_projection import IGTProjection
 
 
-def estimate_igt_trajectory(igt_projection: IGTProjection, number_of_points=None):
+def _estimate_igt_trajectory(igt_projection: IGTProjection, number_of_points=None):
+    """
+    Estimates a trajectory of the information temporal evolution in a IGT projection by fitting a
+    cubic smoothing spline
+    """
     if igt_projection is None:
         raise ValueError("An input IGT projection object is required.")
     if number_of_points is None:
