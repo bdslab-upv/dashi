@@ -1,4 +1,14 @@
+"""
+Information Geometric Temporal (IGT) plotting main functions and classes
+"""
+# Author: David Fernández Narro <dfernar@upv.edu.es>
+#         Ángel Sánchez García <ansan12a@upv.es>
+#         Pablo Ferri Borredá <pabferb2@upv.es>
+#         Carlos Sáez Silvestre <carsaesi@upv.es>
+#         Juan Miguel García Gómez <juanmig@upv.es>
+
 from datetime import datetime
+from typing import Optional
 
 import numpy as np
 import plotly.graph_objs as go
@@ -7,19 +17,62 @@ from matplotlib.colors import to_hex
 
 from datashift.constants import *
 from datashift.igt.igt_projection import IGTProjection
-from datashift.igt.igt_trajectory_estimator import estimate_igt_trajectory
+from datashift.igt.igt_trajectory_estimator import _estimate_igt_trajectory
 from datashift.utils import matplotlib_to_plotly, format_date_for_year, format_date_for_month, format_date_for_week
 
 
 def plot_IGT_projection(
         igt_projection: IGTProjection,
-        dimensions: int = 3,
-        start_date: datetime = None,
-        end_date: datetime = None,
+        dimensions: int = 2,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
         color_palette: PlotColorPalette = PlotColorPalette.Spectral,
         trajectory: bool = False
-):
-    # Validate dimensions
+) -> go.Figure:
+    """
+    Plots an interactive Information Geometric Temporal (IGT) plot from an \code{IGTProjection} object.
+    An IGT plot visualizes the variability among time batches in a data repository in a 2D or 3D plot.
+    Time batches are positioned as points where the distance between them represents the probabilistic
+    distance between their distributions (currently Jensen-Shannon distance).
+    To track the temporal evolution, temporal batches are labeled to show their date and
+    colored according to their season or period, according to the analysis period, as follows.
+    If period=="year" the label is "yy" (2 digit year) and the color is according to year.
+    If period=="month" the label is "yym" (yy + abbreviated month*) and the color is according
+    to the season (yearly).
+    If period=="week" the label is "yymmw" (yym + ISO week number in 1-2 digit) and the color is
+    according to the season (yearly). An estimated smoothed trajectory of the information evolution
+    over time can be shown using the optional "trajectory" parameter.
+
+    Note that since the projection is based on multidimensional scaling, a 2 dimensional
+    projection entails a loss of information compared to a 3 dimensional projection. E.g., periodic
+    variability components such as seasonal effect can be hindered by an abrupt change or a general trend.
+
+    Parameters
+    ----------
+    igt_projection : IGTProjection
+        The `IGTProjection` object containing the data for the temporal plot.
+
+    dimensions : int, optional
+        The number of dimensions to be used for plotting (2D or 3D). Default is 2.
+
+    start_date : Optional[datetime], optional
+        The starting date for the temporal plot. If None, it is not constrained. Default is None.
+
+    end_date : Optional[datetime], optional
+        The ending date for the temporal plot. If None, it is not constrained. Default is None.
+
+    color_palette : PlotColorPalette, optional
+        The color palette to be used for coloring the points. Default is Spectral.
+
+    trajectory : bool, optional
+        If True, a smoothed trajectory showing the evolution of the information across time is plotted.
+        Default is False.
+
+    Returns
+    -------
+    Figure
+        The Plotly figure object containing the IGT projection plot.
+    """
     if dimensions not in [2, 3]:
         raise ValueError(
             'Currently IGT plot can only be made on 2 or 3 dimensions, please set dimensions parameter accordingly')
@@ -41,13 +94,11 @@ def plot_IGT_projection(
 
     # Estimating trajectory if needed
     if trajectory:
-        igt_trajectory = estimate_igt_trajectory(igt_projection)
+        igt_trajectory = _estimate_igt_trajectory(igt_projection)
         trajectory_points = igt_trajectory['points']
         trajectory_dates = igt_trajectory['dates']
 
     # Generate colors for ten data points
-
-    # TODO: colors
     # Set color based on period
     period = igt_projection.data_temporal_map.period
     colors = []
@@ -137,6 +188,15 @@ def plot_IGT_projection(
                     hovertext=[f"Approx. date: {date}" for date in trajectory_dates]
                 )
             )
+
+        title = {
+            'text': 'Information Geometric Temporal (IGT) projection',
+            'x': 0.5,
+            'y': 0.95,
+            'xanchor': 'center',
+            'yanchor': 'top',
+        }
+
     elif dimensions == 3:
         if period == TEMPORAL_PERIOD_YEAR:
             # Add scatter for each point
@@ -209,26 +269,35 @@ def plot_IGT_projection(
                 )
             )
 
+        title = {
+            'text': 'Information Geometric Temporal (IGT) projection',
+            'x': 0.5,
+            'y': 0.9,
+            'xanchor': 'center',
+            'yanchor': 'top',
+        }
+
     fig.update_layout(
         plot_bgcolor='white',
         showlegend=False,
-        title={
-            'text': 'Information Geometric Temporal (IGT) projection',
-            'x': 0.5,
-            'xanchor': 'center',
-            'yanchor': 'top',
-        },
+        title=title,
+        margin=dict(
+            l=40,
+            r=40,
+            b=50,
+            t=90
+        ),
         scene=dict(
             xaxis=dict(
                 title='D1',
-                backgroundcolor="rgba(0, 0, 0,0)",
+                backgroundcolor="rgba(0, 0, 0, 0)",
                 gridcolor="lightgrey",
                 showbackground=True,
                 zerolinecolor="black"
             ),
             yaxis=dict(
                 title='D2',
-                backgroundcolor="rgba(0, 0, 0,0)",
+                backgroundcolor="rgba(0, 0, 0, 0)",
                 gridcolor="lightgrey",
                 showbackground=True,
                 zerolinecolor="black"
@@ -259,3 +328,4 @@ def plot_IGT_projection(
         zerolinecolor='black'
     )
     fig.show()
+    return fig
