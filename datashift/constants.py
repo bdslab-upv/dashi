@@ -26,6 +26,12 @@ MISSING_VALUE = 'NA'
 MONTH_SHORT_ABBREVIATIONS = ['J', 'F', 'M', 'A', 'm', 'j', 'x', 'a', 'S', 'O', 'N', 'D']
 MONTH_LONG_ABBREVIATIONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
+# Dimensionality reduction methods
+FAMD = 'FAMD'
+PCA = 'PCA'
+MCA = 'MCA'
+VALID_DIM_REDUCTION_TYPES = [FAMD, PCA, MCA]
+
 
 # Temporal map plotting sorting method
 class DataTemporalMapPlotSortingMethod(Enum):
