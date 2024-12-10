@@ -83,3 +83,7 @@ def plot_multi_batch_models(*, metrics: Dict[str, float], metric_name: str) -> N
     # Create the figure and plot
     fig = go.Figure(data=[heatmap_data], layout=layout)
     fig.show()
+
+
+# ACCESSIBILITY
+__all__ = ['plot_multi_batch_models']
