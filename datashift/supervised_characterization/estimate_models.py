@@ -639,3 +639,7 @@ def _get_regression_metrics(*, y_true: ndarray, y_pred: ndarray) -> dict:
 
     # Output
     return metrics
+
+
+# ACCESSIBILITY
+__all__ = ['estimate_multi_batch_models']
