@@ -1,28 +1,60 @@
+"""
+Data Temporal Map main functions and classes
+"""
+# Author: David Fernández Narro <dfernar@upv.edu.es>
+#         Ángel Sánchez García <ansan12a@upv.es>
+#         Pablo Ferri Borredá <pabferb2@upv.es>
+#         Carlos Sáez Silvestre <carsaesi@upv.es>
+#         Juan Miguel García Gómez <juanmig@upv.es>
+
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional
+
+import prince
 
 import numpy as np
 import pandas as pd
+import plotly.express as px
 from scipy.stats import gaussian_kde
 
 from datashift.constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, \
     VALID_INTEGER_TYPE, VALID_FLOAT_TYPE, \
     VALID_DATE_TYPE, TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_YEAR, VALID_CONVERSION_STRING_TYPE, \
-    MISSING_VALUE, VALID_TYPES_WITHOUT_DATE
+    MISSING_VALUE, VALID_TYPES_WITHOUT_DATE, VALID_DIM_REDUCTION_TYPES, PCA, MCA, FAMD
 
 
 @dataclass
 class DataTemporalMap:
-    # TODO: change types
-    # TODO: hablar con Ángel la definición de los atributos
-    # Example
-    # probability_map = [
-    #   [ 0, 1, 2...],
-    #   [ 0, 1, 2...],
-    #   [ 0, 1, 2...]
-    # ]
+    """
+    A class that  contains the statistical distributions of data estimated at a
+    specific time period. Both relative and absolute frequencies are included
+
+    Attributes
+    ----------
+    probability_map: Union[List[List[float]], None]
+        Numerical matrix representing the probability distribution temporal map (relative frequency).
+
+    counts_map: Union[List[List[int]], None]
+        Numerical matrix representing the counts temporal map (absolute frequency).
+
+    dates: Union[List[datetime], None]
+        Array of the temporal batches.
+
+    support: Union[List[str], None]
+        Numerical or character matrix representing the support (the value at each bin) of probability_map
+        and counts_map.
+
+    variable_name: Union[str, None]
+        Name of the variable (character).
+
+    variable_type: Union[str, None]
+        Type of the variable (character).
+
+    period: Union[str, None]
+        Batching period among 'week', 'month' and 'year'.
+    """
     probability_map: Union[List[List[float]], None] = None
     counts_map: Union[List[List[int]], None] = None
     dates: Union[List[datetime], None] = None
@@ -32,9 +64,17 @@ class DataTemporalMap:
     period: Union[str, None] = None
 
     def check(self) -> Union[List[str], bool]:
-        errors = []
+        """
+        Validates the consistency of the DataTemporalMap attributes. This method checks for various
+        potential issues, such as mismatched dimensions, invalid periods, or unsupported variable types.
 
-        # TODO: Quizás hacer log de los errores en vez de devolver varios tipos y sacar solo boolean
+        Returns
+        -------
+        Union[List[str], bool]:
+            Returns a list of error messages if any validation fails, otherwise returns True indicating
+            the object is valid.
+        """
+        errors = []
 
         # Check if the dimensions of probability_map and counts_map match
         if self.probability_map is not None and self.counts_map is not None:
@@ -68,18 +108,101 @@ class DataTemporalMap:
             errors.append(f"period must be one of the following: {', '.join(VALID_TEMPORAL_PERIODS)}")
 
         # Check if variableType is one of the valid types
-        # TODO: duda, variable type es de uno?
         if self.variable_type is not None and self.variable_type not in VALID_TYPES:
             errors.append(f"variable_type must be one of the following: {', '.join(VALID_TYPES)}")
 
         return errors if errors else True
 
 
+@dataclass
+class MultiVariateDataTemporalMap(DataTemporalMap):
+    """
+    A subclass of DataTemporalMap representing a multi-variate time series data map.
+    In addition to the attributes inherited from the DataTemporalMap class, this
+    class includes additional properties specific to multivariate time series data.
+
+    Attributes
+    ----------
+    multivariate_probability_map: Optional[List[List[float]]]
+        List of matrices representing the multi-variate probability distribution
+        temporal map (relative frequency) for each timestamp.
+
+    multivariate_counts_map: Optional[List[List[float]]]
+        List of matrices representing the multi-variate counts temporal map (absolute)
+        for each timestamp.
+
+    multivariate_support: Optional[List[float]]
+        List of matrices representing the support (the value at each bin) of the dimensions
+        of multivariate_probability_map and multivariate_counts_map.
+    """
+    multivariate_probability_map: Optional[List[List[float]]] = None
+    multivariate_counts_map: Optional[List[List[float]]] = None
+    multivariate_support: Optional[List[str]] = None
+
+    def check(self) -> Union[List[str], bool]:
+        """
+        Validates the consistency of the MultiVariateDataTemporalMap attributes, ensuring
+        that the multivariate probability map, counts map, and support dimensions are consistent,
+        along with inherited checks from the parent class DataTemporalMap.
+
+        Returns
+        -------
+        Union[List[str], bool]:
+            Returns a list of error messages if any validation fails, otherwise returns True indicating
+            the object is valid.
+        """
+        errors = super().check() if isinstance(super(), DataTemporalMap) else []
+
+        # Check if the dimensions of multivariate_probability_map and multivariate_counts_map match
+        if self.multivariate_probability_map is not None and self.multivariate_counts_map is not None:
+            if len(self.multivariate_probability_map) != len(self.multivariate_counts_map) or \
+                    any(len(probability_row) != len(count_row)
+                        for probability_row, count_row in
+                        zip(self.multivariate_probability_map, self.multivariate_counts_map)):
+                errors.append(
+                    "The dimensions of multivariate_probability_map and multivariate_counts_map do not match.")
+
+        # Check if the length of multivariate_support matches the columns of multivariate_probability_map
+        if self.multivariate_support is not None and self.multivariate_probability_map is not None:
+            if len(self.multivariate_support) != len(self.multivariate_probability_map[0]):
+                errors.append(
+                    "The length of multivariate_support must match the columns of multivariate_probability_map.")
+
+        # Check if the length of multivariate_support matches the columns of multivariate_counts_map
+        if self.multivariate_support is not None and self.multivariate_counts_map is not None:
+            if len(self.multivariate_support) != len(self.multivariate_counts_map[0]):
+                errors.append("The length of multivariate_support must match the columns of multivariate_counts_map.")
+
+        # Return the list of errors if any, or True if no errors
+        return errors if errors else True
+
+
 def trim_data_temporal_map(
         data_temporal_map: DataTemporalMap,
-        start_date: datetime = None,
-        end_date: datetime = None
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None
 ) -> DataTemporalMap:
+    """
+    Trims the data in the DataTemporalMap object to the specified date range.
+
+    Parameters
+    ----------
+    data_temporal_map: DataTemporalMap
+        The DataTemporalMap object to be trimmed.
+
+    start_date: Optional[datetime]
+        The start date of the range to trim the data from. If None, the earliest
+        date in `data_temporal_map.dates` will be used.
+
+    end_date: Optional[datetime]
+        The end date of the range to trim the data from. If None, the latest
+        date in `data_temporal_map.dates` will be used.
+
+    Returns
+    -------
+    DataTemporalMap:
+        The input DataTemporalMap object with trimmed data.
+    """
     if start_date is None:
         start_date = data_temporal_map.dates.min()
     else:
@@ -102,16 +225,70 @@ def trim_data_temporal_map(
 
 def estimate_data_temporal_map(
         data: pd.DataFrame,
-        date_column_name,
-        period=TEMPORAL_PERIOD_MONTH,
+        date_column_name: str,
+        period: str = TEMPORAL_PERIOD_MONTH,
         start_date: pd.Timestamp = None,
         end_date: pd.Timestamp = None,
         supports: Union[Dict, None] = None,  # Dict with: variable_name: variable_type_name
-        numeric_variables_bins=100,
-        numeric_smoothing=True,
-        date_gaps_smoothing=False,
-        verbose=False
-):
+        numeric_variables_bins: int = 100,
+        numeric_smoothing: bool = True,
+        date_gaps_smoothing: bool = False,
+        verbose: bool = False
+) -> DataTemporalMap:
+    """
+    Estimates a DataTemporalMap object from a DataFrame containing individuals in rows and the variables
+    in columns, being one of these columns the analysis date (typically the acquisition date).
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+        A DataFrame containing as many rows as individuals, and as many columns as teh analysis
+        variables plus the individual acquisition date.
+
+    date_column_name: str
+        A string indicating teh name of the column in data containing the analysis date variable.
+
+    period:
+        The period to batch the data for analysis. Options are:
+        - 'week' (weekly analysis)
+        - 'month' (monthly analysis, default)
+        - 'year' (annual analysis)
+
+    start_date: pd.Timestamp
+        A date object indicating the date at which to start teh analysis, in case of being different
+        from the first chronological date in the date column.
+
+    end_date: pd.Timestamp
+        A date object indicating the date at which to end the analysis, in case of being
+        different from the last chronological date in the date column.
+
+    supports: Union[Dict, None]
+        A dictionary with structure {variable_name: variable_type_name} containing the support
+        of the data distributions for each variable. If not provided, it is automatically
+        estimated from the data.
+
+    numeric_variables_bins: int
+        The number of bins at which to define the frequency/density histogram for numerical
+        variables when their support is not provided. 100 as default.
+
+    numeric_smoothing: bool
+        Logical value indicating whether a Kernel Density Estimation smoothing
+        (Gaussian kernel, default bandwidth) is to be applied on numerical variables
+        or traditional histogram instead.
+
+    date_gaps_smoothing: bool
+        Logical value indicating whether a linear smoothing is applied to those time
+        batches without data. By default gaps are filled with NAs.
+
+    verbose: bool
+        Whether to display additional information during the process. Defaults to `False`.
+
+    Returns
+    -------
+    DataTemporalMap
+        The DataTemporalMap object or a dictionary of DataTemporalMap objects depending on teh number of
+        analysis variables.
+    """
     # Validation of parameters
     if data is None:
         raise ValueError('An input data frame is required.')
@@ -131,7 +308,6 @@ def estimate_data_temporal_map(
     if period not in VALID_TEMPORAL_PERIODS:
         raise ValueError(f'Period must be one of the following: {", ".join(VALID_TEMPORAL_PERIODS)}')
 
-    # TODO: check classes
     if not all(data[column].dtype.name in VALID_TYPES for column in data.columns):
         print(data.dtypes)
         raise ValueError(f'The classes of input columns must be one of the following: {", ".join(VALID_TYPES)}')
@@ -166,7 +342,7 @@ def estimate_data_temporal_map(
         # Adjust the dates to the beginning of the year
         dates = dates - pd.to_timedelta(dates.dt.dayofyear - 1, unit='D')
 
-    # Get variable types, others will not be allowed
+    # Get VARIABLE types, others will not be allowed
     data_types = data_without_date_column.dtypes
     float_columns = data_types == VALID_FLOAT_TYPE
     integer_columns = data_types == VALID_INTEGER_TYPE
@@ -197,14 +373,14 @@ def estimate_data_temporal_map(
 
     # Create supports
     supports_to_fill = {column: None for column in data_without_date_column.columns}
-    supports_to_estimate_columns = data_without_date_column.columns.to_list()
+    supports_to_estimate_columns = data_without_date_column.columns.to_series()
 
     # TODO: to test
     if supports is not None:
         for column_index, column in enumerate(supports):
             if column in supports_to_fill:
                 supports_to_fill[column] = supports[column]
-                supports_to_estimate_columns.remove(column)
+                supports_to_estimate_columns.drop(column)
                 error_in_support = False
 
                 # TODO: Check this (category)
@@ -252,9 +428,7 @@ def estimate_data_temporal_map(
             date_columns = data_types == VALID_DATE_TYPE
             categorical_columns = data_types == VALID_CATEGORICAL_TYPE
 
-    # TODO: To test, define category of NA/None
     if np.any(categorical_columns & supports_to_estimate_columns):
-        # Crear categoría para los NA, missings
         data_without_date_column.loc[:,
         categorical_columns & supports_to_estimate_columns] = data_without_date_column.loc[:,
                                                               categorical_columns & supports_to_estimate_columns].apply(
@@ -275,7 +449,6 @@ def estimate_data_temporal_map(
             }
         )
 
-    # Tested
     if np.any(float_columns & supports_to_estimate_columns):
         minimums = data_without_date_column.loc[:, float_columns & supports_to_estimate_columns].apply(np.nanmin,
                                                                                                        axis=0)
@@ -299,8 +472,6 @@ def estimate_data_temporal_map(
                 }
             )
 
-    # DUDA if
-    # Tested
     if np.any(integer_columns & supports_to_estimate_columns):
         minimums = data_without_date_column.loc[:, integer_columns & supports_to_estimate_columns].apply(np.nanmin,
                                                                                                          axis=0)
@@ -327,7 +498,6 @@ def estimate_data_temporal_map(
                 }
             )
 
-    # TESTED
     if np.any(string_columns & supports_to_estimate_columns):
         supports.update(
             {
@@ -391,6 +561,7 @@ def estimate_data_temporal_map(
             print(f'Estimating the DataTemporalMap of variable \'{column}\'')
 
         data_xts = pd.Series(data_without_date_column[column].values, index=pd.to_datetime(dates))
+        data_xts = data_xts.sort_index(ascending=True)
 
         if start_date is not None or end_date is not None:
             if start_date is None:
@@ -402,19 +573,19 @@ def estimate_data_temporal_map(
 
         period_function = {
             TEMPORAL_PERIOD_WEEK: data_xts.resample('W').apply(
-                estimate_absolute_frequencies,
+                _estimate_absolute_frequencies,
                 varclass=posterior_data_classes[column],
                 support=supports[column],
                 numeric_smoothing=numeric_smoothing
             ),
             TEMPORAL_PERIOD_MONTH: data_xts.resample('MS').apply(
-                estimate_absolute_frequencies,
+                _estimate_absolute_frequencies,
                 varclass=posterior_data_classes[column],
                 support=supports[column],
                 numeric_smoothing=numeric_smoothing
             ),
             TEMPORAL_PERIOD_YEAR: data_xts.resample('YS').apply(
-                estimate_absolute_frequencies,
+                _estimate_absolute_frequencies,
                 varclass=posterior_data_classes[column],
                 support=supports[column],
                 numeric_smoothing=numeric_smoothing
@@ -496,7 +667,10 @@ def estimate_data_temporal_map(
         return results[data.columns[0]]
 
 
-def estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=False):
+def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=False):
+    """
+    Estimates the absolute frequencies of data, which will be the counts_map in the final DataTemporalMap object
+    """
     data = np.array(data)
     if varclass == VALID_STRING_TYPE:
         value_counts = pd.Series(data).value_counts()
@@ -525,7 +699,7 @@ def estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fal
                     ndata = np.sum(~np.isnan(data))
 
                 kde = gaussian_kde(
-                    data)  # combina muchas gaussianas, una por punto, kdtree, revisar criterio de bandwith, semilla aleatoria, silverman
+                    data)
                 map_data = kde(support) * ndata
 
     elif varclass == VALID_INTEGER_TYPE:
@@ -545,70 +719,535 @@ def estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fal
 
 def estimate_multidim_data_temporal_map(
         data: pd.DataFrame,
-        dates: datetime.date,
-        binsize=10,
-        period=TEMPORAL_PERIOD_MONTH,
-):
+        date_column_name: str,
+        kde_resolution: int = 10,
+        dimensions: int = 2,
+        period: str=TEMPORAL_PERIOD_MONTH,
+        start_date: pd.Timestamp = None,
+        end_date: pd.Timestamp = None,
+        dim_reduction: str=PCA,
+        scatter_plot: bool = False,
+        verbose: bool = False
+) -> MultiVariateDataTemporalMap:
+    """
+    Estimates a MultiVariateDataTemporalMap object from a DataFrame containing multiple variables
+    (in columns) over time, using dimensionality reduction techniques (e.g., PCA) to handle high-dimensional data.
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+        A DataFrame where each row represents an individual or data point, and each column represents a
+        variable. One column should represent the analysis date (typically the acquisition date).
+
+    date_column_name: str
+        A string indicating teh name of the column in data containing the analysis date variable.
+
+    kde_resolution: int
+        The resolution of the grid used for Kernel Density Estimation (KDE). This determines the granularity
+        of the KDE grid and how fine or coarse the estimated density maps will be. Default is 10.
+
+    dimensions: int
+        The number of dimensions to keep after applying dimensionality reduction (e.g., PCA).
+        Default is 2, meaning the data will be projected into a 2D space. The maximum number of dimensions
+        available are 3.
+
+    period: str
+        The period to batch the data for analysis. Options are:
+        - 'week' (weekly analysis)
+        - 'month' (monthly analysis, default)
+        - 'year' (annual analysis)
+
+    start_date: pd.Timestamp
+        A date object indicating the date at which to start teh analysis, in case of being different
+        from the first chronological date in the date column.
+
+    end_date: pd.Timestamp
+        A date object indicating the date at which to end the analysis, in case of being
+        different from the last chronological date in the date column.
+
+    dim_reduction: str
+        A dimensionality reduction technique to be used on the data. Default is `PCA` (Principal Component Analysis)
+        for numerical data. Other options can include 'MCA' (Multiple Correspondence Analysis) for categorical data or
+        'FAMD' (Factor Analysis of Mixed Data) for mixed data.
+
+    scatter_plot: bool
+        Whether to generate a scatter plot of the first two principal components of the dimensionality reduction
+
+    verbose: bool
+        Whether to display additional information during the process. Defaults to `False`.
+
+    Returns
+    -------
+    MultiVariateDataTemporalMap
+        The MultivariateDataTemporalMap object of the data
+    """
+    # Validation of parameters
     if data is None:
         raise ValueError('An input data frame is required.')
 
     if period not in VALID_TEMPORAL_PERIODS:
         raise ValueError(f'Period must be one of the following: {", ".join(VALID_TEMPORAL_PERIODS)}')
 
-    xmin = data.min(axis=0)
-    xmax = data.max(axis=0)
+    if date_column_name is None:
+        raise ValueError('The name of the column including dates is required.')
 
-    if period == TEMPORAL_PERIOD_MONTH:
-        dates_for_batching = pd.to_datetime(dates).to_period('M')
-        unique_dates = sorted(dates_for_batching.unique())
-    elif period == TEMPORAL_PERIOD_YEAR:
-        dates_for_batching = pd.to_datetime(dates).dt.year
-        unique_dates = dates_for_batching.unique()
-        unique_dates = pd.to_datetime([f'{year}-01-01' for year in unique_dates])
-    elif period == TEMPORAL_PERIOD_WEEK:
-        dates_for_batching = pd.to_datetime(dates).to_period('W')
-        unique_dates = sorted(dates_for_batching.unique())
+    if date_column_name not in data.columns:
+        raise ValueError(f'There is not a column named \'{date_column_name}\' in the input data.')
 
-    kde2 = data.groupby(dates_for_batching).apply(lambda group: __compute_kde(data.loc[group.index, [0, 1]], xmin[:2],
-                                                                              xmax[:2], binsize)).tolist()
-    probability_map_2d = np.column_stack([__process_kde(kde).flatten() for kde in kde2]).T
+    if data[date_column_name].dtype != VALID_DATE_TYPE:
+        raise ValueError('The specified date column must be of type pandas.Timestamp.')
 
-    dtm2d = DataTemporalMap(
-        probability_map=probability_map_2d,
-        counts_map=probability_map_2d,
-        dates=unique_dates,
-        support=pd.DataFrame(range(0, binsize ** 2)),
-        variable_name='Dim.reduded.2D',
-        variable_type='float64',
-        period=period
-    )
+    if period not in VALID_TEMPORAL_PERIODS:
+        raise ValueError(f'Period must be one of the following: {", ".join(VALID_TEMPORAL_PERIODS)}')
 
-    kde3 = data.groupby(dates_for_batching).apply(lambda group: __compute_kde(data.loc[group.index, 0:4], xmin, xmax,
-                                                                              binsize)).tolist()
-    probability_map_3d = np.column_stack([__process_kde(kde).flatten() for kde in kde3]).T
+    if not all(data[column].dtype.name in VALID_TYPES for column in data.columns):
+        print(data.dtypes)
+        raise ValueError(f'The types of input columns must be one of the following: {", ".join(VALID_TYPES)}')
 
-    dtm3d = DataTemporalMap(
-        probability_map=probability_map_3d,
-        counts_map=probability_map_3d,
-        dates=pd.to_datetime(unique_dates),
-        support=pd.DataFrame(range(0, binsize ** 3)),
-        variable_name='Dim.reduded.3D',
-        variable_type='float64',
-        period=period
-    )
-    return dtm2d, dtm3d
+    if start_date is not None and not isinstance(start_date, pd.Timestamp):
+        raise ValueError('The specified start date must be of type pandas.Timestamp')
+
+    if end_date is not None and not isinstance(end_date, pd.Timestamp):
+        raise ValueError('The specified end date must be of type pandas.Timestamp')
+
+    if dim_reduction not in VALID_DIM_REDUCTION_TYPES:
+        raise ValueError(
+            f'Dimensionality reduction method must be one of the following: {", ".join(VALID_DIM_REDUCTION_TYPES)}')
+
+    if dimensions not in [2, 3]:
+        raise ValueError(
+            f'The number of supported dimensions are 2 or 3')
+
+    # Separate analysis data from analysis dates
+    dates = data[date_column_name]
+    data_without_date_column = data.drop(columns=[date_column_name])
+    number_of_columns = len(data_without_date_column.columns)
+
+    if start_date is not None or end_date is not None:
+        data_without_date_column = data_without_date_column.set_index(dates)
+        data_without_date_column = data_without_date_column.sort_index(ascending=True)
+        if start_date is None:
+            start_date = min(dates)
+        if end_date is None:
+            end_date = max(dates)
+        data_without_date_column = data_without_date_column.loc[start_date:end_date]
+        dates = pd.Series(data_without_date_column.index)
+        data_without_date_column = data_without_date_column.reset_index(drop=True)
+
+    if verbose:
+        print(f'Total number of columns to analyze: {number_of_columns}')
+        print(f'Analysis period: {period}')
+
+    # Get VARIABLE types, others will not be allowed
+    data_types = data_without_date_column.dtypes
+    float_columns = data_types == VALID_FLOAT_TYPE
+    integer_columns = data_types == VALID_INTEGER_TYPE
+    string_columns = data_types == VALID_STRING_TYPE
+    date_columns = data_types == VALID_DATE_TYPE
+    categorical_columns = data_types == VALID_CATEGORICAL_TYPE  # TODO: check, categorical, pandas
+
+    if verbose:
+        if any(float_columns):
+            print(f'Number of float columns: {sum(float_columns)}')
+        if any(integer_columns):
+            print(f'Number of integer columns: {sum(integer_columns)}')
+        if any(string_columns):
+            print(f'Number of string columns: {sum(string_columns)}')
+        if any(date_columns):
+            print(f'Number of date columns: {sum(date_columns)}')
+        if any(categorical_columns):
+            print(f'Number of categorical columns: {sum(categorical_columns)}')
+
+    # Convert dates to numbers
+    if any(date_columns):
+        data_without_date_column.iloc[:, date_columns] = data_without_date_column.iloc[:, date_columns].apply(
+            pd.to_numeric,
+            errors='coerce'
+        )
+        if verbose:
+            print('Converting date columns to numeric for distribution analysis')
+
+    if verbose:
+        print(f'Applying dimensionality reduction with {dim_reduction}')
+
+    if dim_reduction == PCA:
+        method = prince.PCA(n_components=dimensions, random_state=112)
+        reduced_data = method.fit_transform(data_without_date_column)
+    elif dim_reduction == FAMD:
+        method = prince.FAMD(n_components=dimensions, random_state=112)
+        reduced_data = method.fit_transform(data_without_date_column)
+    elif dim_reduction == MCA:
+        method = prince.MCA(n_components=dimensions, random_state=112)
+        reduced_data = method.fit_transform(data_without_date_column)
+
+    if scatter_plot:
+        if verbose:
+            print(f'Plotting {dim_reduction} 2D Scatter Plot')
+        fig = px.scatter(
+            reduced_data.iloc[:, 0:2],
+            x=0,
+            y=1,
+            title=f'{dim_reduction} Scatter Plot',
+            template='plotly_white',
+            opacity=0.7
+        )
+
+        fig.update_layout(
+            title={
+                'text': f'{dim_reduction} Scatter Plot',
+                'y': 0.95,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': {'size': 25}
+            },
+            xaxis_title={
+                'text': f'PC1 ({method.eigenvalues_summary.iloc[0, 1]} variance)',
+                'font': {'size': 18}
+            },
+            yaxis_title={
+                'text': f'PC2 ({method.eigenvalues_summary.iloc[1, 1]} variance)',
+                'font': {'size': 18}
+            }
+
+        )
+        fig.show()
+
+    dtm = _generate_multivariate_dtm(reduced_data=reduced_data, period=period, dates=dates, verbose=verbose,
+                                     dimensions=dimensions, kde_resolution=kde_resolution)
+    return dtm
 
 
-def __compute_kde(data_subset, xmin, xmax, binsize):
-    kde = gaussian_kde(data_subset.T, bw_method='silverman')
-    grid = [np.linspace(start, stop, binsize) for start, stop in zip(xmin, xmax)]
-    mesh = np.meshgrid(*grid)
+def estimate_multidim_concept_shift(
+        data: pd.DataFrame,
+        date_column_name: str,
+        label_column_name: str,
+        kde_resolution: int = 10,
+        dimensions: int = 2,
+        period: str = TEMPORAL_PERIOD_MONTH,
+        start_date: pd.Timestamp = None,
+        end_date: pd.Timestamp = None,
+        dim_reduction: str = PCA,
+        scatter_plot: bool = False,
+        verbose: bool = False
+) -> Dict[str, MultiVariateDataTemporalMap]:
+    """
+    Estimates a MultivariateDataTemporalMap object for the data corresponding to each label of the DataFrame
+    containing multiple variables (in columns) over time, using dimensionality reduction techniques (e.g., PCA)
+    to handle high dimensional data.
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+        A DataFrame where each row represents an individual or data point, and each column represents a
+        variable. One column should represent the analysis date (typically the acquisition date).
+
+    date_column_name: str
+        A string indicating teh name of the column in data containing the analysis date variable.
+
+    label_column_name: str
+        The name of the column that contains the labels or class/category for each observation
+        (used for concept shift analysis).
+
+    kde_resolution: int
+        The resolution of the grid used for Kernel Density Estimation (KDE). This determines the granularity
+        of the KDE grid and how fine or coarse the estimated density maps will be. Default is 10.
+
+    dimensions: int
+        The number of dimensions to keep after applying dimensionality reduction (e.g., PCA).
+        Default is 2, meaning the data will be projected into a 2D space. The maximum number of dimensions
+        available are 3.
+
+    period: str
+        The period to batch the data for analysis. Options are:
+        - 'week' (weekly analysis)
+        - 'month' (monthly analysis, default)
+        - 'year' (annual analysis)
+
+    start_date: pd.Timestamp
+        A date object indicating the date at which to start teh analysis, in case of being different
+        from the first chronological date in the date column.
+
+    end_date: pd.Timestamp
+        A date object indicating the date at which to end the analysis, in case of being
+        different from the last chronological date in the date column.
+
+    dim_reduction: str
+        A dimensionality reduction technique to be used on the data. Default is `PCA` (Principal Component Analysis)
+        for numerical data. Other options can include 'MCA' (Multiple Correspondence Analysis) for categorical data or
+        'FAMD' (Factor Analysis of Mixed Data) for mixed data.
+
+    scatter_plot: bool
+        Whether to generate a scatter plot of the first two principal components of the dimensionality reduction
+
+    verbose: bool
+        Whether to display additional information during the process. Defaults to `False`.
+
+
+    Returns
+    -------
+    Dict[str, MultiVariateDataTemporalMap]
+        A dictionary where the keys are the labels in the dataset, and the values are
+        `MultiVariateDataTemporalMap` objects representing the temporal maps generated for each label.
+    """
+
+    # Validation of parameters
+    if data is None:
+        raise ValueError('An input data frame is required.')
+
+    if period not in VALID_TEMPORAL_PERIODS:
+        raise ValueError(f'Period must be one of the following: {", ".join(VALID_TEMPORAL_PERIODS)}')
+
+    if date_column_name is None:
+        raise ValueError('The name of the column including dates is required.')
+
+    if date_column_name not in data.columns:
+        raise ValueError(f'There is not a column named \'{date_column_name}\' in the input data.')
+
+    if data[date_column_name].dtype != VALID_DATE_TYPE:
+        raise ValueError('The specified date column must be of type pandas.Timestamp.')
+
+    if period not in VALID_TEMPORAL_PERIODS:
+        raise ValueError(f'Period must be one of the following: {", ".join(VALID_TEMPORAL_PERIODS)}')
+
+    if not all(data[column].dtype.name in VALID_TYPES for column in data.columns):
+        print(data.dtypes)
+        raise ValueError(f'The types of input columns must be one of the following: {", ".join(VALID_TYPES)}')
+
+    if start_date is not None and not isinstance(start_date, pd.Timestamp):
+        raise ValueError('The specified start date must be of type pandas.Timestamp')
+
+    if end_date is not None and not isinstance(end_date, pd.Timestamp):
+        raise ValueError('The specified end date must be of type pandas.Timestamp')
+
+    if dim_reduction not in VALID_DIM_REDUCTION_TYPES:
+        raise ValueError(
+            f'Dimensionality reduction method must be one of the following: {", ".join(VALID_DIM_REDUCTION_TYPES)}')
+
+    if dimensions not in [2, 3]:
+        raise ValueError(
+            f'The number of supported dimensions are 2 or 3')
+
+    # Separate analysis data from analysis dates
+    labels_columns = data[label_column_name]
+    unique_labels = np.unique(labels_columns)
+    dates = data[date_column_name]
+    data_without_date_column = data.drop(columns=[date_column_name, label_column_name])
+    number_of_columns = len(data_without_date_column.columns)
+
+    if start_date is not None or end_date is not None:
+        data_without_date_column = data_without_date_column.set_index(dates)
+        data_without_date_column = data_without_date_column.sort_index(ascending=True)
+        if start_date is None:
+            start_date = min(dates)
+        if end_date is None:
+            end_date = max(dates)
+        data_without_date_column = data_without_date_column.loc[start_date:end_date]
+        dates = pd.Series(data_without_date_column.index)
+        data_without_date_column = data_without_date_column.reset_index(drop=True)
+
+    if verbose:
+        print(f'Total number of columns to analyze: {number_of_columns}')
+        print(f'Analysis period: {period}')
+
+    # Get VARIABLE types, others will not be allowed
+    data_types = data_without_date_column.dtypes
+    float_columns = data_types == VALID_FLOAT_TYPE
+    integer_columns = data_types == VALID_INTEGER_TYPE
+    string_columns = data_types == VALID_STRING_TYPE
+    date_columns = data_types == VALID_DATE_TYPE
+    categorical_columns = data_types == VALID_CATEGORICAL_TYPE  # TODO: check, categorical, pandas
+
+    if verbose:
+        if any(float_columns):
+            print(f'Number of float columns: {sum(float_columns)}')
+        if any(integer_columns):
+            print(f'Number of integer columns: {sum(integer_columns)}')
+        if any(string_columns):
+            print(f'Number of string columns: {sum(string_columns)}')
+        if any(date_columns):
+            print(f'Number of date columns: {sum(date_columns)}')
+        if any(categorical_columns):
+            print(f'Number of categorical columns: {sum(categorical_columns)}')
+
+    # Convert dates to numbers
+    if any(date_columns):
+        data_without_date_column.iloc[:, date_columns] = data_without_date_column.iloc[:, date_columns].apply(
+            pd.to_numeric,
+            errors='coerce'
+        )
+        if verbose:
+            print('Converting date columns to numeric for distribution analysis')
+
+    # Dimensionality reduction
+    if verbose:
+        print(f'Applying dimensionality reduction with {dim_reduction}')
+
+    if dim_reduction == PCA:
+        method = prince.PCA(n_components=dimensions, random_state=112)
+        reduced_data = method.fit_transform(data_without_date_column)
+    elif dim_reduction == FAMD:
+        method = prince.FAMD(n_components=dimensions, random_state=112)
+        reduced_data = method.fit_transform(data_without_date_column)
+    elif dim_reduction == MCA:
+        method = prince.MCA(n_components=dimensions, random_state=112)
+        reduced_data = method.fit_transform(data_without_date_column)
+
+    # Divide reduced data by the labels
+    reduced_data[label_column_name] = labels_columns
+    reduced_data[date_column_name] = dates
+
+    if scatter_plot:
+        if verbose:
+            print(f'Plotting {dim_reduction} 2D Scatter Plot divided by class')
+        fig = px.scatter(
+            reduced_data,
+            x=0,
+            y=1,
+            color=label_column_name,
+            title=f'{dim_reduction} Scatter Plot',
+            template='plotly_white',
+            opacity=0.5
+        )
+
+        fig.update_layout(
+            title={
+                'text': f'{dim_reduction} Scatter Plot',
+                'y': 0.95,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': {'size': 25}
+            },
+            xaxis_title={
+                'text': f'PC1 ({method.eigenvalues_summary.iloc[0, 1]} variance)',
+                'font': {'size': 18}
+            },
+            yaxis_title={
+                'text': f'PC2 ({method.eigenvalues_summary.iloc[1, 1]} variance)',
+                'font': {'size': 18}
+            }
+
+        )
+        fig.show()
+
+    reduced_data_by_label = {
+        label: reduced_data[reduced_data[label_column_name] == label].reset_index(drop=True).drop(
+            columns=[label_column_name, date_column_name])
+        for label in unique_labels}
+
+    reduced_dates_by_label = {
+        label: reduced_data[reduced_data[label_column_name] == label][date_column_name].reset_index(drop=True) for label
+        in unique_labels
+    }
+
+    # Generate DTMs
+    concept_maps_dict = dict()
+    for label, concept_data in reduced_data_by_label.items():
+        if verbose:
+            print(f'Label :{label}')
+        reduced_dates = reduced_dates_by_label[label]
+        dtm = _generate_multivariate_dtm(reduced_data=concept_data, period=period, dates=reduced_dates, verbose=verbose,
+                                         dimensions=dimensions, kde_resolution=kde_resolution)
+        concept_maps_dict[label] = dtm
+
+    return concept_maps_dict
+
+
+def _compute_kde(data_subset, xmin, xmax, kde_resolution):
+    """
+    Performs a Gaussian Kernel Density Estimation (KDE) on a subset of the original data to estimate
+    the probability density function over a specified range, using a grid resolution determined by
+    kde_resolution.
+    """
+    kde = gaussian_kde(data_subset.T, bw_method='silverman')  # Transpose for data compatibility
+    grid = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin, xmax)]
+    mesh = np.meshgrid(*grid, indexing='ij')
     positions = np.vstack([m.ravel() for m in mesh])
-    kde_values = kde(positions).reshape([binsize] * len(xmin))
-
+    kde_values = kde(positions).reshape([kde_resolution] * len(xmin))
     return kde_values
 
 
-def __process_kde(kde_values):
+def _normalize_kde(kde_values):
+    """
+    Normalizes the results of the Kernel Density Estimation (KDE) values so that the total area under the
+    estimated probability density function equals 1. This ensures that the KDE represents a valid probability
+    distribution.
+    """
     kde_values = np.maximum(kde_values, 0)  # Set negative values to 0
     return kde_values / np.sum(kde_values)  # Normalize
+
+
+def _generate_multivariate_dtm(reduced_data, period, dates, verbose, dimensions, kde_resolution):
+    """
+    Generates a MultiVariateDataTemporalMap object from the reduced multivariate data by applying Kernel
+    Density Estimation (KDE) of the data over time. This function processes the data in
+    the specified temporal period (e.g., weekly, monthly, yearly) and computes the joint probability distribution
+    of the multivariate time series.
+    """
+    xmin = reduced_data.min(axis=0)
+    xmax = reduced_data.max(axis=0)
+
+    if period == TEMPORAL_PERIOD_MONTH:
+        dates_for_batching = pd.to_datetime(dates).dt.to_period('M').astype('str')
+        unique_dates = sorted(dates_for_batching.unique())
+        unique_dates = pd.to_datetime(unique_dates)
+    elif period == TEMPORAL_PERIOD_YEAR:
+        dates_for_batching = pd.to_datetime(dates).dt.year
+        unique_dates = sorted(dates_for_batching.unique())
+        unique_dates = pd.to_datetime([f'{year}-01-01' for year in unique_dates])
+    elif period == TEMPORAL_PERIOD_WEEK:
+        dates_for_batching = pd.to_datetime(dates).dt.to_period('W').astype('str')
+        unique_dates = sorted(dates_for_batching.unique())
+        unique_dates = pd.to_datetime(unique_dates)
+
+    if verbose:
+        print('Estimating the data temporal maps')
+
+    if dimensions == 2:
+        kde2 = reduced_data.groupby(dates_for_batching).apply(
+            lambda group: _compute_kde(reduced_data.iloc[group.index, :], xmin[:2], xmax[:2], kde_resolution)).tolist()
+        probability_map_2d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde2])
+        multivariate_probability_map_2d = [_normalize_kde(kde) for kde in kde2]
+        multivariate_support_2d = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin[:2], xmax[:2])]
+        total_data_over_time = dates_for_batching.value_counts().sort_index().to_numpy().reshape(-1, 1)
+        counts_map_2d = (probability_map_2d * total_data_over_time).round()
+        multivariate_counts_map_2d = [(temporal_map * total_data_over_time[i, 0]).round() for i, temporal_map in
+                                      enumerate(multivariate_probability_map_2d)]
+
+        dtm = MultiVariateDataTemporalMap(
+            probability_map=probability_map_2d,
+            multivariate_probability_map=multivariate_probability_map_2d,
+            counts_map=counts_map_2d,
+            multivariate_counts_map=multivariate_counts_map_2d,
+            dates=pd.to_datetime(unique_dates),
+            support=pd.DataFrame(range(0, kde_resolution ** 2)),
+            multivariate_support=multivariate_support_2d,
+            variable_name='Dim.reduced.2D',
+            variable_type='float64',
+            period=period
+        )
+    elif dimensions == 3:
+        kde3 = reduced_data.groupby(dates_for_batching).apply(
+            lambda group: _compute_kde(reduced_data.iloc[group.index, :], xmin, xmax, kde_resolution)).tolist()
+        probability_map_3d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde3])
+        multivariate_probability_map_3d = [_normalize_kde(kde) for kde in kde3]
+        multivariate_support_3d = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin, xmax)]
+        total_data_over_time = dates_for_batching.value_counts().sort_index().to_numpy().reshape(-1, 1)
+        counts_map_3d = (probability_map_3d * total_data_over_time).round()
+        multivariate_counts_map_3d = [(temporal_map * total_data_over_time[i, 0]).round() for i, temporal_map in
+                                      enumerate(multivariate_probability_map_3d)]
+
+        dtm = MultiVariateDataTemporalMap(
+            probability_map=probability_map_3d,
+            multivariate_probability_map=multivariate_probability_map_3d,
+            counts_map=counts_map_3d,
+            multivariate_counts_map=multivariate_counts_map_3d,
+            dates=pd.to_datetime(unique_dates),
+            support=pd.DataFrame(range(0, kde_resolution ** 3)),
+            multivariate_support=multivariate_support_3d,
+            variable_name='Dim.reduced.3D',
+            variable_type='float64',
+            period=period
+        )
+    return dtm
