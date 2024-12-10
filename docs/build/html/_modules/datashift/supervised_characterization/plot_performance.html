@@ -1,0 +1,189 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>datashift.supervised_characterization.plot_performance &mdash; dashi  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            dashi
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../datashift.html">datashift package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">dashi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">datashift.supervised_characterization.plot_performance</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for datashift.supervised_characterization.plot_performance</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">DESCRIPTION: main function for multi-batch metrics exploration.</span>
+<span class="sd">AUTHOR: Pablo Ferri-Borredà</span>
+<span class="sd">DATE: 17/10/24</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># MODULES IMPORT</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
+
+<span class="kn">import</span> <span class="nn">plotly.graph_objects</span> <span class="k">as</span> <span class="nn">go</span>
+<span class="kn">import</span> <span class="nn">plotly.io</span> <span class="k">as</span> <span class="nn">pio</span>
+
+<span class="kn">from</span> <span class="nn">.arrange_metrics</span> <span class="kn">import</span> <span class="n">arrange_metrics</span>
+
+<span class="c1"># SETTINGS</span>
+<span class="n">FONTSIZE</span> <span class="o">=</span> <span class="mi">14</span>
+
+
+<div class="viewcode-block" id="plot_multi_batch_models">
+<a class="viewcode-back" href="../../../datashift.supervised_characterization.html#datashift.supervised_characterization.plot_performance.plot_multi_batch_models">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_multi_batch_models</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots a heatmap visualizing the specified metric for multiple batches of training and test models.</span>
+
+<span class="sd">    The function takes a dictionary of metrics and filters them based on the metric identifier.</span>
+<span class="sd">    It then generates a heatmap where the x-axis represents the test batches,</span>
+<span class="sd">    the y-axis represents the training batches, and the color scale indicates the</span>
+<span class="sd">    values of the specified metric.</span>
+
+<span class="sd">    The plot is interactive and can be explored (zoomed, hovered, etc.) using Plotly.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    metrics : dict</span>
+<span class="sd">        A dictionary where keys are tuples of (training_batch, test_batch, dataset_type),</span>
+<span class="sd">        and values are the metric values for the corresponding combination.</span>
+<span class="sd">        The `dataset_type` should be `&#39;test&#39;` to include the metric in the heatmap.</span>
+
+<span class="sd">    metric_name : str</span>
+<span class="sd">        The name of the metric to visualize (e.g., &#39;accuracy&#39;, &#39;loss&#39;, etc.).</span>
+<span class="sd">        The function will filter metrics based on this identifier and only plot those for the &#39;test&#39; set.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        This function generates and displays an interactive heatmap using Plotly,</span>
+<span class="sd">        and does not return any value. The heatmap is displayed directly in the output</span>
+<span class="sd">        environment (e.g., Jupyter notebook, web browser).</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        If the `metrics` parameter is not a dictionary or if `metric_identifier` is not a string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Metrics arrangement</span>
+    <span class="n">metrics_test_frame</span> <span class="o">=</span> <span class="n">arrange_metrics</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">,</span> <span class="n">metric_name</span><span class="o">=</span><span class="n">metric_name</span><span class="p">)</span>
+
+    <span class="c1"># Plotting using Plotly</span>
+    <span class="n">heatmap_data</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">(</span>
+        <span class="n">z</span><span class="o">=</span><span class="n">metrics_test_frame</span><span class="o">.</span><span class="n">iloc</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>  <span class="c1"># Values for the heatmap (reversed rows)</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">metrics_test_frame</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>  <span class="c1"># Columns as x-axis</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">metrics_test_frame</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>  <span class="c1"># Rows as y-axis</span>
+        <span class="n">colorscale</span><span class="o">=</span><span class="s1">&#39;RdYlGn&#39;</span><span class="p">,</span>  <span class="c1"># Color scale</span>
+        <span class="n">colorbar</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">metric_name</span><span class="p">),</span>  <span class="c1"># Colorbar label</span>
+        <span class="n">zmid</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Center color (0 value centered)</span>
+        <span class="n">hovertemplate</span><span class="o">=</span><span class="s2">&quot;%</span><span class="si">{y}</span><span class="s2">&lt;br&gt;%</span><span class="si">{x}</span><span class="s2">: %</span><span class="si">{z:.3f}</span><span class="s2">&quot;</span><span class="p">,</span>  <span class="c1"># Tooltip on hover</span>
+        <span class="n">showscale</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Display colorbar scale</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Layout of the plot</span>
+    <span class="n">layout</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">metric_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s1"> heatmap&#39;</span><span class="p">,</span>
+        <span class="n">xaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Test Batch&#39;</span><span class="p">,</span> <span class="n">tickangle</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">tickfont</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">FONTSIZE</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)),</span>
+        <span class="n">yaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Training Batch&#39;</span><span class="p">,</span> <span class="n">tickfont</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">FONTSIZE</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)),</span>
+        <span class="n">font</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">FONTSIZE</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="s2">&quot;serif&quot;</span><span class="p">),</span>
+        <span class="n">template</span><span class="o">=</span><span class="s2">&quot;plotly_white&quot;</span>  <span class="c1"># Optional: use a clean white background template</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Set the Plotly renderer for Jupyter or standalone use</span>
+    <span class="c1"># pio.renderers.default = &#39;notebook&#39;  # For Jupyter Notebooks (use &#39;notebook&#39; or &#39;jupyterlab&#39;)</span>
+    <span class="c1"># For standalone (non-Jupyter) use, you can also use:</span>
+    <span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s1">&#39;browser&#39;</span>
+
+    <span class="c1"># Create the figure and plot</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="n">heatmap_data</span><span class="p">],</span> <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Carlos Sáez Silvestre, David Fernández Narro, Pablo Ferri Borredá, Ángel Sánchez García.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
