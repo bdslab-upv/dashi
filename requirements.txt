@@ -21,6 +21,7 @@ scipy==1.11.3
 six==1.16.0
 tenacity==8.2.3
 threadpoolctl==3.2.0
+tqdm==4.66.5
 tzdata==2023.3
 urllib3==2.1.0
 
