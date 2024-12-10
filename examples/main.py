@@ -18,7 +18,6 @@ dataset_string = io.StringIO(downloaded_dataset.decode('utf-8'))
 # Read the CSV file
 dataframe = pd.read_csv(dataset_string, sep=',', na_values='')
 
-# TODO: pre conversion
 # converted_columns = dataframe.loc[:, dataframe.dtypes == VALID_DEFAULT_STRING_TYPE].astype('string')
 # dataframe = dataframe.assign(**converted_columns)
 
@@ -26,7 +25,7 @@ dataframe = pd.read_csv(dataset_string, sep=',', na_values='')
 dataframe["age"] = dataframe["age"].astype('float64')
 dataframe['sex'] = dataframe.sex.astype('object')
 dataframe['diagcode1'] = dataframe.diagcode1.astype('object')
-variable = 'diagcode1'
+VARIABLE = 'diagcode1'
 
 # Display the first few rows of the dataset
 pd.set_option('display.max_columns', None)
@@ -55,16 +54,16 @@ prob_maps = estimate_data_temporal_map(
 )
 
 plot_data_temporal_map(
-    data_temporal_map=prob_maps[variable],
+    data_temporal_map=prob_maps[VARIABLE],
     color_palette=constants.PlotColorPalette.Spectral,
     absolute=False,
     sorting_method=constants.DataTemporalMapPlotSortingMethod.Frequency,
     mode=constants.DataTemporalMapPlotMode.Heatmap,
-    log_transform=True
+    log_transform=False
 )
 
 igt_projection = estimate_igt_projection(
-    data_temporal_map=prob_maps[variable],
+    data_temporal_map=prob_maps[VARIABLE],
     dimensions=3,
     embedding_type='pca'
 )
