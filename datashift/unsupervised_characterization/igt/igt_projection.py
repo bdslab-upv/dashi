@@ -10,7 +10,7 @@ Information Geometric Temporal class creation
 from dataclasses import dataclass
 from typing import Union, List
 
-from datashift.data_temporal_map.data_temporal_map import DataTemporalMap, MultiVariateDataTemporalMap
+from datashift.unsupervised_characterization.data_temporal_map.data_temporal_map import DataTemporalMap, MultiVariateDataTemporalMap
 
 
 @dataclass
