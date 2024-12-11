@@ -223,7 +223,7 @@ def trim_data_temporal_map(
     return data_temporal_map
 
 
-def estimate_data_temporal_map(
+def estimate_univariate_data_temporal_map(
         data: pd.DataFrame,
         date_column_name: str,
         period: str = TEMPORAL_PERIOD_MONTH,
@@ -717,7 +717,7 @@ def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fa
     return map_data
 
 
-def estimate_multidim_data_temporal_map(
+def estimate_multivariate_data_temporal_map(
         data: pd.DataFrame,
         date_column_name: str,
         kde_resolution: int = 10,
@@ -918,7 +918,7 @@ def estimate_multidim_data_temporal_map(
     return dtm
 
 
-def estimate_multidim_concept_shift(
+def estimate_conditional_data_temporal_map(
         data: pd.DataFrame,
         date_column_name: str,
         label_column_name: str,

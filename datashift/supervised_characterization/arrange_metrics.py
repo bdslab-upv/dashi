@@ -11,7 +11,7 @@ from pandas import Series, DataFrame
 
 
 # FUNCTION DEFINITION
-def arrange_metrics(*, metrics: Dict[str, float], metric_name: str) -> DataFrame:
+def arrange_performance_metrics(*, metrics: Dict[str, float], metric_name: str) -> DataFrame:
 
     """
     Organizes and formats a subset of metrics from a dictionary into a pandas DataFrame.
