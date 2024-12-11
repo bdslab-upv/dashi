@@ -4,10 +4,10 @@ import pandas as pd
 import requests
 
 from datashift import constants
-from datashift.data_temporal_map.data_temporal_map import estimate_data_temporal_map
-from datashift.data_temporal_map.data_temporal_map_plotter import plot_data_temporal_map
-from datashift.igt.igt_plotting import plot_IGT_projection
-from datashift.igt.igt_projection_estimator import estimate_igt_projection
+from datashift.unsupervised_characterization.data_temporal_map.data_temporal_map import estimate_univariate_data_temporal_map
+from datashift.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter import plot_univariate_data_temporal_map
+from datashift.unsupervised_characterization.igt.igt_plotting import plot_IGT_projection
+from datashift.unsupervised_characterization.igt.igt_projection_estimator import estimate_igt_projection
 from datashift.utils import format_date
 
 # URL to the dataset
@@ -45,22 +45,14 @@ dataset_formatted = format_date(dataframe, 'date', date_format='%y/%m', verbose=
 #    - float: done (age as float) (numericSmoothing = False nice y True da poco distinto por kde), comprobar que se normaliza.
 
 
-prob_maps = estimate_data_temporal_map(
-    data=dataset_formatted,
-    date_column_name='date',
-    period=constants.TEMPORAL_PERIOD_YEAR,
-    numeric_smoothing=False,
-    verbose=True
-)
+prob_maps = estimate_univariate_data_temporal_map(data=dataset_formatted, date_column_name='date',
+                                                  period=constants.TEMPORAL_PERIOD_YEAR, numeric_smoothing=False,
+                                                  verbose=True)
 
-plot_data_temporal_map(
-    data_temporal_map=prob_maps[VARIABLE],
-    color_palette=constants.PlotColorPalette.Spectral,
-    absolute=False,
-    sorting_method=constants.DataTemporalMapPlotSortingMethod.Frequency,
-    mode=constants.DataTemporalMapPlotMode.Heatmap,
-    log_transform=False
-)
+plot_univariate_data_temporal_map(data_temporal_map=prob_maps[VARIABLE], absolute=False, log_transform=False,
+                                  sorting_method=constants.DataTemporalMapPlotSortingMethod.Frequency,
+                                  color_palette=constants.PlotColorPalette.Spectral,
+                                  mode=constants.DataTemporalMapPlotMode.Heatmap)
 
 igt_projection = estimate_igt_projection(
     data_temporal_map=prob_maps[VARIABLE],
