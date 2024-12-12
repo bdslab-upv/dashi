@@ -3,12 +3,12 @@ import io
 import pandas as pd
 import requests
 
-from datashift import constants
-from datashift.data_temporal_map.data_temporal_map import estimate_data_temporal_map
-from datashift.data_temporal_map.data_temporal_map_plotter import plot_data_temporal_map
-from datashift.igt.igt_plotting import plot_IGT_projection
-from datashift.igt.igt_projection_estimator import estimate_igt_projection
-from datashift.utils import format_date
+from dashi import constants
+from dashi.data_temporal_map.data_temporal_map import estimate_data_temporal_map
+from dashi.data_temporal_map.data_temporal_map_plotter import plot_data_temporal_map
+from dashi.igt.igt_plotting import plot_IGT_projection
+from dashi.igt.igt_projection_estimator import estimate_igt_projection
+from dashi.utils import format_date
 
 # URL to the dataset
 url = 'http://github.com/hms-dbmi/EHRtemporalVariability-DataExamples/raw/master/nhdsSubset.csv'

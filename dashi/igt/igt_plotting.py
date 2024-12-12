@@ -15,10 +15,10 @@ import plotly.graph_objs as go
 from matplotlib.cm import get_cmap
 from matplotlib.colors import to_hex
 
-from datashift.constants import *
-from datashift.igt.igt_projection import IGTProjection
-from datashift.igt.igt_trajectory_estimator import _estimate_igt_trajectory
-from datashift.utils import matplotlib_to_plotly, format_date_for_year, format_date_for_month, format_date_for_week
+from dashi.constants import *
+from dashi.igt.igt_projection import IGTProjection
+from dashi.igt.igt_trajectory_estimator import _estimate_igt_trajectory
+from dashi.utils import matplotlib_to_plotly, format_date_for_year, format_date_for_month, format_date_for_week
 
 
 def plot_IGT_projection(
