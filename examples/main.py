@@ -33,17 +33,6 @@ pd.set_option('display.max_columns', None)
 # Formatted dataset with dates
 dataset_formatted = format_date(dataframe, 'date', date_format='%y/%m', verbose=True)
 
-# Testing: counts
-#    - string: done (diagcode1)
-#    - int: done (age as integer)
-#    - categorical: (sex as category)
-#    - float: done (age as float) (numericSmoothing = False nice y True da poco distinto por kde), comprobar que se normaliza.
-# Testing: frequencies
-#    - string: done (diagcode1)
-#    - int: done  (age as integer)
-#    - categorical: done (sex as category)
-#    - float: done (age as float) (numericSmoothing = False nice y True da poco distinto por kde), comprobar que se normaliza.
-
 
 prob_maps = estimate_univariate_data_temporal_map(data=dataset_formatted, date_column_name='date',
                                                   period=constants.TEMPORAL_PERIOD_YEAR, numeric_smoothing=False,
@@ -65,9 +54,3 @@ plot_IGT_projection(
     dimensions=3,
     trajectory=False
 )
-
-# TODO Los phw esos
-# TODO Mirar colorinchis
-
-# TODO Condiciconadas
-# TODO Pasar datos y modelos en un periodo
