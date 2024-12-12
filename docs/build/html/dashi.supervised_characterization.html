@@ -19,7 +19,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="dashi.igt package" href="dashi.igt.html" /> 
+    <link rel="next" title="dashi.unsupervised_characterization package" href="dashi.unsupervised_characterization.html" />
+    <link rel="prev" title="dashi package" href="dashi.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,8 +46,6 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="dashi.html">dashi package</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="dashi.html#subpackages">Subpackages</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="dashi.data_temporal_map.html">dashi.data_temporal_map package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="dashi.igt.html">dashi.igt package</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dashi.supervised_characterization package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization.arrange_metrics">dashi.supervised_characterization.arrange_metrics module</a></li>
@@ -55,6 +54,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="dashi.unsupervised_characterization.html">dashi.unsupervised_characterization package</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="dashi.html#submodules">Submodules</a></li>
@@ -101,8 +101,8 @@
 AUTHOR: Pablo Ferri-Borredà
 DATE: 28/11/24</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="dashi.supervised_characterization.arrange_metrics.arrange_metrics">
-<span class="sig-name descname"><span class="pre">arrange_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/arrange_metrics.html#arrange_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.arrange_metrics.arrange_metrics" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dashi.supervised_characterization.arrange_metrics.arrange_performance_metrics">
+<span class="sig-name descname"><span class="pre">arrange_performance_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/arrange_metrics.html#arrange_performance_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.arrange_metrics.arrange_performance_metrics" title="Link to this definition"></a></dt>
 <dd><p>Organizes and formats a subset of metrics from a dictionary into a pandas DataFrame.</p>
 <p>This function filters the metrics based on the provided metric name, selects only those
 relevant to the ‘test’ subset, and formats the result into a DataFrame with a corrected
@@ -140,8 +140,8 @@ filtering the relevant metrics.</p>
 AUTHOR: Pablo Ferri-Borredà
 DATE: 17/10/24</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="dashi.supervised_characterization.plot_performance.plot_multi_batch_models">
-<span class="sig-name descname"><span class="pre">plot_multi_batch_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/plot_performance.html#plot_multi_batch_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.plot_performance.plot_multi_batch_models" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dashi.supervised_characterization.plot_performance.plot_multibatch_performance">
+<span class="sig-name descname"><span class="pre">plot_multibatch_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/plot_performance.html#plot_multibatch_performance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.plot_performance.plot_multibatch_performance" title="Link to this definition"></a></dt>
 <dd><p>Plots a heatmap visualizing the specified metric for multiple batches of training and test models.</p>
 <p>The function takes a dictionary of metrics and filters them based on the metric identifier.
 It then generates a heatmap where the x-axis represents the test batches,
@@ -182,7 +182,8 @@ environment (e.g., Jupyter notebook, web browser).</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="dashi.igt.html" class="btn btn-neutral float-left" title="dashi.igt package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dashi.html" class="btn btn-neutral float-left" title="dashi package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dashi.unsupervised_characterization.html" class="btn btn-neutral float-right" title="dashi.unsupervised_characterization package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
