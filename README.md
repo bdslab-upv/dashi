@@ -1,4 +1,4 @@
-# My Library
+# dashi
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)  
 ![Python Version](https://img.shields.io/badge/python-3.6%2B-brightgreen.svg)
