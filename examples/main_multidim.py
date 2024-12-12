@@ -3,14 +3,14 @@ import requests
 
 import pandas as pd
 
-from datashift import constants
-from datashift.data_temporal_map.data_temporal_map import (estimate_multidim_data_temporal_map,
-                                                           estimate_multidim_concept_shift, estimate_data_temporal_map)
-from datashift.data_temporal_map.data_temporal_map_plotter import plot_data_temporal_map, \
+from dashi import constants
+from dashi.data_temporal_map.data_temporal_map import (estimate_multidim_data_temporal_map,
+                                                       estimate_multidim_concept_shift, estimate_data_temporal_map)
+from dashi.data_temporal_map.data_temporal_map_plotter import plot_data_temporal_map, \
     plot_multivariate_data_temporal_map, plot_multivariate_concept_shift
-from datashift.igt.igt_plotting import plot_IGT_projection
-from datashift.igt.igt_projection_estimator import estimate_igt_projection
-from datashift.utils import format_date
+from dashi.igt.igt_plotting import plot_IGT_projection
+from dashi.igt.igt_projection_estimator import estimate_igt_projection
+from dashi.utils import format_date
 
 """
 # EXAMPLE DATASET R

@@ -15,9 +15,9 @@ import plotly.graph_objs as go
 import plotly.subplots as sp
 from typing import Optional, Dict
 
-from datashift.constants import DataTemporalMapPlotSortingMethod, PlotColorPalette, \
+from dashi.constants import DataTemporalMapPlotSortingMethod, PlotColorPalette, \
     DataTemporalMapPlotMode, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
-from datashift.data_temporal_map.data_temporal_map import DataTemporalMap, MultiVariateDataTemporalMap, \
+from dashi.data_temporal_map.data_temporal_map import DataTemporalMap, MultiVariateDataTemporalMap, \
     trim_data_temporal_map
 
 
