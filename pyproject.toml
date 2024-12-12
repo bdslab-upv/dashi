@@ -11,9 +11,9 @@ dependencies = [# Add your dependencies here
     # Example: "numpy>=1.21.0",
     "numpy>=1.26.2",
     "pandas>=2.2.3",
-    "plotly==5.18.0",
+    "plotly>=5.18.0",
     "sklearn==",
-    "dateutil",
-    "tqdm",
-    "prince",
+    "dateutil==",
+    "tqdm==",
+    "prince==",
 ]
