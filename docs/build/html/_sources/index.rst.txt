@@ -15,5 +15,5 @@ documentation for details.
    :maxdepth: 4
    :caption: Contents:
 
-   datashift
+   dashi
 
