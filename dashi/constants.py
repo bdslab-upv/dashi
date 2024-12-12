@@ -14,7 +14,6 @@ VALID_DEFAULT_STRING_TYPE = 'object'  # recommended string type, more efficient 
 VALID_STRING_TYPE = 'object'  # recommended string type, more efficient than object # string
 VALID_CONVERSION_STRING_TYPE = 'object'  # recommended string type, more efficient than object #string
 VALID_CATEGORICAL_TYPE = 'category'  # ?
-# TODO: check categorical instead of R factor
 VALID_TYPES_WITHOUT_DATE = [VALID_INTEGER_TYPE, VALID_STRING_TYPE, VALID_FLOAT_TYPE,
                             VALID_CATEGORICAL_TYPE]  # Pandas types
 VALID_TYPES = VALID_TYPES_WITHOUT_DATE + [VALID_DATE_TYPE]  # Pandas types

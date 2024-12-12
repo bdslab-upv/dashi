@@ -18,9 +18,15 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 from sklearn.preprocessing import MinMaxScaler
 
-from dashi.data_temporal_map.data_temporal_map import (trim_data_temporal_map, DataTemporalMap,
-                                                       MultiVariateDataTemporalMap)
+<<<<<<<< HEAD:dashi/igt/igt_projection_estimator.py
+from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (trim_data_temporal_map, DataTemporalMap,
+                                                                                     MultiVariateDataTemporalMap)
 from dashi.igt.igt_projection import IGTProjection
+========
+from datashift.unsupervised_characterization.data_temporal_map.data_temporal_map import (trim_data_temporal_map, DataTemporalMap,
+                                                                                         MultiVariateDataTemporalMap)
+from datashift.unsupervised_characterization.igt.igt_projection import IGTProjection
+>>>>>>>> 2ff4a7787c65c95a5bb56ae21222705e2aff8e30:datashift/unsupervised_characterization/igt/igt_projection_estimator.py
 
 
 def _js_divergence(p, q, epsilon=1e-10):
