@@ -3,7 +3,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from datashift.constants import MONTH_SHORT_ABBREVIATIONS, VALID_DATE_TYPE
+from dashi.constants import MONTH_SHORT_ABBREVIATIONS, VALID_DATE_TYPE
 
 
 def format_date_for_year(date: datetime) -> str:
