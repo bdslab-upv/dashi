@@ -3,23 +3,13 @@ import requests
 
 import pandas as pd
 
-<<<<<<< HEAD
 from dashi import constants
-from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (estimate_multidim_data_temporal_map,
-                                                                                     estimate_multidim_concept_shift, estimate_data_temporal_map)
-from dashi.igt.igt_plotting import plot_IGT_projection
-from dashi.igt.igt_projection_estimator import estimate_igt_projection
+from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import *
+from dashi.unsupervised_characterization.igt import *
+from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter import *
+from dashi.unsupervised_characterization.igt.igt_plotting import plot_IGT_projection
+from dashi.unsupervised_characterization.igt.igt_projection_estimator import estimate_igt_projection
 from dashi.utils import format_date
-=======
-from datashift import constants
-from datashift.unsupervised_characterization.data_temporal_map.data_temporal_map import (estimate_multivariate_data_temporal_map,
-                                                                                         estimate_conditional_data_temporal_map, estimate_univariate_data_temporal_map)
-from datashift.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter import plot_univariate_data_temporal_map, \
-    plot_multivariate_data_temporal_map, plot_conditional_data_temporal_map
-from datashift.unsupervised_characterization.igt.igt_plotting import plot_IGT_projection
-from datashift.unsupervised_characterization.igt.igt_projection_estimator import estimate_igt_projection
-from datashift.utils import format_date
->>>>>>> 2ff4a7787c65c95a5bb56ae21222705e2aff8e30
 
 
 # EXAMPLE DATASET
