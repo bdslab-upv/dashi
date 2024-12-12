@@ -6,5 +6,14 @@ build-backend = "setuptools.build_meta"
 name = "dashi"
 version = "0.1.0"
 description = "A description of my library"
-authors = [{name = "Your Name", email = "youremail@example.com"}]
-dependencies = [""]
+authors = [{ name = "Carlos Sáez Silvestre, David Fernández Narro, Ángel Sánchez García", email = "youremail@example.com" }]
+dependencies = [# Add your dependencies here
+    # Example: "numpy>=1.21.0",
+    "numpy>=1.26.2",
+    "pandas>=2.2.3",
+    "plotly==5.18.0",
+    "sklearn==",
+    "dateutil",
+    "tqdm",
+    "prince",
+]

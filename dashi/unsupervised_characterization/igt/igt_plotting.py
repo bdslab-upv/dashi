@@ -15,16 +15,11 @@ import plotly.graph_objs as go
 from matplotlib.cm import get_cmap
 from matplotlib.colors import to_hex
 
-<<<<<<<< HEAD:dashi/igt/igt_plotting.py
-from dashi.constants import *
-from dashi.igt.igt_projection import IGTProjection
+from dashi.constants import PlotColorPalette, TEMPORAL_PERIOD_YEAR, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK, \
+    MONTH_LONG_ABBREVIATIONS
+from dashi.unsupervised_characterization.igt.igt_projection import IGTProjection
 from dashi.unsupervised_characterization.igt.igt_trajectory_estimator import _estimate_igt_trajectory
-========
-from datashift.constants import *
-from datashift.unsupervised_characterization.igt.igt_projection import IGTProjection
-from datashift.unsupervised_characterization.igt.igt_trajectory_estimator import _estimate_igt_trajectory
-from datashift.utils import _matplotlib_to_plotly, _format_date_for_year, _format_date_for_month, _format_date_for_week
->>>>>>>> 2ff4a7787c65c95a5bb56ae21222705e2aff8e30:datashift/unsupervised_characterization/igt/igt_plotting.py
+from dashi.utils import _matplotlib_to_plotly, _format_date_for_year, _format_date_for_month, _format_date_for_week
 
 
 def plot_IGT_projection(
