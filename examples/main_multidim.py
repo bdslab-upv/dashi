@@ -1,3 +1,6 @@
+import io
+import requests
+
 import pandas as pd
 
 from datashift import constants
@@ -9,8 +12,8 @@ from datashift.unsupervised_characterization.igt.igt_plotting import plot_IGT_pr
 from datashift.unsupervised_characterization.igt.igt_projection_estimator import estimate_igt_projection
 from datashift.utils import format_date
 
-"""
-# EXAMPLE DATASET R
+
+# EXAMPLE DATASET
 # URL to the dataset
 url = 'http://github.com/hms-dbmi/EHRtemporalVariability-DataExamples/raw/master/nhdsSubset.csv'
 downloaded_dataset = requests.get(url).content
@@ -23,36 +26,21 @@ dataset = dataset.iloc[:, 0:12]
 DATE_COLUMN = 'date'
 dataset_formated = format_date(dataset, DATE_COLUMN, '%y/%m')
 dataset_formated['age'] = dataset_formated['age'].astype(float)
+dataset_formated['newborn'] = dataset_formated['newborn'].astype(object)
+dataset_formated['race'] = dataset_formated['race'].astype(object)
+dataset_formated['disstatus'] = dataset_formated['disstatus'].astype(object)
 dataset_formated['dayscare'] = dataset_formated['dayscare'].astype(float)
+dataset_formated['lengthflag'] = dataset_formated['lengthflag'].astype(object)
+dataset_formated['region'] = dataset_formated['region'].astype(object)
+dataset_formated['hospbeds'] = dataset_formated['hospbeds'].astype(float)
+dataset_formated['hospownership'] = dataset_formated['hospownership'].astype(float)
 dataset_formated['sex'] = dataset_formated['sex'].astype(object)
 
 LABEL_NAME = 'sex'
 data_without_label = dataset_formated.drop(columns=[LABEL_NAME])
 START_DATE = pd.to_datetime('2015')
 DIMENSIONS = 2
-"""
-
-# EXAMPLE DATASET SIMULATED
-path = r'C:\Users\David\Desktop\Datasets\Simulated_Carlos\uci_heart_disease_simulshift_tsne2.csv'
-dataset = pd.read_csv(path, sep=';')
-describe = dataset.describe()
-print(dataset.dtypes)
-
-DATE_COLUMN = 'synthetic_date'
-LABEL_NAME = 'class_label'
-DIMENSIONS = 2
 PERIOD = 'month'
-
-dataset_formated = format_date(dataset, DATE_COLUMN, '%Y-%m-%d')
-dataset_formated['age'] = dataset_formated['age'].astype(float)
-dataset_formated['trestbps'] = dataset_formated['trestbps'].astype(float)
-dataset_formated['chol'] = dataset_formated['chol'].astype(float)
-dataset_formated['thalach'] = dataset_formated['thalach'].astype(float)
-dataset_formated['oldpeak'] = dataset_formated['oldpeak'].apply(lambda x: float(x.replace(',', '.')))
-dataset_formated['ca'] = dataset_formated['ca'].astype(float)
-dataset_formated[LABEL_NAME] = dataset_formated[LABEL_NAME].astype(object)
-
-data_without_label = dataset_formated.drop(columns=[LABEL_NAME])
 
 
 # Prior probability shift
