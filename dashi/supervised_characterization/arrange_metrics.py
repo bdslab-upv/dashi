@@ -11,7 +11,8 @@ from pandas import Series, DataFrame
 
 
 # FUNCTION DEFINITION
-def arrange_metrics(*, metrics: Dict[str, float], metric_name: str) -> DataFrame:
+def arrange_performance_metrics(*, metrics: Dict[str, float], metric_name: str) -> DataFrame:
+
     """
     Organizes and formats a subset of metrics from a dictionary into a pandas DataFrame.
 
@@ -66,6 +67,7 @@ def arrange_metrics(*, metrics: Dict[str, float], metric_name: str) -> DataFrame
 
 # FUNCTION FOR INDEX CORRECTION
 def _correct_index(index_value: Union[str, float, Tuple]) -> Union[str, float]:
+
     """
     Corrects the index values when learning was based on a cumulative learning strategy.
 
@@ -96,7 +98,3 @@ def _correct_index(index_value: Union[str, float, Tuple]) -> Union[str, float]:
     # Pass without modification
     else:
         return index_value
-
-
-# ACCESSIBILITY
-__all__ = ['arrange_metrics']

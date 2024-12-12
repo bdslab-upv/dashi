@@ -15,10 +15,16 @@ import plotly.graph_objs as go
 from matplotlib.cm import get_cmap
 from matplotlib.colors import to_hex
 
+<<<<<<<< HEAD:dashi/igt/igt_plotting.py
 from dashi.constants import *
 from dashi.igt.igt_projection import IGTProjection
-from dashi.igt.igt_trajectory_estimator import _estimate_igt_trajectory
-from dashi.utils import matplotlib_to_plotly, format_date_for_year, format_date_for_month, format_date_for_week
+from dashi.unsupervised_characterization.igt.igt_trajectory_estimator import _estimate_igt_trajectory
+========
+from datashift.constants import *
+from datashift.unsupervised_characterization.igt.igt_projection import IGTProjection
+from datashift.unsupervised_characterization.igt.igt_trajectory_estimator import _estimate_igt_trajectory
+from datashift.utils import _matplotlib_to_plotly, _format_date_for_year, _format_date_for_month, _format_date_for_week
+>>>>>>>> 2ff4a7787c65c95a5bb56ae21222705e2aff8e30:datashift/unsupervised_characterization/igt/igt_plotting.py
 
 
 def plot_IGT_projection(
@@ -109,7 +115,7 @@ def plot_IGT_projection(
         colors = [to_hex(color_map(i / len(dates))) for i in range(len(dates) + 1)]
     elif period in [TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK]:
         color_map = get_cmap(color_palette.value, 128)
-        color_list = matplotlib_to_plotly(color_map)
+        color_list = _matplotlib_to_plotly(color_map)
         color_list.reverse()
 
         days_of_period = 12 if period == TEMPORAL_PERIOD_MONTH else 53
@@ -136,7 +142,7 @@ def plot_IGT_projection(
                         marker=dict(
                             color=colors[i]
                         ),
-                        text=format_date_for_year(dates[i]),
+                        text=_format_date_for_year(dates[i]),
                         textposition="top center",
                         textfont_color=colors[i]
                     )
@@ -154,7 +160,7 @@ def plot_IGT_projection(
                             color=period_colors[dates[i].month - 1]
                         ),
                         hovertext=f"{dates[i].strftime('%Y')}-{MONTH_LONG_ABBREVIATIONS[dates[i].month - 1]}",
-                        text=format_date_for_month(dates[i]),
+                        text=_format_date_for_month(dates[i]),
                         textposition="top center",
                         textfont_color=period_colors[dates[i].month - 1]
                     )
@@ -171,7 +177,7 @@ def plot_IGT_projection(
                         marker=dict(
                             color=period_colors[dates[i].isoweekday() - 1]
                         ),
-                        text=format_date_for_week(dates[i]),
+                        text=_format_date_for_week(dates[i]),
                         textposition="top center",
                         textfont_color=period_colors[dates[i].isoweekday() - 1]
                     )
@@ -211,7 +217,7 @@ def plot_IGT_projection(
                         marker=dict(
                             color=colors[i]
                         ),
-                        text=format_date_for_year(dates[i]),
+                        text=_format_date_for_year(dates[i]),
                         textposition="top center",
                         textfont_color=colors[i]
                     )
@@ -230,7 +236,7 @@ def plot_IGT_projection(
                         marker=dict(
                             color=period_colors[dates[i].month - 1]
                         ),
-                        text=format_date_for_month(dates[i]),
+                        text=_format_date_for_month(dates[i]),
                         textposition="top center",
                         textfont_color=period_colors[dates[i].month - 1]
                     )
@@ -248,7 +254,7 @@ def plot_IGT_projection(
                         marker=dict(
                             color=period_colors[dates[i].isoweekday() - 1]
                         ),
-                        text=format_date_for_week(dates[i]),
+                        text=_format_date_for_week(dates[i]),
                         textposition="top center",
                         textfont_color=period_colors[dates[i].isoweekday() - 1]
                     )

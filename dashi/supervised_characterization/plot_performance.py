@@ -10,13 +10,13 @@ from typing import Dict
 import plotly.graph_objects as go
 import plotly.io as pio
 
-from .arrange_metrics import arrange_metrics
+from .arrange_metrics import arrange_performance_metrics
 
 # SETTINGS
 FONTSIZE = 14
 
 
-def plot_multi_batch_models(*, metrics: Dict[str, float], metric_name: str) -> None:
+def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) -> None:
     """
     Plots a heatmap visualizing the specified metric for multiple batches of training and test models.
 
@@ -52,7 +52,7 @@ def plot_multi_batch_models(*, metrics: Dict[str, float], metric_name: str) -> N
     """
 
     # Metrics arrangement
-    metrics_test_frame = arrange_metrics(metrics=metrics, metric_name=metric_name)
+    metrics_test_frame = arrange_performance_metrics(metrics=metrics, metric_name=metric_name)
 
     # Plotting using Plotly
     heatmap_data = go.Heatmap(
@@ -83,7 +83,3 @@ def plot_multi_batch_models(*, metrics: Dict[str, float], metric_name: str) -> N
     # Create the figure and plot
     fig = go.Figure(data=[heatmap_data], layout=layout)
     fig.show()
-
-
-# ACCESSIBILITY
-__all__ = ['plot_multi_batch_models']
