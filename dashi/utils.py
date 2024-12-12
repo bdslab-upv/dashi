@@ -6,20 +6,20 @@ import pandas as pd
 from dashi.constants import MONTH_SHORT_ABBREVIATIONS, VALID_DATE_TYPE
 
 
-def format_date_for_year(date: datetime) -> str:
+def _format_date_for_year(date: datetime) -> str:
     year_part = date.strftime('%Y')
 
     return year_part
 
 
-def format_date_for_month(date: datetime) -> str:
+def _format_date_for_month(date: datetime) -> str:
     year_part = date.strftime('%y')
     month_part = MONTH_SHORT_ABBREVIATIONS[date.month - 1]
 
     return year_part + month_part
 
 
-def format_date_for_week(date: datetime) -> str:
+def _format_date_for_week(date: datetime) -> str:
     year_part = date.strftime('%y')
     month_part = MONTH_SHORT_ABBREVIATIONS[date.month - 1]
     day_part = str(date.isoweekday())
@@ -27,7 +27,7 @@ def format_date_for_week(date: datetime) -> str:
     return year_part + month_part + day_part
 
 
-def matplotlib_to_plotly(cmap):
+def _matplotlib_to_plotly(cmap):
     pl_colorscale = []
 
     for k in range(128):
@@ -37,30 +37,55 @@ def matplotlib_to_plotly(cmap):
     return pl_colorscale
 
 
-def format_date(input_dataframe, date_column, date_format='%y/%m/%d', verbose=False):
-    if date_column not in input_dataframe.columns:
-        raise ValueError(f'There is no column in your DataFrame named as: {date_column}')
+def format_date(input_dataframe: pd.DataFrame,
+                date_column_name: str = None,
+                date_format: str = '%y/%m/%d',
+                verbose: bool = False) -> pd.DataFrame:
+    """
+    Function to transform dates into 'Date' Python format
+
+    Parameters
+    ----------
+    input_dataframe : pd.DataFrame
+        Pandas dataframe object with at least one columns of dates.
+
+    date_column_name: str
+        The name of the column containing the dates.
+
+    date_format: str
+        Structure of date format. By default '%y/%m/%d'.
+
+    verbose: bool
+        Whether to display additional information during the process. Defaults to `False`.
+
+    Returns
+    -------
+    pd.DataFrame
+        An object of class pd.DataFrame with the date columns transformed into 'Date' Python format.
+    """
+    if date_column_name not in input_dataframe.columns:
+        raise ValueError(f'There is no column in your DataFrame named as: {date_column_name}')
 
     output_dataframe = input_dataframe.copy()
 
-    if output_dataframe[date_column].dtype == VALID_DATE_TYPE:
+    if output_dataframe[date_column_name].dtype == VALID_DATE_TYPE:
         return output_dataframe
 
     if verbose:
-        print(f'Formatting the {date_column} column')
+        print(f'Formatting the {date_column_name} column')
 
-    if (__is_letter_in_date_format(date_format, ['Y', 'y'])
-            and __is_letter_in_date_format(date_format, ['m', 'M', 'b', 'B', 'h'])
-            and __is_letter_in_date_format(date_format, ['d', 'D'])):
+    if (_is_letter_in_date_format(date_format, ['Y', 'y'])
+            and _is_letter_in_date_format(date_format, ['m', 'M', 'b', 'B', 'h'])
+            and _is_letter_in_date_format(date_format, ['d', 'D'])):
         if verbose:
             print('The data format contains year, month, and day')
-    elif (__is_letter_in_date_format(date_format, ['Y', 'y'])
-          and __is_letter_in_date_format(date_format, ['m', 'M', 'b', 'B', 'h'])):
+    elif (_is_letter_in_date_format(date_format, ['Y', 'y'])
+          and _is_letter_in_date_format(date_format, ['m', 'M', 'b', 'B', 'h'])):
         if verbose:
             print('The data format contains year and month but not day')
             print(
                 'Take into account that if you perform an analysis by week, the day will be automatically assigned as the first day of the month.')
-    elif __is_letter_in_date_format(date_format, ['Y', 'y']):
+    elif _is_letter_in_date_format(date_format, ['Y', 'y']):
         if verbose:
             print('The data format contains only the year')
             print(
@@ -69,11 +94,11 @@ def format_date(input_dataframe, date_column, date_format='%y/%m/%d', verbose=Fa
         print('Please, check the format of the date. At least it should contain the year.')
         raise ValueError('Invalid date format')
 
-    output_dataframe[date_column] = pd.to_datetime(output_dataframe[date_column], format=date_format)
+    output_dataframe[date_column_name] = pd.to_datetime(output_dataframe[date_column_name], format=date_format)
 
     # Check if there are rows with na
     # If there are rows with na remove the complete rows
-    date_rows_without_na = output_dataframe.dropna(subset=[date_column])
+    date_rows_without_na = output_dataframe.dropna(subset=[date_column_name])
     if len(date_rows_without_na) == len(output_dataframe):
         return output_dataframe
     else:
@@ -83,6 +108,6 @@ def format_date(input_dataframe, date_column, date_format='%y/%m/%d', verbose=Fa
         return output_dataframe
 
 
-def __is_letter_in_date_format(date_format, date_pattern):
+def _is_letter_in_date_format(date_format, date_pattern):
     # Check if any of the pattern elements is on the date_format string
     return any(any(element in character_to_check for element in date_pattern) for character_to_check in date_format)

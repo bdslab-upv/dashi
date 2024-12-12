@@ -17,11 +17,12 @@ from typing import Optional, Dict
 
 from dashi.constants import DataTemporalMapPlotSortingMethod, PlotColorPalette, \
     DataTemporalMapPlotMode, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
-from dashi.data_temporal_map.data_temporal_map import DataTemporalMap, MultiVariateDataTemporalMap, \
+
+from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import DataTemporalMap, MultiVariateDataTemporalMap, \
     trim_data_temporal_map
 
 
-def plot_data_temporal_map(
+def plot_univariate_data_temporal_map(
         data_temporal_map: DataTemporalMap,
         absolute: bool = False,
         log_transform: bool = False,
@@ -141,7 +142,7 @@ def plot_data_temporal_map(
 
     font = dict(size=20, color='#7f7f7f')
     x_axis = dict(title='Date',
-                  tickvals=dates,
+                  tickvals=np.unique(dates.year),
                   titlefont=font,
                   type='date')
 
@@ -168,7 +169,10 @@ def plot_data_temporal_map(
             automargin=True,
         )
 
-        figure.update_layout(xaxis=x_axis, yaxis=y_axis)
+        figure.update_xaxes(x_axis)
+
+        figure.update_layout(yaxis=y_axis,
+                             autosize=True)
 
         # Avoid type casting in plotly
         if variable_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
@@ -205,8 +209,10 @@ def plot_data_temporal_map(
             automargin=True,
         )
 
+        figure.update_xaxes(x_axis)
+
         figure.update_layout(
-            xaxis=x_axis,
+            autosize=True,
             yaxis=y_axis,
             paper_bgcolor='white',
             plot_bgcolor='white'
@@ -342,7 +348,7 @@ def plot_multivariate_data_temporal_map(
     return subplot
 
 
-def plot_multivariate_concept_shift(
+def plot_conditional_data_temporal_map(
         data_temporal_map_dict: Dict[str, MultiVariateDataTemporalMap],
         absolute: bool = False,
 ):
@@ -453,7 +459,7 @@ def plot_multivariate_concept_shift(
                               template='plotly_white',
                               margin=dict(t=60, r=20, b=60, l=60),
                               coloraxis=dict(
-                                    colorscale='Spectral_r'
+                                  colorscale='Spectral_r'
                               )
                               )
 
@@ -463,9 +469,3 @@ def plot_multivariate_concept_shift(
         subplot.update_layout(title=plot_title)
 
         subplot.show()
-
-
-
-
-
-

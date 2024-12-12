@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 
 # FUNCTION DEFINITION
-def estimate_multi_batch_models(*, data: DataFrame, inputs_numerical_column_names: List[str],
+def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: List[str],
                                 inputs_categorical_column_names: List[str],
                                 output_regression_column_name: Optional[str] = None,
                                 output_classification_column_name: Optional[str] = None,
@@ -26,7 +26,8 @@ def estimate_multi_batch_models(*, data: DataFrame, inputs_numerical_column_name
                                 period: Optional[str] = None, source_column_name: Optional[str] = None,
                                 learning_strategy: Optional[str] = 'from_scratch') -> Dict[str, float]:
     """
-    Estimate models over multiple batches, either based on time (temporal) or source.
+    Estimate models over multiple batches, either based on time (temporal) or source. RandomForest class weighted,
+    define metrics,
 
     Parameters
     ----------
@@ -639,7 +640,3 @@ def _get_regression_metrics(*, y_true: ndarray, y_pred: ndarray) -> dict:
 
     # Output
     return metrics
-
-
-# ACCESSIBILITY
-__all__ = ['estimate_multi_batch_models']

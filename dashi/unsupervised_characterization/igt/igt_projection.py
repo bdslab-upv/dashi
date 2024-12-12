@@ -10,7 +10,11 @@ Information Geometric Temporal class creation
 from dataclasses import dataclass
 from typing import Union, List
 
-from dashi.data_temporal_map.data_temporal_map import DataTemporalMap, MultiVariateDataTemporalMap
+<<<<<<<< HEAD:dashi/igt/igt_projection.py
+from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import DataTemporalMap, MultiVariateDataTemporalMap
+========
+from datashift.unsupervised_characterization.data_temporal_map.data_temporal_map import DataTemporalMap, MultiVariateDataTemporalMap
+>>>>>>>> 2ff4a7787c65c95a5bb56ae21222705e2aff8e30:datashift/unsupervised_characterization/igt/igt_projection.py
 
 
 @dataclass
