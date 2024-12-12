@@ -27,11 +27,11 @@ setup(
         "License :: OSI Approved :: MIT License",  # Adjust if not MIT
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.7",  # Minimum Python version required
+    python_requires=">=3.11",  # Minimum Python version required
     keywords="dashi, datashift",  # Keywords for PyPI search
     project_urls={  # Additional URLs
-        "Documentation": "https://github.com/yourusername/dashi/docs",
-        "Source": "https://github.com/bdslab-upv",
-        "Tracker": "https://github.com/yourusername/dashi/issues",
+        "Documentation": "https://github.com/bdslab-upv/dashi/docs",
+        "Source": "https://github.com/bdslab-upv/dashi",
+        "Tracker": "https://github.com/bdslab-upv/dashi/issues",
     },
 )
