@@ -7,7 +7,6 @@ certifi==2023.7.22
 charset-normalizer==3.3.2
 contourpy==1.2.1
 cycler==0.12.1
-Django==5.1
 docutils==0.21.2
 fonttools==4.51.0
 idna==3.4
@@ -18,7 +17,6 @@ jsonschema==4.23.0
 jsonschema-specifications==2024.10.1
 kiwisolver==1.4.5
 MarkupSafe==3.0.2
-matplotlib==3.8.4
 narwhals==1.16.0
 numpy==1.26.2
 packaging==23.2
@@ -51,6 +49,5 @@ sqlparse==0.5.1
 tenacity==8.2.3
 threadpoolctl==3.2.0
 typing_extensions==4.12.2
-tqdm==4.66.5
 tzdata==2023.3
 urllib3==2.1.0
