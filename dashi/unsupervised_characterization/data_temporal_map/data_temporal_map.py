@@ -223,7 +223,7 @@ def trim_data_temporal_map(
     return data_temporal_map
 
 
-def estimate_data_temporal_map(
+def estimate_univariate_data_temporal_map(
         data: pd.DataFrame,
         date_column_name: str,
         period: str = TEMPORAL_PERIOD_MONTH,
@@ -348,7 +348,7 @@ def estimate_data_temporal_map(
     integer_columns = data_types == VALID_INTEGER_TYPE
     string_columns = data_types == VALID_STRING_TYPE
     date_columns = data_types == VALID_DATE_TYPE
-    categorical_columns = data_types == VALID_CATEGORICAL_TYPE  # TODO: check, categorical, pandas
+    categorical_columns = data_types == VALID_CATEGORICAL_TYPE
 
     if verbose:
         if any(float_columns):
@@ -375,7 +375,6 @@ def estimate_data_temporal_map(
     supports_to_fill = {column: None for column in data_without_date_column.columns}
     supports_to_estimate_columns = data_without_date_column.columns.to_series()
 
-    # TODO: to test
     if supports is not None:
         for column_index, column in enumerate(supports):
             if column in supports_to_fill:
@@ -383,7 +382,6 @@ def estimate_data_temporal_map(
                 supports_to_estimate_columns.drop(column)
                 error_in_support = False
 
-                # TODO: Check this (category)
                 if supports[column].dtypes == VALID_CATEGORICAL_TYPE:
                     error_in_support = (
                             not supports[column].dtype.name == VALID_CATEGORICAL_TYPE
@@ -507,7 +505,6 @@ def estimate_data_temporal_map(
             }
         )
 
-    # TODO: To test
     if np.any(date_columns & supports_to_estimate_columns):
         minimums = data_without_date_column.loc[:, date_columns & supports_to_estimate_columns].apply(np.nanmin,
                                                                                                       axis=0)
@@ -717,7 +714,7 @@ def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fa
     return map_data
 
 
-def estimate_multidim_data_temporal_map(
+def estimate_multivariate_data_temporal_map(
         data: pd.DataFrame,
         date_column_name: str,
         kde_resolution: int = 10,
@@ -844,7 +841,7 @@ def estimate_multidim_data_temporal_map(
     integer_columns = data_types == VALID_INTEGER_TYPE
     string_columns = data_types == VALID_STRING_TYPE
     date_columns = data_types == VALID_DATE_TYPE
-    categorical_columns = data_types == VALID_CATEGORICAL_TYPE  # TODO: check, categorical, pandas
+    categorical_columns = data_types == VALID_CATEGORICAL_TYPE
 
     if verbose:
         if any(float_columns):
@@ -918,7 +915,7 @@ def estimate_multidim_data_temporal_map(
     return dtm
 
 
-def estimate_multidim_concept_shift(
+def estimate_conditional_data_temporal_map(
         data: pd.DataFrame,
         date_column_name: str,
         label_column_name: str,
@@ -1056,7 +1053,7 @@ def estimate_multidim_concept_shift(
     integer_columns = data_types == VALID_INTEGER_TYPE
     string_columns = data_types == VALID_STRING_TYPE
     date_columns = data_types == VALID_DATE_TYPE
-    categorical_columns = data_types == VALID_CATEGORICAL_TYPE  # TODO: check, categorical, pandas
+    categorical_columns = data_types == VALID_CATEGORICAL_TYPE
 
     if verbose:
         if any(float_columns):
