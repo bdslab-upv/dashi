@@ -1,0 +1,211 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashi.supervised_characterization package &mdash; dashi  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="dashi.igt package" href="dashi.igt.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            dashi
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="dashi.html">dashi package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="dashi.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="dashi.data_temporal_map.html">dashi.data_temporal_map package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dashi.igt.html">dashi.igt package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">dashi.supervised_characterization package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization.arrange_metrics">dashi.supervised_characterization.arrange_metrics module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dashi-supervised-characterization-estimate-models-module">dashi.supervised_characterization.estimate_models module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization.plot_performance">dashi.supervised_characterization.plot_performance module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi.constants">dashi.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi.utils">dashi.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">dashi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="dashi.html">dashi package</a></li>
+      <li class="breadcrumb-item active">dashi.supervised_characterization package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/dashi.supervised_characterization.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dashi-supervised-characterization-package">
+<h1>dashi.supervised_characterization package<a class="headerlink" href="#dashi-supervised-characterization-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-dashi.supervised_characterization.arrange_metrics">
+<span id="dashi-supervised-characterization-arrange-metrics-module"></span><h2>dashi.supervised_characterization.arrange_metrics module<a class="headerlink" href="#module-dashi.supervised_characterization.arrange_metrics" title="Link to this heading"></a></h2>
+<p>DESCRIPTION: functions for arranging metrics in a data frame from the original metrics dictionary.
+AUTHOR: Pablo Ferri-Borredà
+DATE: 28/11/24</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.supervised_characterization.arrange_metrics.arrange_metrics">
+<span class="sig-name descname"><span class="pre">arrange_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/arrange_metrics.html#arrange_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.arrange_metrics.arrange_metrics" title="Link to this definition"></a></dt>
+<dd><p>Organizes and formats a subset of metrics from a dictionary into a pandas DataFrame.</p>
+<p>This function filters the metrics based on the provided metric name, selects only those
+relevant to the ‘test’ subset, and formats the result into a DataFrame with a corrected
+index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em><em> of </em><em>{str: float}</em>) – A dictionary containing the calculated metrics for each batch and model combination.</p></li>
+<li><p><strong>metric_name</strong> (<em>str</em>) – The name of the metric to be selected from the <cite>metrics</cite> dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataFrame where the rows represent the combinations and the columns represent
+the metric values, with the index corrected for cumulative learning strategies.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>TypeError</strong> – If <cite>metrics</cite> is not a dictionary or if <cite>metric_name</cite> is not a string.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The function assumes that the <cite>metrics</cite> dictionary contains a third element ‘test’ for
+filtering the relevant metrics.</p>
+</dd></dl>
+
+</section>
+<section id="dashi-supervised-characterization-estimate-models-module">
+<h2>dashi.supervised_characterization.estimate_models module<a class="headerlink" href="#dashi-supervised-characterization-estimate-models-module" title="Link to this heading"></a></h2>
+</section>
+<section id="module-dashi.supervised_characterization.plot_performance">
+<span id="dashi-supervised-characterization-plot-performance-module"></span><h2>dashi.supervised_characterization.plot_performance module<a class="headerlink" href="#module-dashi.supervised_characterization.plot_performance" title="Link to this heading"></a></h2>
+<p>DESCRIPTION: main function for multi-batch metrics exploration.
+AUTHOR: Pablo Ferri-Borredà
+DATE: 17/10/24</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.supervised_characterization.plot_performance.plot_multi_batch_models">
+<span class="sig-name descname"><span class="pre">plot_multi_batch_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/plot_performance.html#plot_multi_batch_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.plot_performance.plot_multi_batch_models" title="Link to this definition"></a></dt>
+<dd><p>Plots a heatmap visualizing the specified metric for multiple batches of training and test models.</p>
+<p>The function takes a dictionary of metrics and filters them based on the metric identifier.
+It then generates a heatmap where the x-axis represents the test batches,
+the y-axis represents the training batches, and the color scale indicates the
+values of the specified metric.</p>
+<p>The plot is interactive and can be explored (zoomed, hovered, etc.) using Plotly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em>) – A dictionary where keys are tuples of (training_batch, test_batch, dataset_type),
+and values are the metric values for the corresponding combination.
+The <cite>dataset_type</cite> should be <cite>‘test’</cite> to include the metric in the heatmap.</p></li>
+<li><p><strong>metric_name</strong> (<em>str</em>) – The name of the metric to visualize (e.g., ‘accuracy’, ‘loss’, etc.).
+The function will filter metrics based on this identifier and only plot those for the ‘test’ set.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>This function generates and displays an interactive heatmap using Plotly,
+and does not return any value. The heatmap is displayed directly in the output
+environment (e.g., Jupyter notebook, web browser).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>TypeError</strong> – If the <cite>metrics</cite> parameter is not a dictionary or if <cite>metric_identifier</cite> is not a string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-dashi.supervised_characterization">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-dashi.supervised_characterization" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dashi.igt.html" class="btn btn-neutral float-left" title="dashi.igt package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Carlos Sáez Silvestre, David Fernández Narro, Pablo Ferri Borredá, Ángel Sánchez García.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
