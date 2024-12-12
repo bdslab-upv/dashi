@@ -2,11 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import UnivariateSpline
 
-<<<<<<<< HEAD:dashi/igt/igt_trajectory_estimator.py
-from dashi.igt.igt_projection import IGTProjection
-========
-from datashift.unsupervised_characterization.igt.igt_projection import IGTProjection
->>>>>>>> 2ff4a7787c65c95a5bb56ae21222705e2aff8e30:datashift/unsupervised_characterization/igt/igt_trajectory_estimator.py
+from dashi.unsupervised_characterization.igt.igt_projection import IGTProjection
 
 
 def _estimate_igt_trajectory(igt_projection: IGTProjection, number_of_points=None):
