@@ -1,0 +1,581 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter &mdash; dashi  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            dashi
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dashi.html">dashi package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">dashi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Data Temporal Map plotting main functions and classes</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Author: David Fernández Narro &lt;dfernar@upv.edu.es&gt;</span>
+<span class="c1">#         Ángel Sánchez García &lt;ansan12a@upv.es&gt;</span>
+<span class="c1">#         Pablo Ferri Borredá &lt;pabferb2@upv.es&gt;</span>
+<span class="c1">#         Carlos Sáez Silvestre &lt;carsaesi@upv.es&gt;</span>
+<span class="c1">#         Juan Miguel García Gómez &lt;juanmig@upv.es&gt;</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">plotly.graph_objs</span> <span class="k">as</span> <span class="nn">go</span>
+<span class="kn">import</span> <span class="nn">plotly.subplots</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="kn">from</span> <span class="nn">dashi.constants</span> <span class="kn">import</span> <span class="n">DataTemporalMapPlotSortingMethod</span><span class="p">,</span> <span class="n">PlotColorPalette</span><span class="p">,</span> \
+    <span class="n">DataTemporalMapPlotMode</span><span class="p">,</span> <span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span>
+
+<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.data_temporal_map.data_temporal_map</span> <span class="kn">import</span> <span class="n">DataTemporalMap</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">,</span> \
+    <span class="n">trim_data_temporal_map</span>
+
+
+<div class="viewcode-block" id="plot_univariate_data_temporal_map">
+<a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_univariate_data_temporal_map">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_univariate_data_temporal_map</span><span class="p">(</span>
+        <span class="n">data_temporal_map</span><span class="p">:</span> <span class="n">DataTemporalMap</span><span class="p">,</span>
+        <span class="n">absolute</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">log_transform</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">start_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">end_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">start_date</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">end_date</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sorting_method</span><span class="p">:</span> <span class="n">DataTemporalMapPlotSortingMethod</span> <span class="o">=</span> <span class="n">DataTemporalMapPlotSortingMethod</span><span class="o">.</span><span class="n">Frequency</span><span class="p">,</span>
+        <span class="n">color_palette</span><span class="p">:</span> <span class="n">PlotColorPalette</span> <span class="o">=</span> <span class="n">PlotColorPalette</span><span class="o">.</span><span class="n">Spectral</span><span class="p">,</span>
+        <span class="n">mode</span><span class="p">:</span> <span class="n">DataTemporalMapPlotMode</span> <span class="o">=</span> <span class="n">DataTemporalMapPlotMode</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">,</span>
+        <span class="n">plot_title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots a Data Temporal heatmap or series from a DataTemporalMap object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_temporal_map : DataTemporalMap</span>
+<span class="sd">        The DataTemporalMap object that contains the temporal data to be plotted.</span>
+
+<span class="sd">    absolute : bool</span>
+<span class="sd">        If True, plot absolute values; otherwise, the relative probabilities are plotted. Default is False.</span>
+
+<span class="sd">    log_transform : bool</span>
+<span class="sd">        If True, applies a log transformation to the data for better visibility of small values. Default is False.</span>
+
+<span class="sd">    start_value : int, optional</span>
+<span class="sd">        The value at which to start the plot. Default is 0.</span>
+
+<span class="sd">    end_value : int, optional</span>
+<span class="sd">        The value at which to end the plot. If None, the plot extends to the last value. Default is None.</span>
+
+<span class="sd">    start_date : datetime, optional</span>
+<span class="sd">        The starting date for the plot (filters the data). If None, uses the first date in the data. Default is None.</span>
+
+<span class="sd">    end_date : datetime, optional</span>
+<span class="sd">        The ending date for the plot (filters the data). If None, uses the last date in the data. Default is None.</span>
+
+<span class="sd">    sorting_method : DataTemporalMapPlotSortingMethod, optional</span>
+<span class="sd">        The method by which to sort the data for visualization. Default is Frequency.</span>
+
+<span class="sd">    color_palette : PlotColorPalette, optional</span>
+<span class="sd">        The color palette to be used for the plot. Default is Spectral.</span>
+
+<span class="sd">    mode : DataTemporalMapPlotMode, optional</span>
+<span class="sd">        The mode of visualization (e.g., Heatmap, Series). Default is Heatmap.</span>
+
+<span class="sd">    plot_title : str, optional</span>
+<span class="sd">        The title of the plot. If None, a default title is used. Default is None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Figure</span>
+<span class="sd">        The Plotly figure object representing the plot</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="p">)</span> <span class="o">==</span> <span class="n">DataTemporalMap</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;data_temporal_map must be of type DataTemporalMap. For multivariate plot&#39;</span>
+                        <span class="s1">&#39; use plot_multivariate_data_temporal_map function&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">DataTemporalMapPlotMode</span><span class="p">)</span> <span class="ow">or</span> \
+            <span class="n">mode</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">DataTemporalMapPlotMode</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;mode must be one of the defined in DataTemporalMapPlotMode&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color_palette</span><span class="p">,</span> <span class="n">PlotColorPalette</span><span class="p">)</span> <span class="ow">or</span> \
+            <span class="n">color_palette</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">palette</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">palette</span> <span class="ow">in</span> <span class="n">PlotColorPalette</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;color_palette must be one of the defined in PlotColorPalette&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;absolute must be a logical value&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">log_transform</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;log_transform must be a logical value&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start_value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">start_value</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;start_value must be greater or equal than 1&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sorting_method</span><span class="p">,</span> <span class="n">DataTemporalMapPlotSortingMethod</span><span class="p">)</span> <span class="ow">or</span> \
+            <span class="n">sorting_method</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">method</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">DataTemporalMapPlotSortingMethod</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;sorting_method must be one of the defined in DataTemporalMapPlotSortingMethod&#39;</span><span class="p">)</span>
+
+    <span class="c1"># TODO: check color scales for heatmap and series</span>
+    <span class="n">color_scale</span> <span class="o">=</span> <span class="n">color_palette</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="n">data_temporal_map</span> <span class="o">=</span> <span class="n">trim_data_temporal_map</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
+        <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">counts_map</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">probability_map</span>
+
+    <span class="n">dates</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">dates</span>
+
+    <span class="n">support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="o">.</span><span class="n">support</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+    <span class="n">variable_type</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">variable_type</span>
+
+    <span class="k">if</span> <span class="n">variable_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">sorting_method</span> <span class="o">==</span> <span class="n">DataTemporalMapPlotSortingMethod</span><span class="o">.</span><span class="n">Frequency</span><span class="p">:</span>
+            <span class="n">support_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">temporal_map</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">support_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">support</span><span class="p">)</span>
+
+        <span class="n">support</span> <span class="o">=</span> <span class="n">support</span><span class="p">[</span><span class="n">support_order</span><span class="p">]</span>
+
+        <span class="c1"># Resort temporal map by support_order</span>
+        <span class="n">temporal_map</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="n">support_order</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">temporal_map</span><span class="p">]</span>
+        <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">temporal_map</span><span class="p">)</span>
+
+        <span class="n">any_supp_na</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">support</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">any_supp_na</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">support</span><span class="p">[</span><span class="n">any_supp_na</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&lt;NA&gt;&#39;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">end_value</span> <span class="ow">or</span> <span class="n">end_value</span> <span class="o">&gt;</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">end_value</span> <span class="o">=</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">start_value</span> <span class="o">&gt;</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">start_value</span> <span class="o">=</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">font</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#7f7f7f&#39;</span><span class="p">)</span>
+    <span class="n">x_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span>
+                  <span class="n">tickvals</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">dates</span><span class="o">.</span><span class="n">year</span><span class="p">),</span>
+                  <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+                  <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">log_transform</span><span class="p">:</span>
+        <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">temporal_map</span><span class="p">)</span>
+
+    <span class="n">counts_subarray</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="n">start_value</span><span class="p">:</span><span class="n">end_value</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">temporal_map</span><span class="p">]</span>
+    <span class="n">counts_subarray</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">counts_subarray</span><span class="p">))</span>  <span class="c1"># Transpose the matrix</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="n">DataTemporalMapPlotMode</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">:</span>
+        <span class="n">figure</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">go</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">support</span><span class="p">[</span><span class="n">start_value</span><span class="p">:</span><span class="n">end_value</span><span class="p">],</span>
+                <span class="n">z</span><span class="o">=</span><span class="n">counts_subarray</span><span class="p">,</span>
+                <span class="n">colorscale</span><span class="o">=</span><span class="n">color_scale</span><span class="p">,</span>
+                <span class="n">reversescale</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">y_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">data_temporal_map</span><span class="o">.</span><span class="n">variable_name</span><span class="p">,</span>
+            <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+            <span class="n">automargin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">figure</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">x_axis</span><span class="p">)</span>
+
+        <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">yaxis</span><span class="o">=</span><span class="n">y_axis</span><span class="p">,</span>
+                             <span class="n">autosize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Avoid type casting in plotly</span>
+        <span class="k">if</span> <span class="n">variable_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">]:</span>
+            <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">yaxis_type</span><span class="o">=</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plot_title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">plot_title</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_title</span> <span class="o">=</span> <span class="s1">&#39;Probability distribution data temporal heatmap&#39;</span>
+            <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
+                <span class="n">plot_title</span> <span class="o">=</span> <span class="s1">&#39;Absolute frequencies data temporal heatmap&#39;</span>
+            <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">plot_title</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="n">DataTemporalMapPlotMode</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+        <span class="n">figure</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_value</span><span class="p">,</span> <span class="n">end_value</span><span class="p">):</span>
+            <span class="n">trace</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">counts_subarray</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">support</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="p">)</span>
+            <span class="n">figure</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">trace</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
+            <span class="n">y_axis_title</span> <span class="o">=</span> <span class="s1">&#39;Absolute frequency&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">y_axis_title</span> <span class="o">=</span> <span class="s1">&#39;Relative frequency&#39;</span>
+
+        <span class="n">y_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">y_axis_title</span><span class="p">,</span>
+            <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+            <span class="n">automargin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">figure</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">x_axis</span><span class="p">)</span>
+
+        <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+            <span class="n">autosize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">yaxis</span><span class="o">=</span><span class="n">y_axis</span><span class="p">,</span>
+            <span class="n">paper_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span>
+            <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plot_title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">plot_title</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Evolution of &#39;</span> <span class="o">+</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
+
+    <span class="n">figure</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">figure</span></div>
+
+
+
+<div class="viewcode-block" id="plot_multivariate_data_temporal_map">
+<a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_multivariate_data_temporal_map">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_multivariate_data_temporal_map</span><span class="p">(</span>
+        <span class="n">data_temporal_map</span><span class="p">:</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">,</span>
+        <span class="n">absolute</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">plot_title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots a Data Temporal heatmap from a MultiVariateDataTemporalMap object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_temporal_map : MultiVariateDataTemporalMap</span>
+<span class="sd">        The MultiVariateDataTemporalMap object that contains the temporal data to be plotted.</span>
+
+<span class="sd">    absolute : bool, optional</span>
+<span class="sd">        If True, plot absolute values; otherwise, the relative probabilities are plotted. Default is False.</span>
+
+<span class="sd">    plot_title : str, optional</span>
+<span class="sd">        The title of the plot. If None, a default title is used. Default is None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Figure</span>
+<span class="sd">        The Plotly figure object representing the plot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="p">)</span> <span class="o">==</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;data_temporal_map must be of type MultiVariateDataTemporalMap. For univariate plot use&#39;</span>
+                        <span class="s1">&#39; plot_data_temporal_map function&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;absolute must be a logical value&#39;</span><span class="p">)</span>
+
+    <span class="n">dates</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">dates</span>
+
+    <span class="n">supports</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">multivariate_support</span>
+    <span class="n">dimensions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">supports</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
+        <span class="n">multivariate_map</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">multivariate_counts_map</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">multivariate_map</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">multivariate_probability_map</span>
+
+    <span class="n">probability_map_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">probability_map_dim2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">probability_map_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">probability_map_dim1</span><span class="p">,</span> <span class="n">probability_map_dim2</span><span class="p">])</span>
+
+    <span class="k">elif</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">probability_map_dim2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">probability_map_dim3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim3</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">probability_map_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">probability_map_dim1</span><span class="p">,</span> <span class="n">probability_map_dim2</span><span class="p">,</span> <span class="n">probability_map_dim3</span><span class="p">])</span>
+
+    <span class="n">subplot</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span>
+                               <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                               <span class="n">shared_xaxes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                               <span class="n">vertical_spacing</span><span class="o">=</span><span class="mf">0.02</span>
+                               <span class="p">)</span>
+
+    <span class="n">font</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#7f7f7f&#39;</span><span class="p">)</span>
+    <span class="n">x_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">tickvals</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span>
+        <span class="n">tickfont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">temporal_map</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">probability_map_list</span><span class="p">):</span>
+        <span class="n">support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">temporal_map</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="n">counts_subarray</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>
+        <span class="n">counts_subarray</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">counts_subarray</span><span class="p">))</span>
+
+        <span class="n">figure</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">support</span><span class="p">,</span>
+            <span class="n">z</span><span class="o">=</span><span class="n">counts_subarray</span><span class="p">,</span>
+            <span class="n">reversescale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">coloraxis</span><span class="o">=</span><span class="s1">&#39;coloraxis&#39;</span>
+        <span class="p">)</span>
+
+        <span class="n">subplot</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">y_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;PC </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+            <span class="n">automargin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">subplot</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">y_axis</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">dimensions</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">subplot</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">title_text</span><span class="o">=</span><span class="s2">&quot;Date&quot;</span><span class="p">,</span> <span class="n">title_font</span><span class="o">=</span><span class="n">font</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">subplot</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">x_axis</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">subplot</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">xaxis</span><span class="o">=</span><span class="n">x_axis</span><span class="p">,</span>
+                          <span class="n">autosize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                          <span class="n">height</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="mi">300</span> <span class="o">*</span> <span class="n">dimensions</span><span class="p">,</span> <span class="mi">800</span><span class="p">),</span>
+                          <span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                          <span class="n">template</span><span class="o">=</span><span class="s1">&#39;plotly_white&#39;</span><span class="p">,</span>
+                          <span class="n">margin</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="mi">60</span><span class="p">),</span>
+                          <span class="n">coloraxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                              <span class="n">colorscale</span><span class="o">=</span><span class="s1">&#39;Spectral_r&#39;</span>
+                          <span class="p">)</span>
+                          <span class="p">)</span>
+    <span class="k">if</span> <span class="n">plot_title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">subplot</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">plot_title</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plot_title</span> <span class="o">=</span> <span class="s1">&#39;Probability distribution data temporal heatmap&#39;</span>
+        <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
+            <span class="n">plot_title</span> <span class="o">=</span> <span class="s1">&#39;Absolute frequencies data temporal heatmap&#39;</span>
+        <span class="n">subplot</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">plot_title</span><span class="p">)</span>
+
+    <span class="n">subplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">subplot</span></div>
+
+
+
+<div class="viewcode-block" id="plot_conditional_data_temporal_map">
+<a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_conditional_data_temporal_map">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_conditional_data_temporal_map</span><span class="p">(</span>
+        <span class="n">data_temporal_map_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">],</span>
+        <span class="n">absolute</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots a Figure for each dimension selected in the data_temporal_map_dict. Each Figure represents the</span>
+<span class="sd">    Data Temporal heatmap of each label in that dimension</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_temporal_map_dict : Dict[str, MultiVariateDataTemporalMap]</span>
+<span class="sd">        A dictionary where keys are labels (strings), and values are the corresponding</span>
+<span class="sd">        `MultiVariateDataTemporalMap` objects obtained from the &#39;estimate_multidim_concept_shift&#39; function.</span>
+
+<span class="sd">    absolute : bool, optional</span>
+<span class="sd">        If True, plot absolute values; otherwise, relative probabilities are plotted. Default is False.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_temporal_map_dict</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;data_temporal_map must be a dictionary of objects MultiVariateDataTemporalMap, resultant of &#39;</span>
+                        <span class="s1">&#39;the estimate_multidim_concept_shift function&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;absolute must be a logical value&#39;</span><span class="p">)</span>
+
+    <span class="n">labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_temporal_map_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">probability_map_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">data_temporal_map</span> <span class="ow">in</span> <span class="n">data_temporal_map_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">dates</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">dates</span>
+
+        <span class="n">supports</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">multivariate_support</span>
+        <span class="n">dimensions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">supports</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
+            <span class="n">multivariate_map</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">multivariate_counts_map</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">multivariate_map</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">multivariate_probability_map</span>
+
+        <span class="n">probability_map_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                                <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">probability_map_dim2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                                <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">probability_map_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">probability_map_dim1</span><span class="p">,</span> <span class="n">probability_map_dim2</span><span class="p">])</span>
+
+        <span class="k">elif</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                                <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">probability_map_dim2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                                <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">probability_map_dim3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim3</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                                <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">probability_map_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">probability_map_dim1</span><span class="p">,</span> <span class="n">probability_map_dim2</span><span class="p">,</span> <span class="n">probability_map_dim3</span><span class="p">])</span>
+
+        <span class="n">probability_map_dict</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">probability_map_list</span>
+
+    <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dimensions</span><span class="p">):</span>
+        <span class="n">subplot</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span>
+                                   <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                   <span class="n">shared_xaxes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                   <span class="n">vertical_spacing</span><span class="o">=</span><span class="mf">0.02</span>
+                                   <span class="p">)</span>
+
+        <span class="n">font</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#7f7f7f&#39;</span><span class="p">)</span>
+        <span class="n">x_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">tickvals</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span>
+            <span class="n">tickfont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;date&#39;</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">probability_map_list</span> <span class="ow">in</span> <span class="n">probability_map_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">probability_map_list</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+            <span class="n">support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">temporal_map</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="n">counts_subarray</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>
+            <span class="n">counts_subarray</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">counts_subarray</span><span class="p">))</span>
+
+            <span class="n">figure</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">support</span><span class="p">,</span>
+                <span class="n">z</span><span class="o">=</span><span class="n">counts_subarray</span><span class="p">,</span>
+                <span class="n">reversescale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">coloraxis</span><span class="o">=</span><span class="s1">&#39;coloraxis&#39;</span>
+            <span class="p">)</span>
+
+            <span class="n">subplot</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">y_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Label: </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+                <span class="n">automargin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">subplot</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">y_axis</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">subplot</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">title_text</span><span class="o">=</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">title_font</span><span class="o">=</span><span class="n">font</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">subplot</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">x_axis</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">subplot</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">xaxis</span><span class="o">=</span><span class="n">x_axis</span><span class="p">,</span>
+                              <span class="n">autosize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">height</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="mi">300</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span> <span class="mi">800</span><span class="p">),</span>
+                              <span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">template</span><span class="o">=</span><span class="s1">&#39;plotly_white&#39;</span><span class="p">,</span>
+                              <span class="n">margin</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="mi">60</span><span class="p">),</span>
+                              <span class="n">coloraxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                                  <span class="n">colorscale</span><span class="o">=</span><span class="s1">&#39;Spectral_r&#39;</span>
+                              <span class="p">)</span>
+                              <span class="p">)</span>
+
+        <span class="n">plot_title</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Probability distribution data temporal heatmap of Principal Component </span><span class="si">{</span><span class="n">dim</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
+            <span class="n">plot_title</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Absolute frequencies data temporal heatmap of Principal Component </span><span class="si">{</span><span class="n">dim</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">subplot</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">plot_title</span><span class="p">)</span>
+
+        <span class="n">subplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Carlos Sáez Silvestre, David Fernández Narro, Pablo Ferri Borredá, Ángel Sánchez García.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
