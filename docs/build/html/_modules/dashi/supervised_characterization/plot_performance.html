@@ -81,15 +81,15 @@
 <span class="kn">import</span> <span class="nn">plotly.graph_objects</span> <span class="k">as</span> <span class="nn">go</span>
 <span class="kn">import</span> <span class="nn">plotly.io</span> <span class="k">as</span> <span class="nn">pio</span>
 
-<span class="kn">from</span> <span class="nn">.arrange_metrics</span> <span class="kn">import</span> <span class="n">arrange_metrics</span>
+<span class="kn">from</span> <span class="nn">.arrange_metrics</span> <span class="kn">import</span> <span class="n">arrange_performance_metrics</span>
 
 <span class="c1"># SETTINGS</span>
 <span class="n">FONTSIZE</span> <span class="o">=</span> <span class="mi">14</span>
 
 
-<div class="viewcode-block" id="plot_multi_batch_models">
-<a class="viewcode-back" href="../../../dashi.supervised_characterization.html#dashi.supervised_characterization.plot_performance.plot_multi_batch_models">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_multi_batch_models</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="plot_multibatch_performance">
+<a class="viewcode-back" href="../../../dashi.supervised_characterization.html#dashi.supervised_characterization.plot_performance.plot_multibatch_performance">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_multibatch_performance</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plots a heatmap visualizing the specified metric for multiple batches of training and test models.</span>
 
@@ -125,7 +125,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Metrics arrangement</span>
-    <span class="n">metrics_test_frame</span> <span class="o">=</span> <span class="n">arrange_metrics</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">,</span> <span class="n">metric_name</span><span class="o">=</span><span class="n">metric_name</span><span class="p">)</span>
+    <span class="n">metrics_test_frame</span> <span class="o">=</span> <span class="n">arrange_performance_metrics</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">,</span> <span class="n">metric_name</span><span class="o">=</span><span class="n">metric_name</span><span class="p">)</span>
 
     <span class="c1"># Plotting using Plotly</span>
     <span class="n">heatmap_data</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">(</span>
@@ -157,10 +157,6 @@
     <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="n">heatmap_data</span><span class="p">],</span> <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">)</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
 
-
-
-<span class="c1"># ACCESSIBILITY</span>
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;plot_multi_batch_models&#39;</span><span class="p">]</span>
 </pre></div>
 
            </div>

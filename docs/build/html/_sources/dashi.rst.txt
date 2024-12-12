@@ -7,9 +7,8 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   dashi.data_temporal_map
-   dashi.igt
    dashi.supervised_characterization
+   dashi.unsupervised_characterization
 
 Submodules
 ----------
