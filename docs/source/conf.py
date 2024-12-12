@@ -30,13 +30,14 @@ html_static_path = ['_static']
 
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('../../'))  # Adjust the path to your library
 
 napoleon_google_docstring = False  # Disable Google-style
-napoleon_numpy_docstring = True   # Enable NumPy-style
+napoleon_numpy_docstring = True  # Enable NumPy-style
 napoleon_include_init_with_doc = True  # Include __init__ method docstrings
-napoleon_use_param = True         # Use :param: syntax in output
-napoleon_use_rtype = True         # Use :rtype: syntax in output
+napoleon_use_param = True  # Use :param: syntax in output
+napoleon_use_rtype = True  # Use :rtype: syntax in output
 
 utodoc_default_options = {
     'members': True,
@@ -50,7 +51,3 @@ napoleon_use_param = True
 napoleon_use_rtype = True
 
 autosummary_generate = True  # Auto-generate summaries
-
-exclude_patterns = [
-    '**/webapp/**',  # Exclude the entire webapp directory
-]
