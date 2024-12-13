@@ -12,15 +12,13 @@ setup(
     packages=find_packages(),
     include_package_data=False,  # Include non-Python files listed in MANIFEST.in
     install_requires=[  # Add your dependencies here
-        # Example: "numpy>=1.21.0",
-        "numpy>=1.26.2",
-        "pandas>=2.2.3",
-        "plotly==5.18.0",
-        "sklearn==",
-        "dateutil",
-        "tqdm",
-        "prince",
-
+        "numpy>=1.26.1",
+        "pandas>=2.2.2",
+        "plotly>=5.18.0",
+        "sklearn==1.5.1",
+        "dateutil>=2.8.2",
+        "tqdm>=4.66.5",
+        "prince>=0.14.0"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
