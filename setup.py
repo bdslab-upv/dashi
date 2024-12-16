@@ -18,8 +18,7 @@ setup(
         "sklearn==1.5.1",
         "dateutil>=2.8.2",
         "tqdm>=4.66.5",
-        "prince>=0.14.0",
-        "matplotlib>=3.10.0"
+        "prince>=0.14.0"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
