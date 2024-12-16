@@ -13,7 +13,7 @@ import plotly.io as pio
 from .arrange_metrics import arrange_performance_metrics
 
 # SETTINGS
-FONTSIZE = 14
+_FONTSIZE = 14
 
 
 def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) -> None:
@@ -56,12 +56,12 @@ def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) 
 
     # Plotting using Plotly
     heatmap_data = go.Heatmap(
-        z=metrics_test_frame.iloc[::-1].values,  # Values for the heatmap (reversed rows)
+        z=metrics_test_frame.values,  # Values for the heatmap (reversed rows)
         x=metrics_test_frame.columns,  # Columns as x-axis
         y=metrics_test_frame.index,  # Rows as y-axis
         colorscale='RdYlGn',  # Color scale
         colorbar=dict(title=metric_name),  # Colorbar label
-        zmid=0,  # Center color (0 value centered)
+        zmid=0.5,  # Center color (0 value centered)
         hovertemplate="%{y}<br>%{x}: %{z:.3f}",  # Tooltip on hover
         showscale=True  # Display colorbar scale
     )
@@ -69,9 +69,9 @@ def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) 
     # Layout of the plot
     layout = go.Layout(
         title=f'{metric_name.lower().capitalize()} heatmap',
-        xaxis=dict(title='Test Batch', tickangle=45, tickfont=dict(size=FONTSIZE - 2)),
-        yaxis=dict(title='Training Batch', tickfont=dict(size=FONTSIZE - 2)),
-        font=dict(size=FONTSIZE, family="serif"),
+        xaxis=dict(title='Test Batch', tickangle=45, tickfont=dict(size=_FONTSIZE - 2)),
+        yaxis=dict(title='Training Batch', tickfont=dict(size=_FONTSIZE - 2)),
+        font=dict(size=_FONTSIZE, family="serif"),
         template="plotly_white"  # Optional: use a clean white background template
     )
 

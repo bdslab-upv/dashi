@@ -1,49 +1,39 @@
-import io
-import requests
-
 import pandas as pd
 
-
 from dashi import constants
-from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (estimate_multivariate_data_temporal_map,
-                                                                                         estimate_conditional_data_temporal_map, estimate_univariate_data_temporal_map)
-from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter import plot_univariate_data_temporal_map, \
+from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (
+    estimate_multivariate_data_temporal_map,
+    estimate_conditional_data_temporal_map, estimate_univariate_data_temporal_map)
+from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter import \
+    plot_univariate_data_temporal_map, \
     plot_multivariate_data_temporal_map, plot_conditional_data_temporal_map
 from dashi.unsupervised_characterization.igt.igt_plotting import plot_IGT_projection
 from dashi.unsupervised_characterization.igt.igt_projection_estimator import estimate_igt_projection
 from dashi.utils import format_data
 
+from dashi.supervised_characterization.estimate_models import estimate_multibatch_models
+from dashi.supervised_characterization.plot_performance import plot_multibatch_performance
 
 # EXAMPLE DATASET
-# URL to the dataset
-url = 'http://github.com/hms-dbmi/EHRtemporalVariability-DataExamples/raw/master/nhdsSubset.csv'
-downloaded_dataset = requests.get(url).content
-dataset_string = io.StringIO(downloaded_dataset.decode('utf-8'))
-
+path = r'C:\Users\David\Desktop\Datasets\Simulated_Carlos\uci_heart_disease_full_simulshift_pcamix_cs_dim1_2y_nout.csv'
 # Read the CSV file
-dataset = pd.read_csv(dataset_string, sep=',', na_values='')
-dataset = dataset.iloc[:, 0:12]
+dataset = pd.read_csv(path, sep=';')
 
-DATE_COLUMN = 'date'
-dataset_formated = format_data(dataset, DATE_COLUMN, '%y/%m')
-dataset_formated['age'] = dataset_formated['age'].astype(float)
-dataset_formated['newborn'] = dataset_formated['newborn'].astype(object)
-dataset_formated['race'] = dataset_formated['race'].astype(object)
-dataset_formated['disstatus'] = dataset_formated['disstatus'].astype(object)
-dataset_formated['dayscare'] = dataset_formated['dayscare'].astype(float)
-dataset_formated['lengthflag'] = dataset_formated['lengthflag'].astype(object)
-dataset_formated['region'] = dataset_formated['region'].astype(object)
-dataset_formated['hospbeds'] = dataset_formated['hospbeds'].astype(float)
-dataset_formated['hospownership'] = dataset_formated['hospownership'].astype(float)
-dataset_formated['sex'] = dataset_formated['sex'].astype(object)
+DATE_COLUMN = 'synthetic_date'
+CATEGORICAL_VARIABLES = ['sex', 'cp', 'fbs', 'restecg', 'slope', 'thal', 'ca']
+NUMERICAL_VARIABLES = ['age', 'trestbps', 'chol', 'thalach']
+dataset_formated = format_data(dataset, date_column_name=DATE_COLUMN, date_format='%Y-%m-%d',
+                               inputs_numerical_column_names=NUMERICAL_VARIABLES,
+                               inputs_categorical_column_names=CATEGORICAL_VARIABLES)
+dataset_formated['oldpeak'] = pd.Series(map(lambda x: float(x.replace(',', '.')), dataset_formated['oldpeak']))
 
-LABEL_NAME = 'sex'
+LABEL_NAME = 'class_label'
 data_without_label = dataset_formated.drop(columns=[LABEL_NAME])
-START_DATE = pd.to_datetime('2015')
 DIMENSIONS = 2
 PERIOD = 'month'
-REDUCTION_METHOD = 'PCA'
+REDUCTION_METHOD = 'FAMD'
 
+# UNSUPERVISED
 
 # Prior probability shift
 prob_maps = estimate_univariate_data_temporal_map(data=dataset_formated, date_column_name=DATE_COLUMN,
@@ -63,7 +53,8 @@ prior_igt_projection = estimate_igt_projection(
 
 plot_IGT_projection(prior_igt_projection,
                     dimensions=DIMENSIONS,
-                    trajectory=True)
+                    trajectory=True,
+                    color_palette=constants.PlotColorPalette.Spectral)
 
 # Covariate shift
 dtm = estimate_multivariate_data_temporal_map(data=data_without_label, date_column_name=DATE_COLUMN, kde_resolution=20,
@@ -79,14 +70,14 @@ igt_proj_covariate = estimate_igt_projection(dtm,
 plot_IGT_projection(igt_proj_covariate,
                     dimensions=DIMENSIONS,
                     trajectory=True,
-                    color_palette=constants.PlotColorPalette.Viridis)
+                    color_palette=constants.PlotColorPalette.Spectral)
 
 # Concept shift
 
 dtm_concept_shift = estimate_conditional_data_temporal_map(data=dataset_formated, date_column_name=DATE_COLUMN,
-                                                           label_column_name=LABEL_NAME, kde_resolution=20,
+                                                           label_column_name=LABEL_NAME, kde_resolution=30,
                                                            dimensions=DIMENSIONS, period=PERIOD,
-                                                           dim_reduction=constants.FAMD, scatter_plot=True,
+                                                           dim_reduction=REDUCTION_METHOD, scatter_plot=True,
                                                            verbose=True)
 
 plot_conditional_data_temporal_map(data_temporal_map_dict=dtm_concept_shift)
@@ -98,5 +89,14 @@ igt_proj_concept = estimate_igt_projection(dtm_concept_shift,
 plot_IGT_projection(igt_proj_concept,
                     dimensions=DIMENSIONS,
                     trajectory=True,
-                    color_palette=constants.PlotColorPalette.Viridis)
+                    color_palette=constants.PlotColorPalette.Spectral)
+
+# SUPERVISED
+metrics = estimate_multibatch_models(data=dataset, inputs_numerical_column_names=NUMERICAL_VARIABLES,
+                                     inputs_categorical_column_names=CATEGORICAL_VARIABLES,
+                                     output_classification_column_name=LABEL_NAME,
+                                     date_column_name=DATE_COLUMN,
+                                     period=PERIOD)
+
+plot_multibatch_performance(metrics=metrics, metric_name='F1-SCORE_MACRO')
 
