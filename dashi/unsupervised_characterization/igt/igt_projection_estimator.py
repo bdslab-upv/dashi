@@ -18,7 +18,8 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 from sklearn.preprocessing import MinMaxScaler
 
-from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (trim_data_temporal_map, DataTemporalMap,
+from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (trim_data_temporal_map,
+                                                                                     DataTemporalMap,
                                                                                      MultiVariateDataTemporalMap)
 from dashi.unsupervised_characterization.igt.igt_projection import IGTProjection
 
