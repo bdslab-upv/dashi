@@ -3,10 +3,10 @@ from setuptools import setup, find_packages
 setup(
     name="dashi",  # Replace with your library's name
     version="0.1.0",  # Initial version
-    author="Carlos Sáez Silvestre, David Fernández Narro, Ángel Sánchez García",
+    author="Carlos Sáez Silvestre, David Fernández Narro, Ángel Sánchez García, Pablo Ferri Borredá",
     author_email="",
-    description="A brief description of your library",
-    long_description=open("README.md").read(),
+    description="Dataset shifts analysis and characterization in python",
+    long_description=open("README.md", encoding='utf-8').read(),
     long_description_content_type="text/markdown",
     url="https://github.com/bdslab-upv/dashi",
     packages=find_packages(),

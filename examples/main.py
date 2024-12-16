@@ -10,7 +10,7 @@ from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plo
     plot_univariate_data_temporal_map
 from dashi.unsupervised_characterization.igt.igt_plotting import plot_IGT_projection
 from dashi.unsupervised_characterization.igt.igt_projection_estimator import estimate_igt_projection
-from dashi.utils import format_date
+from dashi.utils import format_data
 
 # URL to the dataset
 url = 'http://github.com/hms-dbmi/EHRtemporalVariability-DataExamples/raw/master/nhdsSubset.csv'
@@ -33,7 +33,7 @@ VARIABLE = 'diagcode1'
 pd.set_option('display.max_columns', None)
 
 # Formatted dataset with dates
-dataset_formatted = format_date(dataframe, 'date', date_format='%y/%m', verbose=True)
+dataset_formatted = format_data(dataframe, 'date', date_format='%y/%m', verbose=True)
 
 
 prob_maps = estimate_univariate_data_temporal_map(data=dataset_formatted, date_column_name='date',

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List
 
 import numpy as np
 import pandas as pd
@@ -27,20 +28,13 @@ def _format_date_for_week(date: datetime) -> str:
     return year_part + month_part + day_part
 
 
-def _matplotlib_to_plotly(cmap):
-    pl_colorscale = []
-
-    for k in range(128):
-        C = np.array([cmap(k)[0] * 255, cmap(k)[1] * 255, cmap(k)[2] * 255])
-        pl_colorscale.append(f'rgb({C[0]}, {C[1]}, {C[2]})')
-
-    return pl_colorscale
-
-
-def format_date(input_dataframe: pd.DataFrame,
+def format_data(input_dataframe: pd.DataFrame,
+                *,
                 date_column_name: str = None,
                 date_format: str = '%y/%m/%d',
-                verbose: bool = False) -> pd.DataFrame:
+                verbose: bool = False,
+                inputs_numerical_column_names: Optional[List[str]] = None,
+                inputs_categorical_column_names: Optional[List[str]] = None) -> pd.DataFrame:
     """
     Function to transform dates into 'Date' Python format
 
@@ -58,6 +52,14 @@ def format_date(input_dataframe: pd.DataFrame,
     verbose: bool
         Whether to display additional information during the process. Defaults to `False`.
 
+    inputs_numerical_column_names: Optional[List[str]]
+        A list of numerical column names in the dataset. If this parameter is `None`, the variables types must be
+        managed by the user.
+
+    inputs_categorical_column_names: Optional[List[str]]
+        A list of categorical column names in the dataset. If this parameter is `None`, the variables types must be
+        managed by the user.
+
     Returns
     -------
     pd.DataFrame
@@ -67,6 +69,14 @@ def format_date(input_dataframe: pd.DataFrame,
         raise ValueError(f'There is no column in your DataFrame named as: {date_column_name}')
 
     output_dataframe = input_dataframe.copy()
+
+    if inputs_numerical_column_names is not None:
+        for col in inputs_numerical_column_names:
+            output_dataframe[col] = output_dataframe[col].astype(float)
+
+    if inputs_categorical_column_names is not None:
+        for col in inputs_categorical_column_names:
+            output_dataframe[col] = output_dataframe[col].astype('category')
 
     if output_dataframe[date_column_name].dtype == VALID_DATE_TYPE:
         return output_dataframe

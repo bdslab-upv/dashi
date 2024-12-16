@@ -12,14 +12,13 @@ from typing import Optional
 
 import numpy as np
 import plotly.graph_objs as go
-from matplotlib.cm import get_cmap
-from matplotlib.colors import to_hex
+from plotly.colors import sample_colorscale
 
 from dashi.constants import PlotColorPalette, TEMPORAL_PERIOD_YEAR, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK, \
     MONTH_LONG_ABBREVIATIONS
 from dashi.unsupervised_characterization.igt.igt_projection import IGTProjection
 from dashi.unsupervised_characterization.igt.igt_trajectory_estimator import _estimate_igt_trajectory
-from dashi.utils import _matplotlib_to_plotly, _format_date_for_year, _format_date_for_month, _format_date_for_week
+from dashi.utils import _format_date_for_year, _format_date_for_month, _format_date_for_week
 
 
 def plot_IGT_projection(
@@ -106,11 +105,9 @@ def plot_IGT_projection(
     period_colors = []
 
     if period == TEMPORAL_PERIOD_YEAR:
-        color_map = get_cmap(color_palette.value)
-        colors = [to_hex(color_map(i / len(dates))) for i in range(len(dates) + 1)]
+        colors = sample_colorscale(color_palette.value, [i/len(dates) for i in range(len(dates) + 1)])
     elif period in [TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK]:
-        color_map = get_cmap(color_palette.value, 128)
-        color_list = _matplotlib_to_plotly(color_map)
+        color_list = sample_colorscale(color_palette.value, [i / (128 - 1) for i in range(128)])
         color_list.reverse()
 
         days_of_period = 12 if period == TEMPORAL_PERIOD_MONTH else 53

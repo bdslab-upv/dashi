@@ -719,10 +719,10 @@ def estimate_multivariate_data_temporal_map(
         date_column_name: str,
         kde_resolution: int = 10,
         dimensions: int = 2,
-        period: str=TEMPORAL_PERIOD_MONTH,
+        period: str = TEMPORAL_PERIOD_MONTH,
         start_date: pd.Timestamp = None,
         end_date: pd.Timestamp = None,
-        dim_reduction: str=PCA,
+        dim_reduction: str = 'PCA',
         scatter_plot: bool = False,
         verbose: bool = False
 ) -> MultiVariateDataTemporalMap:
@@ -765,7 +765,8 @@ def estimate_multivariate_data_temporal_map(
     dim_reduction: str
         A dimensionality reduction technique to be used on the data. Default is `PCA` (Principal Component Analysis)
         for numerical data. Other options can include 'MCA' (Multiple Correspondence Analysis) for categorical data or
-        'FAMD' (Factor Analysis of Mixed Data) for mixed data.
+        'FAMD' (Factor Analysis of Mixed Data) for mixed data. Note: in case of using 'FAMD', numerical variables must be
+        in float type. Otherwise they will be treated as categorical.
 
     scatter_plot: bool
         Whether to generate a scatter plot of the first two principal components of the dimensionality reduction
@@ -879,6 +880,7 @@ def estimate_multivariate_data_temporal_map(
 
     if scatter_plot:
         if verbose:
+            warnings.filterwarnings('ignore', category=FutureWarning)
             print(f'Plotting {dim_reduction} 2D Scatter Plot')
         fig = px.scatter(
             reduced_data.iloc[:, 0:2],
@@ -909,6 +911,7 @@ def estimate_multivariate_data_temporal_map(
 
         )
         fig.show()
+        warnings.filterwarnings('default', category=FutureWarning)
 
     dtm = _generate_multivariate_dtm(reduced_data=reduced_data, period=period, dates=dates, verbose=verbose,
                                      dimensions=dimensions, kde_resolution=kde_resolution)
@@ -972,7 +975,8 @@ def estimate_conditional_data_temporal_map(
     dim_reduction: str
         A dimensionality reduction technique to be used on the data. Default is `PCA` (Principal Component Analysis)
         for numerical data. Other options can include 'MCA' (Multiple Correspondence Analysis) for categorical data or
-        'FAMD' (Factor Analysis of Mixed Data) for mixed data.
+        'FAMD' (Factor Analysis of Mixed Data) for mixed data. Note: in case of using 'FAMD', numerical variables must be
+        in float type. Otherwise they will be treated as categorical.
 
     scatter_plot: bool
         Whether to generate a scatter plot of the first two principal components of the dimensionality reduction
@@ -1095,6 +1099,7 @@ def estimate_conditional_data_temporal_map(
     reduced_data[date_column_name] = dates
 
     if scatter_plot:
+        warnings.filterwarnings('ignore', category=FutureWarning)
         if verbose:
             print(f'Plotting {dim_reduction} 2D Scatter Plot divided by class')
         fig = px.scatter(
@@ -1127,6 +1132,7 @@ def estimate_conditional_data_temporal_map(
 
         )
         fig.show()
+        warnings.filterwarnings('default', category=FutureWarning)
 
     reduced_data_by_label = {
         label: reduced_data[reduced_data[label_column_name] == label].reset_index(drop=True).drop(

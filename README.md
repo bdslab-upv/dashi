@@ -1,22 +1,47 @@
 # dashi
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)  
+![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg) 
 ![Python Version](https://img.shields.io/badge/python-3.6%2B-brightgreen.svg)
 
-`my_library` is a Python library designed to **[briefly describe the purpose, e.g., simplify data processing, automate tasks, etc.]**. It provides a set of tools to **[elaborate on the library's functionality]**.
+Dataset shifts analysis and characterization in python
+## What is `dashi`?
+`dashi` is a Python library designed to **analyze and characterize temporal and multi-source dataset shifts**. It provides 
+robust tools for both **supervised and unsupervised evaluation of dataset shifts,** empowering users to detect, understand, 
+and address changes in data distributions with confidence.
 
-## Features
+### Key Features:
 
-- **Feature 1:** Description of the first key feature.
-- **Feature 2:** Description of another important feature.
-- **Feature 3:** Mention any unique or critical functionality.
+- **Supervised Characterization:**
+Enables users to create classification or regression models using Random Forests trained on batched data 
+(temporal or multi-source). This allows for the detailed analysis of how dataset shifts impact model performance, 
+helping to pinpoint areas of potential degradation.
+- **Unsupervised Characterization:** 
+Facilitates the identification of temporal dataset shifts by projecting and visualizing data dissimilarities across time. 
+This process involves:
+  - Estimating data statistical distributions over time.
+  - Projecting these distributions onto non-parametric statistical manifolds. These projections reveal patterns of
+  latent temporal variability in the data, uncovering hidden trends and shifts.
+
+### Visualization Tools:
+To aid exploration and interpretation of dataset shifts, `dashi` includes visual analytics features such as:
+
+- **Data Temporal Heatmaps (DTHs):** Provide an intuitive visualization of temporal data changes.
+- **Information Geometric Temporal (IGT) plots:** Offer a more sophisticated view of data variability through statistical
+manifolds projections.
+
+## References
+1. Roschewitz, M., Mehta, R., Jones, C., & Glocker, B. (2024). Automatic dataset shift identification to support root cause analysis of AI performance drift (arXiv:2411.07940). arXiv. https://doi.org/10.48550/arXiv.2411.07940
+2. Sáez, C., & García-Gómez, J. M. (2018). Kinematics of Big Biomedical Data to characterize temporal variability and seasonality of data repositories: Functional Data Analysis of data temporal evolution over non-parametric statistical manifolds. International Journal of Medical Informatics, 119, 109-124. https://doi.org/10.1016/j.ijmedinf.2018.09.015
+3. Sáez, C., Rodrigues, P. P., Gama, J., Robles, M., & García-Gómez, J. M. (2015). Probabilistic change detection and visualization methods for the assessment of temporal stability in biomedical data quality. Data Mining and Knowledge Discovery, 29(4), 950-975. https://doi.org/10.1007/s10618-014-0378-6
+4. Sáez, C., Zurriaga, O., Pérez-Panadés, J., Melchor, I., Robles, M., & García-Gómez, J. M. (2016). Applying probabilistic temporal and multisite data quality control methods to a public health mortality registry in Spain: A systematic approach to quality control of repositories. Journal of the American Medical Informatics Association, 23(6), 1085-1095. https://doi.org/10.1093/jamia/ocw010
+
 
 ## Installation
 
-You can install `my_library` using pip:
+You can install `dashi` using pip:
 
 ```bash
-pip install my_library
+pip install dashi
 ```
 
 Or install from source:
@@ -67,7 +92,7 @@ pytest
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 

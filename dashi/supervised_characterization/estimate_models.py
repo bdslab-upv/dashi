@@ -50,7 +50,7 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
         Column name containing date or time information for temporal batching, if applicable.
 
     period : Optional[str], default=None
-        Period for batching the data ('MONTH' or 'YEAR') when using temporal batching.
+        Period for batching the data ('month' or 'year') when using temporal batching.
 
     source_column_name : Optional[str], default=None
         Column name representing the source of the data (for multi-source batching).
@@ -100,12 +100,12 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
         # sorting by date
         data = data.sort_values(by=date_column_name)
         # batching period adjusting
-        if period == 'MONTH':
+        if period == 'month':
             data[date_column_name] = data[date_column_name].apply(lambda date_: date_.strftime("%B %Y"))
-        elif period == 'YEAR':
+        elif period == 'year':
             data[date_column_name] = data[date_column_name].apply(lambda date_: date_.strftime("%Y"))
         else:
-            raise ValueError("Current supported batching periods are 'MONTH' and 'YEAR'.")
+            raise ValueError("Current supported batching periods are 'month' and 'year'.")
         # batching column assignation
         batching_column_name = date_column_name
     else:
@@ -297,7 +297,7 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: List[str],
         Column name containing date or time information for temporal batching, if applicable.
 
     period : Optional[str], default=None
-        Period for batching the data ('MONTH' or 'YEAR') when using temporal batching.
+        Period for batching the data ('month' or 'year') when using temporal batching.
 
     source_column_name : Optional[str], default=None
         Column name representing the source of the data (for multi-source batching).
@@ -327,10 +327,10 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: List[str],
             raise ValueError('Date column not found in the current data frame.')
         # batching period
         if period is None:
-            raise ValueError("A batching period needs to be specified: either 'MONTH' or 'YEAR'.")
+            raise ValueError("A batching period needs to be specified: either 'month' or 'year'.")
         else:
-            if period not in ('MONTH', 'YEAR'):
-                raise ValueError("Current supported batching periods are 'MONTH' and 'YEAR'.")
+            if period not in ('month', 'year'):
+                raise ValueError("Current supported batching periods are 'month' and 'year'.")
 
     # Source column
     if source_column_name is not None:
