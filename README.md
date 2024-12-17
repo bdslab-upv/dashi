@@ -1,7 +1,7 @@
 # dashi
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg) 
-![Python Version](https://img.shields.io/badge/python-3.6%2B-brightgreen.svg)
+![Python Version](https://img.shields.io/badge/python-3.10%2B-brightgreen.svg)
 
 Dataset shifts analysis and characterization in python
 ## What is `dashi`?
