@@ -116,10 +116,8 @@ the License.
 
 ## Acknowledgments
 
-- **[Tool or Library]:** Mention any tools or libraries your project relies on.
-- **[Inspiration]:** Acknowledge any inspirations or prior work.
-- **[Contributors]:** List or link to contributors to the project.
+This library, `dashi`, has been inspired by the [EHRtemporalVariability](https://github.com/hms-dbmi/EHRtemporalVariability) project, originally implemented in R by the **Harvard Medical School DBMI**. We adapted and extended its core concepts for Python to facilitate dataset shift analysis and characterization.
 
 ---
 
-Made with ❤️ by [Your Name](https://github.com/yourusername)
+Made with ❤️ by [BDSLab](https://bdslab.upv.es)
