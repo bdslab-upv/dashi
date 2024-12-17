@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
 
-import numpy as np
 import pandas as pd
 
 from dashi.constants import MONTH_SHORT_ABBREVIATIONS, VALID_DATE_TYPE
