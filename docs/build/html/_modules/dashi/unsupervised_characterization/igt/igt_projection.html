@@ -1,0 +1,149 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashi.unsupervised_characterization.igt.igt_projection &mdash; dashi  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            dashi
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dashi.html">dashi package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">dashi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dashi.unsupervised_characterization.igt.igt_projection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dashi.unsupervised_characterization.igt.igt_projection</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Information Geometric Temporal class creation</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Author: David Fernández Narro &lt;dfernar@upv.edu.es&gt;</span>
+<span class="c1">#         Ángel Sánchez García &lt;ansan12a@upv.es&gt;</span>
+<span class="c1">#         Pablo Ferri Borredá &lt;pabferb2@upv.es&gt;</span>
+<span class="c1">#         Carlos Sáez Silvestre &lt;carsaesi@upv.es&gt;</span>
+<span class="c1">#         Juan Miguel García Gómez &lt;juanmig@upv.es&gt;</span>
+
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.data_temporal_map.data_temporal_map</span> <span class="kn">import</span> <span class="n">DataTemporalMap</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span>
+
+
+<div class="viewcode-block" id="IGTProjection">
+<a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.igt.html#dashi.unsupervised_characterization.igt.igt_projection.IGTProjection">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">IGTProjection</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class IGTProjection object contains the estimated Information Geometric Temporal projection</span>
+<span class="sd">    of a DataTemporalMap or MultiVariateDataTemporalMap objects</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_temporal_map : Union[DataTemporalMap, MultiVariateDataTemporalMap, None]</span>
+<span class="sd">        A `DataTemporalMap` or &#39;MultiVariateDataTemporalMap&#39; object containing the temporal data map</span>
+<span class="sd">        that was used for generating the projection.</span>
+
+<span class="sd">    projection : Union[List[List[float]], None]</span>
+<span class="sd">        A 2D matrix matrix of floats representing the lower-dimensional projection of the temporal data.</span>
+<span class="sd">        Each row corresponds to a data timestamp, with each column representing a dimension of the projection.</span>
+
+<span class="sd">    embedding_type : Union[str, None]</span>
+<span class="sd">        A string representing the type of embedding used for the projection (e.g., &quot;classicalmds&quot;, &quot;nonmetricmds&quot;,</span>
+<span class="sd">        &quot;pca&quot;).</span>
+
+<span class="sd">    stress : Union[float, None]</span>
+<span class="sd">        A float value representing the stress (or error) of the projection if it is available (used in MDS</span>
+<span class="sd">        or similar techniques). The lower the stress value, the better the projection reflects the original data.</span>
+<span class="sd">        This attribute is `None` if stress is not computed or available.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data_temporal_map</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DataTemporalMap</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">projection</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">embedding_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">stress</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Carlos Sáez Silvestre, David Fernández Narro, Pablo Ferri Borredá, Ángel Sánchez García.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

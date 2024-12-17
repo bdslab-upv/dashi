@@ -1,18 +1,44 @@
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "dashi"
 version = "0.1.0"
-description = "A description of my library"
-authors = [{ name = "Carlos Sáez Silvestre, David Fernández Narro, Ángel Sánchez García", email = "youremail@example.com" }]
-dependencies = [# Add your dependencies here
+description = "Dataset shifts analysis and characterization in python"
+readme = "README.md"
+authors = [
+    { name = "Biomedical Data Science Lab, Universitat Politècnica de València (Spain)", email = "bdslab@bdslab.upv.es" }
+]
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+keywords = ["dashi", "datashift"]
+dependencies = [
     "numpy>=1.26.1",
     "pandas>=2.2.2",
     "plotly>=5.18.0",
-    "sklearn==1.5.1",
-    "dateutil>=2.8.2",
+    "scikit-learn==1.5.1",
+    "python-dateutil>=2.8.2",
     "tqdm>=4.66.5",
-    "prince>=0.14.0",
+    "prince>=0.14.0"
 ]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[tool.credits]
+inspiration = "This library was inspired by the EHRtemporalVariability project by Harvard Medical School DBMI: https://github.com/hms-dbmi/EHRtemporalVariability"
+
+[project.urls]
+"Homepage" = "https://github.com/bdslab-upv/dashi"
+"Documentation" = "https://github.com/bdslab-upv/dashi/docs"
+"Source" = "https://github.com/bdslab-upv/dashi"
+"Tracker" = "https://github.com/bdslab-upv/dashi/issues"
+"Reference" = "https://github.com/hms-dbmi/EHRtemporalVariability"
+"License of Reference" = "https://github.com/hms-dbmi/EHRtemporalVariability/blob/master/LICENSE"

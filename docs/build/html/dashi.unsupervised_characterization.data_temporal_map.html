@@ -339,7 +339,8 @@ from the first chronological date in the date column.</p></li>
 different from the last chronological date in the date column.</p></li>
 <li><p><strong>dim_reduction</strong> (<em>str</em>) – A dimensionality reduction technique to be used on the data. Default is <cite>PCA</cite> (Principal Component Analysis)
 for numerical data. Other options can include ‘MCA’ (Multiple Correspondence Analysis) for categorical data or
-‘FAMD’ (Factor Analysis of Mixed Data) for mixed data.</p></li>
+‘FAMD’ (Factor Analysis of Mixed Data) for mixed data. Note: in case of using ‘FAMD’, numerical variables must be
+in float type. Otherwise they will be treated as categorical.</p></li>
 <li><p><strong>scatter_plot</strong> (<em>bool</em>) – Whether to generate a scatter plot of the first two principal components of the dimensionality reduction</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>) – Whether to display additional information during the process. Defaults to <cite>False</cite>.</p></li>
 </ul>
@@ -380,7 +381,8 @@ from the first chronological date in the date column.</p></li>
 different from the last chronological date in the date column.</p></li>
 <li><p><strong>dim_reduction</strong> (<em>str</em>) – A dimensionality reduction technique to be used on the data. Default is <cite>PCA</cite> (Principal Component Analysis)
 for numerical data. Other options can include ‘MCA’ (Multiple Correspondence Analysis) for categorical data or
-‘FAMD’ (Factor Analysis of Mixed Data) for mixed data.</p></li>
+‘FAMD’ (Factor Analysis of Mixed Data) for mixed data. Note: in case of using ‘FAMD’, numerical variables must be
+in float type. Otherwise they will be treated as categorical.</p></li>
 <li><p><strong>scatter_plot</strong> (<em>bool</em>) – Whether to generate a scatter plot of the first two principal components of the dimensionality reduction</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>) – Whether to display additional information during the process. Defaults to <cite>False</cite>.</p></li>
 </ul>
