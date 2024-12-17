@@ -96,7 +96,7 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 
 
 ```
-Copyright 2024 Biomedical Data Science Laboratory, Universitat Politècnica de València
+Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)
 
 Licensed to the Apache Software Foundation (ASF) under one or more contributor
 license agreements. See the NOTICE file distributed with this work for
