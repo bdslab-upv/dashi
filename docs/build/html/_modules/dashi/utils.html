@@ -70,6 +70,7 @@
              
   <h1>Source code for dashi.utils</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -98,22 +99,15 @@
     <span class="k">return</span> <span class="n">year_part</span> <span class="o">+</span> <span class="n">month_part</span> <span class="o">+</span> <span class="n">day_part</span>
 
 
-<span class="k">def</span> <span class="nf">_matplotlib_to_plotly</span><span class="p">(</span><span class="n">cmap</span><span class="p">):</span>
-    <span class="n">pl_colorscale</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">128</span><span class="p">):</span>
-        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cmap</span><span class="p">(</span><span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">255</span><span class="p">,</span> <span class="n">cmap</span><span class="p">(</span><span class="n">k</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">255</span><span class="p">,</span> <span class="n">cmap</span><span class="p">(</span><span class="n">k</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="mi">255</span><span class="p">])</span>
-        <span class="n">pl_colorscale</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;rgb(</span><span class="si">{</span><span class="n">C</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">C</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">C</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">pl_colorscale</span>
-
-
-<div class="viewcode-block" id="format_date">
-<a class="viewcode-back" href="../../dashi.html#dashi.utils.format_date">[docs]</a>
-<span class="k">def</span> <span class="nf">format_date</span><span class="p">(</span><span class="n">input_dataframe</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+<div class="viewcode-block" id="format_data">
+<a class="viewcode-back" href="../../dashi.html#dashi.utils.format_data">[docs]</a>
+<span class="k">def</span> <span class="nf">format_data</span><span class="p">(</span><span class="n">input_dataframe</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+                <span class="o">*</span><span class="p">,</span>
                 <span class="n">date_column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">date_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;%y/%m/</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
-                <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+                <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="n">inputs_numerical_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">inputs_categorical_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function to transform dates into &#39;Date&#39; Python format</span>
 
@@ -131,6 +125,14 @@
 <span class="sd">    verbose: bool</span>
 <span class="sd">        Whether to display additional information during the process. Defaults to `False`.</span>
 
+<span class="sd">    inputs_numerical_column_names: Optional[List[str]]</span>
+<span class="sd">        A list of numerical column names in the dataset. If this parameter is `None`, the variables types must be</span>
+<span class="sd">        managed by the user.</span>
+
+<span class="sd">    inputs_categorical_column_names: Optional[List[str]]</span>
+<span class="sd">        A list of categorical column names in the dataset. If this parameter is `None`, the variables types must be</span>
+<span class="sd">        managed by the user.</span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    pd.DataFrame</span>
@@ -140,6 +142,14 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;There is no column in your DataFrame named as: </span><span class="si">{</span><span class="n">date_column_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
     <span class="n">output_dataframe</span> <span class="o">=</span> <span class="n">input_dataframe</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">inputs_numerical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">inputs_numerical_column_names</span><span class="p">:</span>
+            <span class="n">output_dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">inputs_categorical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">inputs_categorical_column_names</span><span class="p">:</span>
+            <span class="n">output_dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">output_dataframe</span><span class="p">[</span><span class="n">date_column_name</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">VALID_DATE_TYPE</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">output_dataframe</span>
