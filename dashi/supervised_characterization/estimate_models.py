@@ -1,7 +1,19 @@
+# Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
-DESCRIPTION: main function for estimating models over multiple temporal or multi-source batches.
-AUTHOR: Pablo Ferri-Borredà
-DATE: 17/10/24
+Main function for estimating models over multiple temporal or multi-source batches.
 """
 
 # MODULES IMPORT
@@ -19,12 +31,12 @@ from tqdm import tqdm
 
 # FUNCTION DEFINITION
 def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: List[str],
-                                inputs_categorical_column_names: List[str],
-                                output_regression_column_name: Optional[str] = None,
-                                output_classification_column_name: Optional[str] = None,
-                                date_column_name: Optional[str] = None,
-                                period: Optional[str] = None, source_column_name: Optional[str] = None,
-                                learning_strategy: Optional[str] = 'from_scratch') -> Dict[str, float]:
+                               inputs_categorical_column_names: List[str],
+                               output_regression_column_name: Optional[str] = None,
+                               output_classification_column_name: Optional[str] = None,
+                               date_column_name: Optional[str] = None,
+                               period: Optional[str] = None, source_column_name: Optional[str] = None,
+                               learning_strategy: Optional[str] = 'from_scratch') -> Dict[str, float]:
     """
     Estimate models over multiple batches, either based on time (temporal) or source. RandomForest class weighted,
     define metrics,
@@ -62,6 +74,28 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     -------
     Dict[str, float]
         A dictionary containing the calculated metrics for each batch and model combination.
+        Regression metrics, if applicable:
+            - 'MEAN_ABSOLUTE_ERROR'
+            - 'MEAN_SQUARED_ERROR'
+            - 'ROOT_MEAN_SQUARED_ERROR'
+            - 'R_SQUARED'
+        Classification metrics, if applicable:
+            - 'AUC_{class_identifier}'
+            - 'AUC_MACRO'
+            - 'LOGLOSS'
+            - 'RECALL_{class_identifier}'
+            - 'PRECISION_{class_identifier}'
+            - 'F1-SCORE_{class_identifier}'
+            - 'ACCURACY'
+            - 'RECALL_MACRO'
+            - 'RECALL_MICRO'
+            - 'RECALL_WEIGHTED'
+            - 'PRECISION_MACRO'
+            - 'PRECISION_MICRO'
+            - 'PRECISION_WEIGHTED'
+            - 'F1-SCORE_MACRO'
+            - 'F1-SCORE_MICRO'
+            - 'F1-SCORE_WEIGHTED'
     """
 
     # Input checking
