@@ -1,7 +1,7 @@
 # dashi
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg) 
-![Python Version](https://img.shields.io/badge/python-3.6%2B-brightgreen.svg)
+![Python Version](https://img.shields.io/badge/python-3.10%2B-brightgreen.svg)
 
 Dataset shifts analysis and characterization in python
 ## What is `dashi`?
@@ -94,12 +94,30 @@ pytest
 
 This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
+
+```
+Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)
+
+Licensed to the Apache Software Foundation (ASF) under one or more contributor
+license agreements. See the NOTICE file distributed with this work for
+additional information regarding copyright ownership. The ASF licenses this
+file to you under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+```
+
 ## Acknowledgments
 
-- **[Tool or Library]:** Mention any tools or libraries your project relies on.
-- **[Inspiration]:** Acknowledge any inspirations or prior work.
-- **[Contributors]:** List or link to contributors to the project.
+This library, `dashi`, has been inspired by the [EHRtemporalVariability](https://github.com/hms-dbmi/EHRtemporalVariability) project, originally implemented in R by the **Harvard Medical School DBMI**. We adapted and extended its core concepts for Python to facilitate dataset shift analysis and characterization.
 
 ---
 
-Made with ❤️ by [Your Name](https://github.com/yourusername)
+Made with ❤️ by [BDSLab](https://bdslab.upv.es)

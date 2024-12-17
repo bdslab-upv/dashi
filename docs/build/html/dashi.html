@@ -73,7 +73,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-dashi.utils">dashi.utils module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#dashi.utils.format_date"><code class="docutils literal notranslate"><span class="pre">format_date()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dashi.utils.format_data"><code class="docutils literal notranslate"><span class="pre">format_data()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-dashi">Module contents</a></li>
@@ -117,7 +117,10 @@
 <li class="toctree-l3"><a class="reference internal" href="dashi.supervised_characterization.html#dashi.supervised_characterization.arrange_metrics.arrange_performance_metrics"><code class="docutils literal notranslate"><span class="pre">arrange_performance_metrics()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="dashi.supervised_characterization.html#dashi-supervised-characterization-estimate-models-module">dashi.supervised_characterization.estimate_models module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.supervised_characterization.html#module-dashi.supervised_characterization.estimate_models">dashi.supervised_characterization.estimate_models module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dashi.supervised_characterization.html#dashi.supervised_characterization.estimate_models.estimate_multibatch_models"><code class="docutils literal notranslate"><span class="pre">estimate_multibatch_models()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="dashi.supervised_characterization.html#module-dashi.supervised_characterization.plot_performance">dashi.supervised_characterization.plot_performance module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="dashi.supervised_characterization.html#dashi.supervised_characterization.plot_performance.plot_multibatch_performance"><code class="docutils literal notranslate"><span class="pre">plot_multibatch_performance()</span></code></a></li>
 </ul>
@@ -136,10 +139,10 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html">dashi.unsupervised_characterization.igt package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html#dashi-unsupervised-characterization-igt-igt-plotting-module">dashi.unsupervised_characterization.igt.igt_plotting module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html#dashi-unsupervised-characterization-igt-igt-projection-module">dashi.unsupervised_characterization.igt.igt_projection module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html#dashi-unsupervised-characterization-igt-igt-projection-estimator-module">dashi.unsupervised_characterization.igt.igt_projection_estimator module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html#dashi-unsupervised-characterization-igt-igt-trajectory-estimator-module">dashi.unsupervised_characterization.igt.igt_trajectory_estimator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html#module-dashi.unsupervised_characterization.igt.igt_plotting">dashi.unsupervised_characterization.igt.igt_plotting module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html#module-dashi.unsupervised_characterization.igt.igt_projection">dashi.unsupervised_characterization.igt.igt_projection module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html#module-dashi.unsupervised_characterization.igt.igt_projection_estimator">dashi.unsupervised_characterization.igt.igt_projection_estimator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html#module-dashi.unsupervised_characterization.igt.igt_trajectory_estimator">dashi.unsupervised_characterization.igt.igt_trajectory_estimator module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="dashi.unsupervised_characterization.igt.html#module-dashi.unsupervised_characterization.igt">Module contents</a></li>
 </ul>
 </li>
@@ -223,8 +226,8 @@
 <section id="module-dashi.utils">
 <span id="dashi-utils-module"></span><h2>dashi.utils module<a class="headerlink" href="#module-dashi.utils" title="Link to this heading"></a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="dashi.utils.format_date">
-<span class="sig-name descname"><span class="pre">format_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'%y/%m/%d'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/utils.html#format_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.utils.format_date" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dashi.utils.format_data">
+<span class="sig-name descname"><span class="pre">format_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dataframe</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'%y/%m/%d'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_numerical_column_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_categorical_column_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/utils.html#format_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.utils.format_data" title="Link to this definition"></a></dt>
 <dd><p>Function to transform dates into ‘Date’ Python format</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -233,6 +236,10 @@
 <li><p><strong>date_column_name</strong> (<em>str</em>) – The name of the column containing the dates.</p></li>
 <li><p><strong>date_format</strong> (<em>str</em>) – Structure of date format. By default ‘%y/%m/%d’.</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>) – Whether to display additional information during the process. Defaults to <cite>False</cite>.</p></li>
+<li><p><strong>inputs_numerical_column_names</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of numerical column names in the dataset. If this parameter is <cite>None</cite>, the variables types must be
+managed by the user.</p></li>
+<li><p><strong>inputs_categorical_column_names</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of categorical column names in the dataset. If this parameter is <cite>None</cite>, the variables types must be
+managed by the user.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
