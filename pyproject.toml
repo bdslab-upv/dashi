@@ -28,12 +28,14 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Information Analysis",
+    Topic :: Scientific/Engineering :: Artificial Intelligence
     "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 
 [tool.credits]
-inspiration = "This library was inspired by the EHRtemporalVariability project by Harvard Medical School DBMI: https://github.com/hms-dbmi/EHRtemporalVariability"
+acknowledgements = "Funded by Agencia Estatal de Investigación—Proyectos de Generación de Conocimiento 2022, project KINEMAI (PID2022-138636OA-I00)."
+inspiration = "Part of the Python library dashi has been inspired by the R EHRtemporalVariability package, licensed under the Apache 2.0 License, and authored by part of this dashi library authors."
 
 [project.urls]
 "Homepage" = "https://github.com/bdslab-upv/dashi"
