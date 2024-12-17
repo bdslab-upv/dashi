@@ -16,7 +16,6 @@
 Main function for estimating models over multiple temporal or multi-source batches.
 """
 
-# MODULES IMPORT
 from typing import List, Dict, Optional
 
 import sklearn.metrics as skmet
@@ -29,7 +28,6 @@ from sklearn.preprocessing import LabelEncoder, RobustScaler
 from tqdm import tqdm
 
 
-# FUNCTION DEFINITION
 def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: List[str],
                                inputs_categorical_column_names: List[str],
                                output_regression_column_name: Optional[str] = None,
@@ -269,7 +267,7 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
                 model.fit(inputs_batch, outputs_batch)
 
             # Inference
-            # index correspondance extraction
+            # index correspondence extraction
             index2index_map = dict(enumerate(model.classes_))
             index2class_map_batch = {idx: index2class_map[index2index_map[idx]] for idx in index2index_map.keys()}
             # raw probabilities extraction
@@ -301,7 +299,6 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     return metrics
 
 
-# INPUTS CHECKING
 def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: List[str],
                   inputs_categorical_column_names: List[str], output_regression_column_name: Optional[str] = None,
                   output_classification_column_names: Optional[str] = None, date_column_name: Optional[str] = None,
@@ -428,7 +425,6 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: List[str],
             raise ValueError('Cumulative learning can only be applied to temporal batches.')
 
 
-# SPLITTING INDEXES OBTAINING
 def _generate_split_indexes(*, data: DataFrame, batching_column_name: str) -> dict:
     """
     Generate split indexes based on a specified batching column (e.g., time, source).
@@ -506,8 +502,6 @@ def _generate_split_indexes(*, data: DataFrame, batching_column_name: str) -> di
     return split_indexes_map
 
 
-# PERFORMANCE METRICS CALCULATION
-# Single-label pre-saturation classification metrics
 def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scores: ndarray,
                                               index2class_map: dict) -> dict:
     """
@@ -573,7 +567,6 @@ def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scor
     return metrics
 
 
-# Single-label post-saturation classification metrics
 def _get_postsaturation_classification_metrics(*, label_true: ndarray, label_predicted: ndarray,
                                                index2class_map: dict) -> dict:
     """
@@ -638,7 +631,6 @@ def _get_postsaturation_classification_metrics(*, label_true: ndarray, label_pre
     return metrics
 
 
-# Regression metrics
 def _get_regression_metrics(*, y_true: ndarray, y_pred: ndarray) -> dict:
     """
     Calculate regression metrics: Mean Absolute Error (MAE), Mean Squared Error (MSE), Root Mean Squared Error (RMSE)
