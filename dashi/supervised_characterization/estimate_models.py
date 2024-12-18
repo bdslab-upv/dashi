@@ -1,10 +1,21 @@
+# Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
-DESCRIPTION: main function for estimating models over multiple temporal or multi-source batches.
-AUTHOR: Pablo Ferri-Borredà
-DATE: 17/10/24
+Main function for estimating models over multiple temporal or multi-source batches.
 """
 
-# MODULES IMPORT
 from typing import List, Dict, Optional
 
 import sklearn.metrics as skmet
@@ -17,14 +28,13 @@ from sklearn.preprocessing import LabelEncoder, RobustScaler
 from tqdm import tqdm
 
 
-# FUNCTION DEFINITION
 def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: List[str],
-                                inputs_categorical_column_names: List[str],
-                                output_regression_column_name: Optional[str] = None,
-                                output_classification_column_name: Optional[str] = None,
-                                date_column_name: Optional[str] = None,
-                                period: Optional[str] = None, source_column_name: Optional[str] = None,
-                                learning_strategy: Optional[str] = 'from_scratch') -> Dict[str, float]:
+                               inputs_categorical_column_names: List[str],
+                               output_regression_column_name: Optional[str] = None,
+                               output_classification_column_name: Optional[str] = None,
+                               date_column_name: Optional[str] = None,
+                               period: Optional[str] = None, source_column_name: Optional[str] = None,
+                               learning_strategy: Optional[str] = 'from_scratch') -> Dict[str, float]:
     """
     Estimate models over multiple batches, either based on time (temporal) or source. RandomForest class weighted,
     define metrics,
@@ -62,6 +72,28 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     -------
     Dict[str, float]
         A dictionary containing the calculated metrics for each batch and model combination.
+        Regression metrics, if applicable:
+            - 'MEAN_ABSOLUTE_ERROR'
+            - 'MEAN_SQUARED_ERROR'
+            - 'ROOT_MEAN_SQUARED_ERROR'
+            - 'R_SQUARED'
+        Classification metrics, if applicable:
+            - 'AUC_{class_identifier}'
+            - 'AUC_MACRO'
+            - 'LOGLOSS'
+            - 'RECALL_{class_identifier}'
+            - 'PRECISION_{class_identifier}'
+            - 'F1-SCORE_{class_identifier}'
+            - 'ACCURACY'
+            - 'RECALL_MACRO'
+            - 'RECALL_MICRO'
+            - 'RECALL_WEIGHTED'
+            - 'PRECISION_MACRO'
+            - 'PRECISION_MICRO'
+            - 'PRECISION_WEIGHTED'
+            - 'F1-SCORE_MACRO'
+            - 'F1-SCORE_MICRO'
+            - 'F1-SCORE_WEIGHTED'
     """
 
     # Input checking
@@ -235,7 +267,7 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
                 model.fit(inputs_batch, outputs_batch)
 
             # Inference
-            # index correspondance extraction
+            # index correspondence extraction
             index2index_map = dict(enumerate(model.classes_))
             index2class_map_batch = {idx: index2class_map[index2index_map[idx]] for idx in index2index_map.keys()}
             # raw probabilities extraction
@@ -267,7 +299,6 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     return metrics
 
 
-# INPUTS CHECKING
 def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: List[str],
                   inputs_categorical_column_names: List[str], output_regression_column_name: Optional[str] = None,
                   output_classification_column_names: Optional[str] = None, date_column_name: Optional[str] = None,
@@ -394,7 +425,6 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: List[str],
             raise ValueError('Cumulative learning can only be applied to temporal batches.')
 
 
-# SPLITTING INDEXES OBTAINING
 def _generate_split_indexes(*, data: DataFrame, batching_column_name: str) -> dict:
     """
     Generate split indexes based on a specified batching column (e.g., time, source).
@@ -472,8 +502,6 @@ def _generate_split_indexes(*, data: DataFrame, batching_column_name: str) -> di
     return split_indexes_map
 
 
-# PERFORMANCE METRICS CALCULATION
-# Single-label pre-saturation classification metrics
 def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scores: ndarray,
                                               index2class_map: dict) -> dict:
     """
@@ -539,7 +567,6 @@ def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scor
     return metrics
 
 
-# Single-label post-saturation classification metrics
 def _get_postsaturation_classification_metrics(*, label_true: ndarray, label_predicted: ndarray,
                                                index2class_map: dict) -> dict:
     """
@@ -604,7 +631,6 @@ def _get_postsaturation_classification_metrics(*, label_true: ndarray, label_pre
     return metrics
 
 
-# Regression metrics
 def _get_regression_metrics(*, y_true: ndarray, y_pred: ndarray) -> dict:
     """
     Calculate regression metrics: Mean Absolute Error (MAE), Mean Squared Error (MSE), Root Mean Squared Error (RMSE)

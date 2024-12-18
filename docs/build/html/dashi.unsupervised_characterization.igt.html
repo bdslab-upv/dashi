@@ -92,17 +92,169 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="dashi-unsupervised-characterization-igt-igt-plotting-module">
-<h2>dashi.unsupervised_characterization.igt.igt_plotting module<a class="headerlink" href="#dashi-unsupervised-characterization-igt-igt-plotting-module" title="Link to this heading"></a></h2>
+<section id="module-dashi.unsupervised_characterization.igt.igt_plotting">
+<span id="dashi-unsupervised-characterization-igt-igt-plotting-module"></span><h2>dashi.unsupervised_characterization.igt.igt_plotting module<a class="headerlink" href="#module-dashi.unsupervised_characterization.igt.igt_plotting" title="Link to this heading"></a></h2>
+<p>Information Geometric Temporal (IGT) plotting main functions and classes</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.igt.igt_plotting.plot_IGT_projection">
+<span class="sig-name descname"><span class="pre">plot_IGT_projection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">igt_projection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_palette</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PlotColorPalette.Spectral</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/igt/igt_plotting.html#plot_IGT_projection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.igt.igt_plotting.plot_IGT_projection" title="Link to this definition"></a></dt>
+<dd><p>Plots an interactive Information Geometric Temporal (IGT) plot from an code{IGTProjection} object.
+An IGT plot visualizes the variability among time batches in a data repository in a 2D or 3D plot.
+Time batches are positioned as points where the distance between them represents the probabilistic
+distance between their distributions (currently Jensen-Shannon distance).
+To track the temporal evolution, temporal batches are labeled to show their date and
+colored according to their season or period, according to the analysis period, as follows.
+If period==”year” the label is “yy” (2 digit year) and the color is according to year.
+If period==”month” the label is “yym” (yy + abbreviated month*) and the color is according
+to the season (yearly).
+If period==”week” the label is “yymmw” (yym + ISO week number in 1-2 digit) and the color is
+according to the season (yearly). An estimated smoothed trajectory of the information evolution
+over time can be shown using the optional “trajectory” parameter.</p>
+<p>Note that since the projection is based on multidimensional scaling, a 2 dimensional
+projection entails a loss of information compared to a 3 dimensional projection. E.g., periodic
+variability components such as seasonal effect can be hindered by an abrupt change or a general trend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>igt_projection</strong> (<a class="reference internal" href="#dashi.unsupervised_characterization.igt.igt_projection.IGTProjection" title="dashi.unsupervised_characterization.igt.igt_projection.IGTProjection"><em>IGTProjection</em></a>) – The <cite>IGTProjection</cite> object containing the data for the temporal plot.</p></li>
+<li><p><strong>dimensions</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of dimensions to be used for plotting (2D or 3D). Default is 2.</p></li>
+<li><p><strong>start_date</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em><em>, </em><em>optional</em>) – The starting date for the temporal plot. If None, it is not constrained. Default is None.</p></li>
+<li><p><strong>end_date</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em><em>, </em><em>optional</em>) – The ending date for the temporal plot. If None, it is not constrained. Default is None.</p></li>
+<li><p><strong>color_palette</strong> (<a class="reference internal" href="dashi.html#dashi.constants.PlotColorPalette" title="dashi.constants.PlotColorPalette"><em>PlotColorPalette</em></a><em>, </em><em>optional</em>) – The color palette to be used for coloring the points. Default is Spectral.</p></li>
+<li><p><strong>trajectory</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, a smoothed trajectory showing the evolution of the information across time is plotted.
+Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Plotly figure object containing the IGT projection plot.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="dashi-unsupervised-characterization-igt-igt-projection-module">
-<h2>dashi.unsupervised_characterization.igt.igt_projection module<a class="headerlink" href="#dashi-unsupervised-characterization-igt-igt-projection-module" title="Link to this heading"></a></h2>
+<section id="module-dashi.unsupervised_characterization.igt.igt_projection">
+<span id="dashi-unsupervised-characterization-igt-igt-projection-module"></span><h2>dashi.unsupervised_characterization.igt.igt_projection module<a class="headerlink" href="#module-dashi.unsupervised_characterization.igt.igt_projection" title="Link to this heading"></a></h2>
+<p>Information Geometric Temporal class creation</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.igt.igt_projection.IGTProjection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IGTProjection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_temporal_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/igt/igt_projection.html#IGTProjection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.igt.igt_projection.IGTProjection" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class IGTProjection object contains the estimated Information Geometric Temporal projection
+of a DataTemporalMap or MultiVariateDataTemporalMap objects</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.igt.igt_projection.IGTProjection.data_temporal_map">
+<span class="sig-name descname"><span class="pre">data_temporal_map</span></span><a class="headerlink" href="#dashi.unsupervised_characterization.igt.igt_projection.IGTProjection.data_temporal_map" title="Link to this definition"></a></dt>
+<dd><p>A <cite>DataTemporalMap</cite> or ‘MultiVariateDataTemporalMap’ object containing the temporal data map
+that was used for generating the projection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[<a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap">DataTemporalMap</a>, <a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap">MultiVariateDataTemporalMap</a>, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.igt.igt_projection.IGTProjection.projection">
+<span class="sig-name descname"><span class="pre">projection</span></span><a class="headerlink" href="#dashi.unsupervised_characterization.igt.igt_projection.IGTProjection.projection" title="Link to this definition"></a></dt>
+<dd><p>A 2D matrix matrix of floats representing the lower-dimensional projection of the temporal data.
+Each row corresponds to a data timestamp, with each column representing a dimension of the projection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[List[List[float]], None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.igt.igt_projection.IGTProjection.embedding_type">
+<span class="sig-name descname"><span class="pre">embedding_type</span></span><a class="headerlink" href="#dashi.unsupervised_characterization.igt.igt_projection.IGTProjection.embedding_type" title="Link to this definition"></a></dt>
+<dd><p>A string representing the type of embedding used for the projection (e.g., “classicalmds”, “nonmetricmds”,
+“pca”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[str, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.igt.igt_projection.IGTProjection.stress">
+<span class="sig-name descname"><span class="pre">stress</span></span><a class="headerlink" href="#dashi.unsupervised_characterization.igt.igt_projection.IGTProjection.stress" title="Link to this definition"></a></dt>
+<dd><p>A float value representing the stress (or error) of the projection if it is available (used in MDS
+or similar techniques). The lower the stress value, the better the projection reflects the original data.
+This attribute is <cite>None</cite> if stress is not computed or available.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[float, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">data_temporal_map</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code><span class="pre">[</span><a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataTemporalMap</span></code></a><span class="pre">,</span> <a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiVariateDataTemporalMap</span></code></a><span class="pre">,</span> <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">embedding_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">projection</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code><span class="pre">]]]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">stress</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="dashi-unsupervised-characterization-igt-igt-projection-estimator-module">
-<h2>dashi.unsupervised_characterization.igt.igt_projection_estimator module<a class="headerlink" href="#dashi-unsupervised-characterization-igt-igt-projection-estimator-module" title="Link to this heading"></a></h2>
+<section id="module-dashi.unsupervised_characterization.igt.igt_projection_estimator">
+<span id="dashi-unsupervised-characterization-igt-igt-projection-estimator-module"></span><h2>dashi.unsupervised_characterization.igt.igt_projection_estimator module<a class="headerlink" href="#module-dashi.unsupervised_characterization.igt.igt_projection_estimator" title="Link to this heading"></a></h2>
+<p>Functions for Information Geometric Temporal creation</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.igt.igt_projection_estimator.estimate_igt_projection">
+<span class="sig-name descname"><span class="pre">estimate_igt_projection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_temporal_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'classicalmds'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/igt/igt_projection_estimator.html#estimate_igt_projection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.igt.igt_projection_estimator.estimate_igt_projection" title="Link to this definition"></a></dt>
+<dd><p>Estimates the Information Geometric Temporal (IGT) projection of a temporal data map, either a
+<cite>DataTemporalMap</cite>, <cite>MultiVariateDataTemporalMap</cite>, or a dictionary containing
+<cite>{label: MultiVariateDataTemporalMap}</cite>.</p>
+<p>The IGT projection is a technique to visualize the temporal relationships between data batches
+by projecting the data into a lower-dimensional space (e.g., 2D or 3D), with time batches represented
+as points. The distance between points reflects the probabilistic distance between the data distributions
+of those time batches.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_temporal_map</strong> (<em>Union</em><em>[</em><a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap"><em>DataTemporalMap</em></a><em>, </em><a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap"><em>MultiVariateDataTemporalMap</em></a><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap"><em>MultiVariateDataTemporalMap</em></a><em>]</em><em>]</em>) – The temporal data map to project. This can either be a <cite>DataTemporalMap</cite> (result of estimate_data_temporal_map),
+a <cite>MultiVariateDataTemporalMap</cite> (result of estimate_multidim_data_temporal_map), or a dictionary
+of <cite>MultiVariateDataTemporalMap</cite> objects where the keys are labels (result of estimate_multidim_concept_shift).</p></li>
+<li><p><strong>dimensions</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of dimensions to use for the projection (2 or 3). Defaults to 2.</p></li>
+<li><p><strong>start_date</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em><em>, </em><em>optional</em>) – The starting date for the temporal plot. If None, it is not constrained. Default is None.</p></li>
+<li><p><strong>end_date</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em><em>, </em><em>optional</em>) – The ending date for the temporal plot. If None, it is not constrained. Default is None.</p></li>
+<li><p><strong>embedding_type</strong> (<em>str</em><em>, </em><em>optional</em>) – The type of embedding technique to use for dimensionality reduction. Choices are
+‘classicalmds’ (Classical Multidimensional Scaling), ‘pca’ (Principal Component Analysis)
+and ‘nonmetricmds’ (Non Metric Multidimensional Scaling). Defaults to ‘classicalmds’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The estimated IGT projection.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#dashi.unsupervised_characterization.igt.igt_projection.IGTProjection" title="dashi.unsupervised_characterization.igt.igt_projection.IGTProjection">IGTProjection</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="dashi-unsupervised-characterization-igt-igt-trajectory-estimator-module">
-<h2>dashi.unsupervised_characterization.igt.igt_trajectory_estimator module<a class="headerlink" href="#dashi-unsupervised-characterization-igt-igt-trajectory-estimator-module" title="Link to this heading"></a></h2>
+<section id="module-dashi.unsupervised_characterization.igt.igt_trajectory_estimator">
+<span id="dashi-unsupervised-characterization-igt-igt-trajectory-estimator-module"></span><h2>dashi.unsupervised_characterization.igt.igt_trajectory_estimator module<a class="headerlink" href="#module-dashi.unsupervised_characterization.igt.igt_trajectory_estimator" title="Link to this heading"></a></h2>
 </section>
 <section id="module-dashi.unsupervised_characterization.igt">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-dashi.unsupervised_characterization.igt" title="Link to this heading"></a></h2>

@@ -810,10 +810,10 @@
         <span class="n">date_column_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">kde_resolution</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
         <span class="n">dimensions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="n">period</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="n">TEMPORAL_PERIOD_MONTH</span><span class="p">,</span>
+        <span class="n">period</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">TEMPORAL_PERIOD_MONTH</span><span class="p">,</span>
         <span class="n">start_date</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">end_date</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">dim_reduction</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="n">PCA</span><span class="p">,</span>
+        <span class="n">dim_reduction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;PCA&#39;</span><span class="p">,</span>
         <span class="n">scatter_plot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">:</span>
@@ -856,7 +856,8 @@
 <span class="sd">    dim_reduction: str</span>
 <span class="sd">        A dimensionality reduction technique to be used on the data. Default is `PCA` (Principal Component Analysis)</span>
 <span class="sd">        for numerical data. Other options can include &#39;MCA&#39; (Multiple Correspondence Analysis) for categorical data or</span>
-<span class="sd">        &#39;FAMD&#39; (Factor Analysis of Mixed Data) for mixed data.</span>
+<span class="sd">        &#39;FAMD&#39; (Factor Analysis of Mixed Data) for mixed data. Note: in case of using &#39;FAMD&#39;, numerical variables must be</span>
+<span class="sd">        in float type. Otherwise they will be treated as categorical.</span>
 
 <span class="sd">    scatter_plot: bool</span>
 <span class="sd">        Whether to generate a scatter plot of the first two principal components of the dimensionality reduction</span>
@@ -970,6 +971,7 @@
 
     <span class="k">if</span> <span class="n">scatter_plot</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Plotting </span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> 2D Scatter Plot&#39;</span><span class="p">)</span>
         <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
             <span class="n">reduced_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">],</span>
@@ -1000,6 +1002,7 @@
 
         <span class="p">)</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
 
     <span class="n">dtm</span> <span class="o">=</span> <span class="n">_generate_multivariate_dtm</span><span class="p">(</span><span class="n">reduced_data</span><span class="o">=</span><span class="n">reduced_data</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="n">period</span><span class="p">,</span> <span class="n">dates</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
                                      <span class="n">dimensions</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="o">=</span><span class="n">kde_resolution</span><span class="p">)</span>
@@ -1066,7 +1069,8 @@
 <span class="sd">    dim_reduction: str</span>
 <span class="sd">        A dimensionality reduction technique to be used on the data. Default is `PCA` (Principal Component Analysis)</span>
 <span class="sd">        for numerical data. Other options can include &#39;MCA&#39; (Multiple Correspondence Analysis) for categorical data or</span>
-<span class="sd">        &#39;FAMD&#39; (Factor Analysis of Mixed Data) for mixed data.</span>
+<span class="sd">        &#39;FAMD&#39; (Factor Analysis of Mixed Data) for mixed data. Note: in case of using &#39;FAMD&#39;, numerical variables must be</span>
+<span class="sd">        in float type. Otherwise they will be treated as categorical.</span>
 
 <span class="sd">    scatter_plot: bool</span>
 <span class="sd">        Whether to generate a scatter plot of the first two principal components of the dimensionality reduction</span>
@@ -1189,6 +1193,7 @@
     <span class="n">reduced_data</span><span class="p">[</span><span class="n">date_column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">dates</span>
 
     <span class="k">if</span> <span class="n">scatter_plot</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Plotting </span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> 2D Scatter Plot divided by class&#39;</span><span class="p">)</span>
         <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
@@ -1221,6 +1226,7 @@
 
         <span class="p">)</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
 
     <span class="n">reduced_data_by_label</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">label</span><span class="p">:</span> <span class="n">reduced_data</span><span class="p">[</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">label_column_name</span><span class="p">]</span> <span class="o">==</span> <span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>

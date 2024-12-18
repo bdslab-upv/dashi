@@ -84,7 +84,7 @@
 <span class="kn">from</span> <span class="nn">.arrange_metrics</span> <span class="kn">import</span> <span class="n">arrange_performance_metrics</span>
 
 <span class="c1"># SETTINGS</span>
-<span class="n">FONTSIZE</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="n">_FONTSIZE</span> <span class="o">=</span> <span class="mi">14</span>
 
 
 <div class="viewcode-block" id="plot_multibatch_performance">
@@ -129,12 +129,12 @@
 
     <span class="c1"># Plotting using Plotly</span>
     <span class="n">heatmap_data</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">(</span>
-        <span class="n">z</span><span class="o">=</span><span class="n">metrics_test_frame</span><span class="o">.</span><span class="n">iloc</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>  <span class="c1"># Values for the heatmap (reversed rows)</span>
+        <span class="n">z</span><span class="o">=</span><span class="n">metrics_test_frame</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>  <span class="c1"># Values for the heatmap (reversed rows)</span>
         <span class="n">x</span><span class="o">=</span><span class="n">metrics_test_frame</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>  <span class="c1"># Columns as x-axis</span>
         <span class="n">y</span><span class="o">=</span><span class="n">metrics_test_frame</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>  <span class="c1"># Rows as y-axis</span>
         <span class="n">colorscale</span><span class="o">=</span><span class="s1">&#39;RdYlGn&#39;</span><span class="p">,</span>  <span class="c1"># Color scale</span>
         <span class="n">colorbar</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">metric_name</span><span class="p">),</span>  <span class="c1"># Colorbar label</span>
-        <span class="n">zmid</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Center color (0 value centered)</span>
+        <span class="n">zmid</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>  <span class="c1"># Center color (0 value centered)</span>
         <span class="n">hovertemplate</span><span class="o">=</span><span class="s2">&quot;%</span><span class="si">{y}</span><span class="s2">&lt;br&gt;%</span><span class="si">{x}</span><span class="s2">: %</span><span class="si">{z:.3f}</span><span class="s2">&quot;</span><span class="p">,</span>  <span class="c1"># Tooltip on hover</span>
         <span class="n">showscale</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Display colorbar scale</span>
     <span class="p">)</span>
@@ -142,9 +142,9 @@
     <span class="c1"># Layout of the plot</span>
     <span class="n">layout</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span>
         <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">metric_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s1"> heatmap&#39;</span><span class="p">,</span>
-        <span class="n">xaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Test Batch&#39;</span><span class="p">,</span> <span class="n">tickangle</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">tickfont</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">FONTSIZE</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)),</span>
-        <span class="n">yaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Training Batch&#39;</span><span class="p">,</span> <span class="n">tickfont</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">FONTSIZE</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)),</span>
-        <span class="n">font</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">FONTSIZE</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="s2">&quot;serif&quot;</span><span class="p">),</span>
+        <span class="n">xaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Test Batch&#39;</span><span class="p">,</span> <span class="n">tickangle</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">tickfont</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">_FONTSIZE</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)),</span>
+        <span class="n">yaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Training Batch&#39;</span><span class="p">,</span> <span class="n">tickfont</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">_FONTSIZE</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)),</span>
+        <span class="n">font</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">_FONTSIZE</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="s2">&quot;serif&quot;</span><span class="p">),</span>
         <span class="n">template</span><span class="o">=</span><span class="s2">&quot;plotly_white&quot;</span>  <span class="c1"># Optional: use a clean white background template</span>
     <span class="p">)</span>
 
