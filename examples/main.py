@@ -3,7 +3,7 @@ import io
 import pandas as pd
 import requests
 
-from dashi import constants
+from dashi import _constants
 from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import \
     estimate_univariate_data_temporal_map
 from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter import \
@@ -33,7 +33,7 @@ VARIABLE = 'diagcode1'
 pd.set_option('display.max_columns', None)
 
 # Formatted dataset with dates
-dataset_formatted = format_data(dataframe, 'date', date_format='%y/%m', verbose=True)
+dataset_formatted = format_data(dataframe, date_format='%y/%m', verbose=True)
 
 
 prob_maps = estimate_univariate_data_temporal_map(data=dataset_formatted, date_column_name='date',

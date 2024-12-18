@@ -1,10 +1,27 @@
+# Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Utils functions
+"""
+
 from datetime import datetime
 from typing import Optional, List
 
-import numpy as np
 import pandas as pd
 
-from dashi.constants import MONTH_SHORT_ABBREVIATIONS, VALID_DATE_TYPE
+from dashi._constants import MONTH_SHORT_ABBREVIATIONS, VALID_DATE_TYPE
 
 
 def _format_date_for_year(date: datetime) -> str:
@@ -33,8 +50,8 @@ def format_data(input_dataframe: pd.DataFrame,
                 date_column_name: str = None,
                 date_format: str = '%y/%m/%d',
                 verbose: bool = False,
-                inputs_numerical_column_names: Optional[List[str]] = None,
-                inputs_categorical_column_names: Optional[List[str]] = None) -> pd.DataFrame:
+                numerical_column_names: Optional[List[str]] = None,
+                categorical_column_names: Optional[List[str]] = None) -> pd.DataFrame:
     """
     Function to transform dates into 'Date' Python format
 
@@ -52,13 +69,13 @@ def format_data(input_dataframe: pd.DataFrame,
     verbose: bool
         Whether to display additional information during the process. Defaults to `False`.
 
-    inputs_numerical_column_names: Optional[List[str]]
-        A list of numerical column names in the dataset. If this parameter is `None`, the variables types must be
-        managed by the user.
+    numerical_column_names: Optional[List[str]]
+        A list containing all the numerical column names in the dataset. If this parameter is `None`, the variables
+        types must be managed by the user.
 
-    inputs_categorical_column_names: Optional[List[str]]
-        A list of categorical column names in the dataset. If this parameter is `None`, the variables types must be
-        managed by the user.
+    categorical_column_names: Optional[List[str]]
+        A list containing all the categorical column names in the dataset. If this parameter is `None`, the variables
+        types must be managed by the user.
 
     Returns
     -------
@@ -70,12 +87,16 @@ def format_data(input_dataframe: pd.DataFrame,
 
     output_dataframe = input_dataframe.copy()
 
-    if inputs_numerical_column_names is not None:
-        for col in inputs_numerical_column_names:
+    if numerical_column_names is not None:
+        if verbose:
+            print('Formating numerical columns as float')
+        for col in numerical_column_names:
             output_dataframe[col] = output_dataframe[col].astype(float)
 
-    if inputs_categorical_column_names is not None:
-        for col in inputs_categorical_column_names:
+    if categorical_column_names is not None:
+        if verbose:
+            print('Formating categorical columns as category')
+        for col in categorical_column_names:
             output_dataframe[col] = output_dataframe[col].astype('category')
 
     if output_dataframe[date_column_name].dtype == VALID_DATE_TYPE:
@@ -110,11 +131,13 @@ def format_data(input_dataframe: pd.DataFrame,
     # If there are rows with na remove the complete rows
     date_rows_without_na = output_dataframe.dropna(subset=[date_column_name])
     if len(date_rows_without_na) == len(output_dataframe):
+        output_dataframe = output_dataframe.reset_index(drop=True)
         return output_dataframe
     else:
         output_dataframe = date_rows_without_na.copy()
         print(
             f'There are {len(output_dataframe) - len(date_rows_without_na)} rows that do not contain date information. They have been removed.')
+        output_dataframe = output_dataframe.reset_index(drop=True)
         return output_dataframe
 
 
