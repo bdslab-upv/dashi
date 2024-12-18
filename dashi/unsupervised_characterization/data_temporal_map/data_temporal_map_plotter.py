@@ -1,11 +1,20 @@
+# Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Data Temporal Map plotting main functions and classes
 """
-# Author: David Fernández Narro <dfernar@upv.edu.es>
-#         Ángel Sánchez García <ansan12a@upv.es>
-#         Pablo Ferri Borredá <pabferb2@upv.es>
-#         Carlos Sáez Silvestre <carsaesi@upv.es>
-#         Juan Miguel García Gómez <juanmig@upv.es>
 
 from datetime import datetime
 
@@ -13,13 +22,18 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.subplots as sp
+import plotly.io as pio
 from typing import Optional, Dict
 
-from dashi.constants import DataTemporalMapPlotSortingMethod, PlotColorPalette, \
-    DataTemporalMapPlotMode, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
+from dashi._constants import VALID_SORTING_METHODS, VALID_COLOR_PALETTES, \
+    VALID_PLOT_MODES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
 
-from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import DataTemporalMap, MultiVariateDataTemporalMap, \
-    trim_data_temporal_map
+from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (DataTemporalMap,
+                                                                                     MultiVariateDataTemporalMap,
+                                                                                     trim_data_temporal_map)
+
+# SETTINGS
+pio.renderers.default = 'browser'
 
 
 def plot_univariate_data_temporal_map(
@@ -30,9 +44,9 @@ def plot_univariate_data_temporal_map(
         end_value: Optional[int] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        sorting_method: DataTemporalMapPlotSortingMethod = DataTemporalMapPlotSortingMethod.Frequency,
-        color_palette: PlotColorPalette = PlotColorPalette.Spectral,
-        mode: DataTemporalMapPlotMode = DataTemporalMapPlotMode.Heatmap,
+        sorting_method: str = 'frequency',
+        color_palette: str = 'Spectral',
+        mode: str = 'heatmap',
         plot_title: Optional[str] = None
 ) -> go.Figure:
     """
@@ -61,14 +75,16 @@ def plot_univariate_data_temporal_map(
     end_date : datetime, optional
         The ending date for the plot (filters the data). If None, uses the last date in the data. Default is None.
 
-    sorting_method : DataTemporalMapPlotSortingMethod, optional
-        The method by which to sort the data for visualization. Default is Frequency.
+    sorting_method : str, optional
+        The method by which to sort the data for visualization (e.g., 'frequency', 'alphabetical').
+        Default is 'frequency'.
 
-    color_palette : PlotColorPalette, optional
-        The color palette to be used for the plot. Default is Spectral.
+    color_palette : str, optional
+        The color palette to be used for the plot (e.g., 'Spectral', 'viridis', 'viridis_r', 'magma', 'magma_r).
+        Default is 'Spectral'.
 
-    mode : DataTemporalMapPlotMode, optional
-        The mode of visualization (e.g., Heatmap, Series). Default is Heatmap.
+    mode : str, optional
+        The mode of visualization (e.g., 'heatmap', 'series'). Default is 'heatmap'.
 
     plot_title : str, optional
         The title of the plot. If None, a default title is used. Default is None.
@@ -82,13 +98,11 @@ def plot_univariate_data_temporal_map(
         raise TypeError('data_temporal_map must be of type DataTemporalMap. For multivariate plot'
                         ' use plot_multivariate_data_temporal_map function')
 
-    if not isinstance(mode, DataTemporalMapPlotMode) or \
-            mode.name not in [mode.name for mode in DataTemporalMapPlotMode]:
-        raise ValueError(f'mode must be one of the defined in DataTemporalMapPlotMode')
+    if mode not in VALID_PLOT_MODES:
+        raise ValueError(f'mode must be one of the defined in {VALID_PLOT_MODES}')
 
-    if not isinstance(color_palette, PlotColorPalette) or \
-            color_palette.name not in [palette.name for palette in PlotColorPalette]:
-        raise ValueError('color_palette must be one of the defined in PlotColorPalette')
+    if color_palette not in VALID_COLOR_PALETTES:
+        raise ValueError(f'color_palette must be one of the defined in {VALID_COLOR_PALETTES}')
 
     if not isinstance(absolute, bool):
         raise ValueError('absolute must be a logical value')
@@ -99,12 +113,10 @@ def plot_univariate_data_temporal_map(
     if not isinstance(start_value, int) and start_value < 1:
         raise ValueError('start_value must be greater or equal than 1')
 
-    if not isinstance(sorting_method, DataTemporalMapPlotSortingMethod) or \
-            sorting_method.name not in [method.name for method in DataTemporalMapPlotSortingMethod]:
-        raise ValueError('sorting_method must be one of the defined in DataTemporalMapPlotSortingMethod')
+    if sorting_method not in VALID_SORTING_METHODS:
+        raise ValueError(f'sorting_method must be one of the defined in {VALID_SORTING_METHODS}')
 
-    # TODO: check color scales for heatmap and series
-    color_scale = color_palette.value
+    color_scale = color_palette
 
     data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date, end_date)
 
@@ -119,7 +131,7 @@ def plot_univariate_data_temporal_map(
     variable_type = data_temporal_map.variable_type
 
     if variable_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
-        if sorting_method == DataTemporalMapPlotSortingMethod.Frequency:
+        if sorting_method == 'frequency':
             support_order = np.argsort(np.sum(temporal_map, axis=0))[::-1]
         else:
             support_order = np.argsort(support)
@@ -142,7 +154,7 @@ def plot_univariate_data_temporal_map(
 
     font = dict(size=20, color='#7f7f7f')
     x_axis = dict(title='Date',
-                  tickvals=np.unique(dates.year),
+                  tickvals=dates[::2],
                   titlefont=font,
                   type='date')
 
@@ -152,7 +164,7 @@ def plot_univariate_data_temporal_map(
     counts_subarray = [row[start_value:end_value] for row in temporal_map]
     counts_subarray = list(zip(*counts_subarray))  # Transpose the matrix
 
-    if mode == DataTemporalMapPlotMode.Heatmap:
+    if mode == 'heatmap':
         figure = go.Figure(
             data=go.Heatmap(
                 x=dates,
@@ -186,7 +198,7 @@ def plot_univariate_data_temporal_map(
                 plot_title = 'Absolute frequencies data temporal heatmap'
             figure.update_layout(title=plot_title)
 
-    elif mode == DataTemporalMapPlotMode.Series:
+    elif mode == 'series':
         figure = go.Figure()
 
         for i in range(start_value, end_value):
@@ -294,7 +306,7 @@ def plot_multivariate_data_temporal_map(
 
     font = dict(size=20, color='#7f7f7f')
     x_axis = dict(
-        tickvals=dates,
+        tickvals=dates[::2],
         tickfont=font,
         type='date')
 
@@ -378,9 +390,9 @@ def plot_conditional_data_temporal_map(
 
     labels = list(data_temporal_map_dict.keys())
     probability_map_dict = dict()
+    dates_dict = dict()
     for label, data_temporal_map in data_temporal_map_dict.items():
-        dates = data_temporal_map.dates
-
+        dates_dict[label] = data_temporal_map.dates
         supports = data_temporal_map.multivariate_support
         dimensions = len(supports)
 
@@ -412,25 +424,30 @@ def plot_conditional_data_temporal_map(
     for dim in range(dimensions):
         subplot = sp.make_subplots(rows=len(labels),
                                    cols=1,
-                                   shared_xaxes=True,
-                                   vertical_spacing=0.02
+                                   shared_xaxes=False,
+                                   vertical_spacing=0.04
                                    )
 
         font = dict(size=20, color='#7f7f7f')
-        x_axis = dict(
-            tickvals=dates,
-            tickfont=font,
-            type='date'
-        )
 
         for label, probability_map_list in probability_map_dict.items():
+            dates = dates_dict[label]
+
+            x_axis = dict(
+                tickvals=dates[::2],
+                tickfont={
+                    'size': 12,
+                },
+                type='date'
+            )
+
             temporal_map = probability_map_list[dim]
             support = np.array(temporal_map.columns)
             counts_subarray = [row for row in temporal_map.values]
             counts_subarray = list(zip(*counts_subarray))
 
             figure = go.Heatmap(
-                x=dates,
+                x=dates.astype(str),
                 y=support,
                 z=counts_subarray,
                 reversescale=True,
@@ -452,16 +469,16 @@ def plot_conditional_data_temporal_map(
             else:
                 subplot.update_xaxes(x_axis, row=labels.index(label) + 1, col=1)
 
-        subplot.update_layout(xaxis=x_axis,
-                              autosize=True,
-                              height=min(300 * len(labels), 800),
-                              showlegend=False,
-                              template='plotly_white',
-                              margin=dict(t=60, r=20, b=60, l=60),
-                              coloraxis=dict(
-                                  colorscale='Spectral_r'
-                              )
-                              )
+        subplot.update_layout(
+            autosize=True,
+            height=min(300 * len(labels), 800),
+            showlegend=False,
+            template='plotly_white',
+            margin=dict(t=60, r=20, b=60, l=60),
+            coloraxis=dict(
+                colorscale='Spectral_r'
+            )
+        )
 
         plot_title = f'Probability distribution data temporal heatmap of Principal Component {dim + 1}'
         if absolute:
