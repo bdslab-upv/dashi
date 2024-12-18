@@ -1,10 +1,21 @@
+# Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
-DESCRIPTION: main function for multi-batch metrics exploration.
-AUTHOR: Pablo Ferri-Borredà
-DATE: 17/10/24
+Main function for multi-batch metrics exploration.
 """
 
-# MODULES IMPORT
 from typing import Dict
 
 import plotly.graph_objects as go
@@ -12,7 +23,6 @@ import plotly.io as pio
 
 from .arrange_metrics import arrange_performance_metrics
 
-# SETTINGS
 _FONTSIZE = 14
 
 
@@ -35,8 +45,30 @@ def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) 
         The `dataset_type` should be `'test'` to include the metric in the heatmap.
 
     metric_name : str
-        The name of the metric to visualize (e.g., 'accuracy', 'loss', etc.).
+        The name of the metric to visualize.
         The function will filter metrics based on this identifier and only plot those for the 'test' set.
+        Regression metric names, when applicable:
+            - 'MEAN_ABSOLUTE_ERROR'
+            - 'MEAN_SQUARED_ERROR'
+            - 'ROOT_MEAN_SQUARED_ERROR'
+            - 'R_SQUARED'
+        Classification metric names, when applicable:
+            - 'AUC_{class_identifier}'
+            - 'AUC_MACRO'
+            - 'LOGLOSS'
+            - 'RECALL_{class_identifier}'
+            - 'PRECISION_{class_identifier}'
+            - 'F1-SCORE_{class_identifier}'
+            - 'ACCURACY'
+            - 'RECALL_MACRO'
+            - 'RECALL_MICRO'
+            - 'RECALL_WEIGHTED'
+            - 'PRECISION_MACRO'
+            - 'PRECISION_MICRO'
+            - 'PRECISION_WEIGHTED'
+            - 'F1-SCORE_MACRO'
+            - 'F1-SCORE_MICRO'
+            - 'F1-SCORE_WEIGHTED'
 
     Returns
     -------

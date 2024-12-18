@@ -49,7 +49,7 @@
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dashi.supervised_characterization package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization.arrange_metrics">dashi.supervised_characterization.arrange_metrics module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dashi-supervised-characterization-estimate-models-module">dashi.supervised_characterization.estimate_models module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization.estimate_models">dashi.supervised_characterization.estimate_models module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization.plot_performance">dashi.supervised_characterization.plot_performance module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization">Module contents</a></li>
 </ul>
@@ -131,8 +131,39 @@ filtering the relevant metrics.</p>
 </dd></dl>
 
 </section>
-<section id="dashi-supervised-characterization-estimate-models-module">
-<h2>dashi.supervised_characterization.estimate_models module<a class="headerlink" href="#dashi-supervised-characterization-estimate-models-module" title="Link to this heading"></a></h2>
+<section id="module-dashi.supervised_characterization.estimate_models">
+<span id="dashi-supervised-characterization-estimate-models-module"></span><h2>dashi.supervised_characterization.estimate_models module<a class="headerlink" href="#module-dashi.supervised_characterization.estimate_models" title="Link to this heading"></a></h2>
+<p>DESCRIPTION: main function for estimating models over multiple temporal or multi-source batches.
+AUTHOR: Pablo Ferri-Borredà
+DATE: 17/10/24</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.supervised_characterization.estimate_models.estimate_multibatch_models">
+<span class="sig-name descname"><span class="pre">estimate_multibatch_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_numerical_column_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_categorical_column_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_regression_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_classification_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'from_scratch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/estimate_models.html#estimate_multibatch_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.estimate_models.estimate_multibatch_models" title="Link to this definition"></a></dt>
+<dd><p>Estimate models over multiple batches, either based on time (temporal) or source. RandomForest class weighted,
+define metrics,</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>DataFrame</em>) – The input data containing both numerical and categorical features, as well as the target variables.</p></li>
+<li><p><strong>inputs_numerical_column_names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of column names representing numerical input features.</p></li>
+<li><p><strong>inputs_categorical_column_names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of column names representing categorical input features.</p></li>
+<li><p><strong>output_regression_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name for the regression target variable, if applicable.</p></li>
+<li><p><strong>output_classification_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name for the classification target variable, if applicable.</p></li>
+<li><p><strong>date_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name containing date or time information for temporal batching, if applicable.</p></li>
+<li><p><strong>period</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Period for batching the data (‘month’ or ‘year’) when using temporal batching.</p></li>
+<li><p><strong>source_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name representing the source of the data (for multi-source batching).</p></li>
+<li><p><strong>learning_strategy</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default='from_scratch'</em>) – Defines the learning strategy: ‘from_scratch’ or ‘cumulative’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing the calculated metrics for each batch and model combination.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-dashi.supervised_characterization.plot_performance">
 <span id="dashi-supervised-characterization-plot-performance-module"></span><h2>dashi.supervised_characterization.plot_performance module<a class="headerlink" href="#module-dashi.supervised_characterization.plot_performance" title="Link to this heading"></a></h2>
