@@ -1,6 +1,20 @@
-# Temporal periods
-from enum import Enum
+# Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
+# Allowed variables in the code
+
+# Temporal periods
 TEMPORAL_PERIOD_WEEK = 'week'
 TEMPORAL_PERIOD_MONTH = 'month'
 TEMPORAL_PERIOD_YEAR = 'year'
@@ -25,27 +39,26 @@ MISSING_VALUE = 'NA'
 MONTH_SHORT_ABBREVIATIONS = ['J', 'F', 'M', 'A', 'm', 'j', 'x', 'a', 'S', 'O', 'N', 'D']
 MONTH_LONG_ABBREVIATIONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-# Dimensionality reduction methods
+# Dimensionality reduction
 FAMD = 'FAMD'
 PCA = 'PCA'
 MCA = 'MCA'
 VALID_DIM_REDUCTION_TYPES = [FAMD, PCA, MCA]
 
+# Sorting method
+Frequency = 'frequency'
+Alphabetical = 'alphabetical'
+VALID_SORTING_METHODS = [Frequency, Alphabetical]
 
-# Temporal map plotting sorting method
-class DataTemporalMapPlotSortingMethod(Enum):
-    Frequency = 'frequency'
-    Alphabetical = 'alphabetical'
+# Plot mode
+Heatmap = 'heatmap'
+Series = 'series'
+VALID_PLOT_MODES = [Heatmap, Series]
 
-
-class DataTemporalMapPlotMode(Enum):
-    Heatmap = 'heatmap'
-    Series = 'series'
-
-
-class PlotColorPalette(Enum):
-    Spectral = 'Spectral'
-    Viridis = 'viridis'
-    Viridis_reversed = 'viridis_r'
-    Magma = 'magma'
-    Magma_reversed = 'magma_r'
+# Color scale
+Spectral = 'Spectral'
+Viridis = 'viridis'
+Viridis_reversed = 'viridis_r'
+Magma = 'magma'
+Magma_reversed = 'magma_r'
+VALID_COLOR_PALETTES = [Spectral, Viridis,Viridis_reversed, Magma, Magma_reversed]

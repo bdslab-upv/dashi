@@ -1,11 +1,20 @@
+# Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Data Temporal Map main functions and classes
 """
-# Author: David Fernández Narro <dfernar@upv.edu.es>
-#         Ángel Sánchez García <ansan12a@upv.es>
-#         Pablo Ferri Borredá <pabferb2@upv.es>
-#         Carlos Sáez Silvestre <carsaesi@upv.es>
-#         Juan Miguel García Gómez <juanmig@upv.es>
 
 import warnings
 from dataclasses import dataclass
@@ -19,7 +28,7 @@ import pandas as pd
 import plotly.express as px
 from scipy.stats import gaussian_kde
 
-from dashi.constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, \
+from dashi._constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, \
     VALID_INTEGER_TYPE, VALID_FLOAT_TYPE, \
     VALID_DATE_TYPE, TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_YEAR, VALID_CONVERSION_STRING_TYPE, \
     MISSING_VALUE, VALID_TYPES_WITHOUT_DATE, VALID_DIM_REDUCTION_TYPES, PCA, MCA, FAMD
@@ -924,7 +933,7 @@ def estimate_conditional_data_temporal_map(
         label_column_name: str,
         kde_resolution: int = 10,
         dimensions: int = 2,
-        period: str = TEMPORAL_PERIOD_MONTH,
+        period: str = 'month',
         start_date: pd.Timestamp = None,
         end_date: pd.Timestamp = None,
         dim_reduction: str = PCA,
@@ -1208,13 +1217,17 @@ def _generate_multivariate_dtm(reduced_data, period, dates, verbose, dimensions,
         print('Estimating the data temporal maps')
 
     if dimensions == 2:
-        kde2 = reduced_data.groupby(dates_for_batching).apply(
-            lambda group: _compute_kde(reduced_data.iloc[group.index, :], xmin[:2], xmax[:2], kde_resolution)).tolist()
+        kde2 = (reduced_data.groupby(dates_for_batching).apply(
+            lambda group: _compute_kde(reduced_data.iloc[group.index, :], xmin[:2], xmax[:2], kde_resolution)
+            if group.shape[0] > dimensions else None)
+                .dropna()
+                ).to_list()
         probability_map_2d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde2])
         multivariate_probability_map_2d = [_normalize_kde(kde) for kde in kde2]
         multivariate_support_2d = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin[:2], xmax[:2])]
         total_data_over_time = dates_for_batching.value_counts().sort_index().to_numpy().reshape(-1, 1)
-        counts_map_2d = (probability_map_2d * total_data_over_time).round()
+        counts_map_2d = ((probability_map_2d * total_data_over_time[total_data_over_time > dimensions].reshape(-1, 1))
+                         .round())
         multivariate_counts_map_2d = [(temporal_map * total_data_over_time[i, 0]).round() for i, temporal_map in
                                       enumerate(multivariate_probability_map_2d)]
 
@@ -1223,7 +1236,7 @@ def _generate_multivariate_dtm(reduced_data, period, dates, verbose, dimensions,
             multivariate_probability_map=multivariate_probability_map_2d,
             counts_map=counts_map_2d,
             multivariate_counts_map=multivariate_counts_map_2d,
-            dates=pd.to_datetime(unique_dates),
+            dates=pd.to_datetime(unique_dates[total_data_over_time.flatten() > dimensions]),
             support=pd.DataFrame(range(0, kde_resolution ** 2)),
             multivariate_support=multivariate_support_2d,
             variable_name='Dim.reduced.2D',
@@ -1231,13 +1244,17 @@ def _generate_multivariate_dtm(reduced_data, period, dates, verbose, dimensions,
             period=period
         )
     elif dimensions == 3:
-        kde3 = reduced_data.groupby(dates_for_batching).apply(
-            lambda group: _compute_kde(reduced_data.iloc[group.index, :], xmin, xmax, kde_resolution)).tolist()
+        kde3 = (reduced_data.groupby(dates_for_batching).apply(
+            lambda group: _compute_kde(reduced_data.iloc[group.index, :], xmin, xmax, kde_resolution)
+            if group.shape[0] > dimensions else None)
+            .dropna()
+            ).tolist()
         probability_map_3d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde3])
         multivariate_probability_map_3d = [_normalize_kde(kde) for kde in kde3]
         multivariate_support_3d = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin, xmax)]
         total_data_over_time = dates_for_batching.value_counts().sort_index().to_numpy().reshape(-1, 1)
-        counts_map_3d = (probability_map_3d * total_data_over_time).round()
+        counts_map_3d = ((probability_map_3d * total_data_over_time[total_data_over_time > dimensions].reshape(-1, 1))
+                         .round())
         multivariate_counts_map_3d = [(temporal_map * total_data_over_time[i, 0]).round() for i, temporal_map in
                                       enumerate(multivariate_probability_map_3d)]
 
@@ -1246,7 +1263,7 @@ def _generate_multivariate_dtm(reduced_data, period, dates, verbose, dimensions,
             multivariate_probability_map=multivariate_probability_map_3d,
             counts_map=counts_map_3d,
             multivariate_counts_map=multivariate_counts_map_3d,
-            dates=pd.to_datetime(unique_dates),
+            dates=pd.to_datetime(unique_dates[total_data_over_time.flatten() > dimensions]),
             support=pd.DataFrame(range(0, kde_resolution ** 3)),
             multivariate_support=multivariate_support_3d,
             variable_name='Dim.reduced.3D',

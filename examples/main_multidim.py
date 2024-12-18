@@ -4,7 +4,7 @@ import requests
 import pandas as pd
 
 
-from dashi import constants
+from dashi import _constants
 from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (estimate_multivariate_data_temporal_map,
                                                                                          estimate_conditional_data_temporal_map, estimate_univariate_data_temporal_map)
 from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter import plot_univariate_data_temporal_map, \
@@ -25,7 +25,7 @@ dataset = pd.read_csv(dataset_string, sep=',', na_values='')
 dataset = dataset.iloc[:, 0:12]
 
 DATE_COLUMN = 'date'
-dataset_formated = format_data(dataset, DATE_COLUMN, '%y/%m')
+dataset_formated = format_data(dataset)
 dataset_formated['age'] = dataset_formated['age'].astype(float)
 dataset_formated['newborn'] = dataset_formated['newborn'].astype(object)
 dataset_formated['race'] = dataset_formated['race'].astype(object)
