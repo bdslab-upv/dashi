@@ -841,6 +841,19 @@ def estimate_multivariate_data_temporal_map(
         dates = pd.Series(data_without_date_column.index)
         data_without_date_column = data_without_date_column.reset_index(drop=True)
 
+    if period == TEMPORAL_PERIOD_MONTH:
+        dates_for_batching = pd.to_datetime(dates).dt.to_period('M').astype('str')
+        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='MS')
+        unique_dates = pd.to_datetime(full_range)
+    if period == TEMPORAL_PERIOD_YEAR:
+        dates_for_batching = pd.to_datetime(dates).dt.to_period('Y').astype('str')
+        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='YS')
+        unique_dates = pd.to_datetime(full_range)
+    if period == TEMPORAL_PERIOD_WEEK:
+        dates_for_batching = pd.to_datetime(dates).dt.to_period('W').astype('str')
+        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='W-SUN')
+        unique_dates = pd.to_datetime(full_range)
+
     if verbose:
         print(f'Total number of columns to analyze: {number_of_columns}')
         print(f'Analysis period: {period}')
@@ -887,6 +900,10 @@ def estimate_multivariate_data_temporal_map(
         method = prince.MCA(n_components=dimensions, random_state=112)
         reduced_data = method.fit_transform(data_without_date_column)
 
+    reduced_data[[date_column_name]] = pd.DataFrame({
+        date_column_name: pd.to_datetime(dates_for_batching)
+    })
+
     if scatter_plot:
         if verbose:
             warnings.filterwarnings('ignore', category=FutureWarning)
@@ -922,7 +939,15 @@ def estimate_multivariate_data_temporal_map(
         fig.show()
         warnings.filterwarnings('default', category=FutureWarning)
 
-    dtm = _generate_multivariate_dtm(reduced_data=reduced_data, period=period, dates=dates, verbose=verbose,
+    value_counts = reduced_data[date_column_name].value_counts(sort=False)
+    dates_info = {
+        'period': period,
+        'unique_dates': unique_dates,
+        'value_counts': value_counts,
+        'date_column_name': date_column_name
+    }
+
+    dtm = _generate_multivariate_dtm(reduced_data=reduced_data, dates_info=dates_info, verbose=verbose,
                                      dimensions=dimensions, kde_resolution=kde_resolution)
     return dtm
 
@@ -936,7 +961,7 @@ def estimate_conditional_data_temporal_map(
         period: str = 'month',
         start_date: pd.Timestamp = None,
         end_date: pd.Timestamp = None,
-        dim_reduction: str = PCA,
+        dim_reduction: str = 'PCA',
         scatter_plot: bool = False,
         verbose: bool = False
 ) -> Dict[str, MultiVariateDataTemporalMap]:
@@ -1040,7 +1065,6 @@ def estimate_conditional_data_temporal_map(
 
     # Separate analysis data from analysis dates
     labels_columns = data[label_column_name]
-    unique_labels = np.unique(labels_columns)
     dates = data[date_column_name]
     data_without_date_column = data.drop(columns=[date_column_name, label_column_name])
     number_of_columns = len(data_without_date_column.columns)
@@ -1055,6 +1079,19 @@ def estimate_conditional_data_temporal_map(
         data_without_date_column = data_without_date_column.loc[start_date:end_date]
         dates = pd.Series(data_without_date_column.index)
         data_without_date_column = data_without_date_column.reset_index(drop=True)
+
+    if period == TEMPORAL_PERIOD_MONTH:
+        dates_for_batching = pd.to_datetime(dates).dt.to_period('M').astype('str')
+        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='MS')
+        unique_dates = pd.to_datetime(full_range)
+    if period == TEMPORAL_PERIOD_YEAR:
+        dates_for_batching = pd.to_datetime(dates).dt.to_period('Y').astype('str')
+        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='YS')
+        unique_dates = pd.to_datetime(full_range)
+    if period == TEMPORAL_PERIOD_WEEK:
+        dates_for_batching = pd.to_datetime(dates).dt.to_period('W').astype('str')
+        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='W-SUN')
+        unique_dates = pd.to_datetime(full_range)
 
     if verbose:
         print(f'Total number of columns to analyze: {number_of_columns}')
@@ -1103,9 +1140,10 @@ def estimate_conditional_data_temporal_map(
         method = prince.MCA(n_components=dimensions, random_state=112)
         reduced_data = method.fit_transform(data_without_date_column)
 
-    # Divide reduced data by the labels
-    reduced_data[label_column_name] = labels_columns
-    reduced_data[date_column_name] = dates
+    reduced_data[[label_column_name, date_column_name]] = pd.DataFrame({
+        label_column_name: labels_columns,
+        date_column_name: pd.to_datetime(dates_for_batching)
+    })
 
     if scatter_plot:
         warnings.filterwarnings('ignore', category=FutureWarning)
@@ -1144,13 +1182,8 @@ def estimate_conditional_data_temporal_map(
         warnings.filterwarnings('default', category=FutureWarning)
 
     reduced_data_by_label = {
-        label: reduced_data[reduced_data[label_column_name] == label].reset_index(drop=True).drop(
-            columns=[label_column_name, date_column_name])
-        for label in unique_labels}
-
-    reduced_dates_by_label = {
-        label: reduced_data[reduced_data[label_column_name] == label][date_column_name].reset_index(drop=True) for label
-        in unique_labels
+        label: group.drop(columns=[label_column_name]).reset_index(drop=True)
+        for label, group in reduced_data.groupby(label_column_name, observed=True)
     }
 
     # Generate DTMs
@@ -1158,9 +1191,16 @@ def estimate_conditional_data_temporal_map(
     for label, concept_data in reduced_data_by_label.items():
         if verbose:
             print(f'Label :{label}')
-        reduced_dates = reduced_dates_by_label[label]
-        dtm = _generate_multivariate_dtm(reduced_data=concept_data, period=period, dates=reduced_dates, verbose=verbose,
-                                         dimensions=dimensions, kde_resolution=kde_resolution)
+
+        value_counts = concept_data[date_column_name].value_counts(sort=False)
+        dates_info = {
+            'period': period,
+            'unique_dates': unique_dates,
+            'value_counts': value_counts[value_counts > dimensions],
+            'date_column_name': date_column_name
+        }
+        dtm = _generate_multivariate_dtm(reduced_data=concept_data, dates_info=dates_info,
+                                         verbose=verbose, dimensions=dimensions, kde_resolution=kde_resolution)
         concept_maps_dict[label] = dtm
 
     return concept_maps_dict
@@ -1190,84 +1230,101 @@ def _normalize_kde(kde_values):
     return kde_values / np.sum(kde_values)  # Normalize
 
 
-def _generate_multivariate_dtm(reduced_data, period, dates, verbose, dimensions, kde_resolution):
+def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kde_resolution):
     """
     Generates a MultiVariateDataTemporalMap object from the reduced multivariate data by applying Kernel
     Density Estimation (KDE) of the data over time. This function processes the data in
     the specified temporal period (e.g., weekly, monthly, yearly) and computes the joint probability distribution
     of the multivariate time series.
     """
-    xmin = reduced_data.min(axis=0)
-    xmax = reduced_data.max(axis=0)
-
-    if period == TEMPORAL_PERIOD_MONTH:
-        dates_for_batching = pd.to_datetime(dates).dt.to_period('M').astype('str')
-        unique_dates = sorted(dates_for_batching.unique())
-        unique_dates = pd.to_datetime(unique_dates)
-    elif period == TEMPORAL_PERIOD_YEAR:
-        dates_for_batching = pd.to_datetime(dates).dt.year
-        unique_dates = sorted(dates_for_batching.unique())
-        unique_dates = pd.to_datetime([f'{year}-01-01' for year in unique_dates])
-    elif period == TEMPORAL_PERIOD_WEEK:
-        dates_for_batching = pd.to_datetime(dates).dt.to_period('W').astype('str')
-        unique_dates = sorted(dates_for_batching.unique())
-        unique_dates = pd.to_datetime(unique_dates)
+    xmin = reduced_data.drop(columns=dates_info['date_column_name']).min(axis=0)
+    xmax = reduced_data.drop(columns=dates_info['date_column_name']).max(axis=0)
 
     if verbose:
         print('Estimating the data temporal maps')
 
     if dimensions == 2:
-        kde2 = (reduced_data.groupby(dates_for_batching).apply(
-            lambda group: _compute_kde(reduced_data.iloc[group.index, :], xmin[:2], xmax[:2], kde_resolution)
-            if group.shape[0] > dimensions else None)
-                .dropna()
-                ).to_list()
+        kde2 = list()
+        for date in dates_info['unique_dates']:
+            if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
+                kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
+                    columns=[dates_info['date_column_name']]),
+                                   xmin[:2], xmax[:2], kde_resolution)
+                kde2.append(kde)
+            else:
+                if verbose:
+                    print(f'Not enough data for calculating {date} probability map.')
+                kde = np.full((kde_resolution, kde_resolution), np.nan)
+                kde2.append(kde)
+
         probability_map_2d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde2])
         multivariate_probability_map_2d = [_normalize_kde(kde) for kde in kde2]
         multivariate_support_2d = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin[:2], xmax[:2])]
-        total_data_over_time = dates_for_batching.value_counts().sort_index().to_numpy().reshape(-1, 1)
-        counts_map_2d = ((probability_map_2d * total_data_over_time[total_data_over_time > dimensions].reshape(-1, 1))
-                         .round())
-        multivariate_counts_map_2d = [(temporal_map * total_data_over_time[i, 0]).round() for i, temporal_map in
-                                      enumerate(multivariate_probability_map_2d)]
+        non_nan_mask = ~np.isnan(probability_map_2d).any(axis=1)
+        non_nan_probability_map_2d = probability_map_2d[non_nan_mask]
+        non_nan_counts_map_2d = np.round(non_nan_probability_map_2d * dates_info['value_counts'].values[:, np.newaxis])
+        counts_map_2d = np.full(probability_map_2d.shape, np.nan)
+        counts_map_2d[non_nan_mask] = non_nan_counts_map_2d
+        multivariate_counts_map_2d = list()
+        index = 0
+        for prob_map in multivariate_probability_map_2d:
+            if np.isnan(prob_map).any():
+                multivariate_counts_map_2d.append(prob_map)
+            else:
+                multivariate_counts_map_2d.append(np.round(prob_map * dates_info['value_counts'].iloc[index]))
+                index += 1
 
         dtm = MultiVariateDataTemporalMap(
             probability_map=probability_map_2d,
             multivariate_probability_map=multivariate_probability_map_2d,
             counts_map=counts_map_2d,
             multivariate_counts_map=multivariate_counts_map_2d,
-            dates=pd.to_datetime(unique_dates[total_data_over_time.flatten() > dimensions]),
+            dates=dates_info['unique_dates'],
             support=pd.DataFrame(range(0, kde_resolution ** 2)),
             multivariate_support=multivariate_support_2d,
             variable_name='Dim.reduced.2D',
             variable_type='float64',
-            period=period
+            period=dates_info['period']
         )
     elif dimensions == 3:
-        kde3 = (reduced_data.groupby(dates_for_batching).apply(
-            lambda group: _compute_kde(reduced_data.iloc[group.index, :], xmin, xmax, kde_resolution)
-            if group.shape[0] > dimensions else None)
-            .dropna()
-            ).tolist()
+        kde3 = list()
+        for date in dates_info['unique_dates']:
+            if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
+                kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
+                    columns=[dates_info['date_column_name']]),
+                                   xmin, xmax, kde_resolution)
+                kde3.append(kde)
+            else:
+                kde = np.full((kde_resolution, kde_resolution, kde_resolution), np.nan)
+                kde3.append(kde)
+
         probability_map_3d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde3])
         multivariate_probability_map_3d = [_normalize_kde(kde) for kde in kde3]
         multivariate_support_3d = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin, xmax)]
-        total_data_over_time = dates_for_batching.value_counts().sort_index().to_numpy().reshape(-1, 1)
-        counts_map_3d = ((probability_map_3d * total_data_over_time[total_data_over_time > dimensions].reshape(-1, 1))
-                         .round())
-        multivariate_counts_map_3d = [(temporal_map * total_data_over_time[i, 0]).round() for i, temporal_map in
-                                      enumerate(multivariate_probability_map_3d)]
+        non_nan_mask = ~np.isnan(probability_map_3d).any(axis=1)
+        non_nan_probability_map_3d = probability_map_3d[non_nan_mask]
+        non_nan_counts_map_3d = np.round(non_nan_probability_map_3d * dates_info['value_counts'].values[:, np.newaxis])
+        counts_map_3d = np.full(probability_map_3d.shape, np.nan)
+        counts_map_3d[non_nan_mask] = non_nan_counts_map_3d
+        multivariate_counts_map_3d = list()
+        index = 0
+        for prob_map in multivariate_probability_map_3d:
+            if np.isnan(prob_map).any():
+                multivariate_counts_map_3d.append(prob_map)
+            else:
+                multivariate_counts_map_3d.append(np.round(prob_map * dates_info['value_counts'].iloc[index]))
+                index += 1
 
         dtm = MultiVariateDataTemporalMap(
             probability_map=probability_map_3d,
             multivariate_probability_map=multivariate_probability_map_3d,
             counts_map=counts_map_3d,
             multivariate_counts_map=multivariate_counts_map_3d,
-            dates=pd.to_datetime(unique_dates[total_data_over_time.flatten() > dimensions]),
+            dates=dates_info['unique_dates'],
             support=pd.DataFrame(range(0, kde_resolution ** 3)),
             multivariate_support=multivariate_support_3d,
             variable_name='Dim.reduced.3D',
             variable_type='float64',
-            period=period
+            period=dates_info['period']
         )
     return dtm
