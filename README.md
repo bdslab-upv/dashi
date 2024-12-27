@@ -40,48 +40,21 @@ pip install dashi
 Or install from source:
 
 ```bash
-git clone https://github.com/yourusername/my_library.git
-cd my_library
+git clone https://github.com/bdslab-upv/dashi
+cd dashi
 pip install .
 ```
 
-## Usage
+## Usage & Examples
 
-Here’s a basic example of how to use `my_library`:
-
-```python
-from my_library import some_function
-
-# Example usage
-result = some_function(args)
-print(result)
-```
-
-### More Examples
+Here’s a basic example of how to use `dashi`:
 
 Find more examples in the [examples](examples/) directory.
 
+
 ## Documentation
 
-Detailed documentation is available at [Documentation Link](https://example.com/docs).
-
-## Contributing
-
-Contributions are welcome! Please check out the [contributing guidelines](CONTRIBUTING.md) for more details.
-
-### Running Tests
-
-To run tests, first install the testing dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Then run the tests using `pytest`:
-
-```bash
-pytest
-```
+Detailed documentation is available at [WIP](https://example.com/docs).
 
 ## License
 
