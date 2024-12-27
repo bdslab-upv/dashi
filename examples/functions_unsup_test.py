@@ -22,6 +22,7 @@ date_column_name = 'DATE'
 date_format = '%d/%m/%Y'
 period = 'month'
 verbose = True
+dimensions = 2
 inputs_numerical_column_names = ['PT08.S1(CO)', 'PT08.S3(NOx)', 'PT08.S4(NO2)', 'PT08.S5(O3)', 'RH', 'T', 'C6H6(GT)']
 inputs_categorical_column_names = ['AH_LEVEL', 'NO2(GT)_RISK', 'ZONE']
 label_column_name = 'NO2(GT)_RISK'
@@ -29,9 +30,9 @@ reduction_method = 'FAMD'
 pio.renderers.default = 'browser'
 
 # TESTING FLAGS
-UNIVARIATE = True
+UNIVARIATE = False
 CONDITIONAL = True
-MULTIVARIATE = True
+MULTIVARIATE = False
 IGT = False
 
 # DATA LOADING
@@ -66,21 +67,31 @@ if CONDITIONAL:
     # DATA TEMPORAL MAP CALCULATION | CONDITIONAL
     probs_maps_conditional = estimate_conditional_data_temporal_map(
         data=dataset_formatted, date_column_name=date_column_name, period=period, label_column_name=label_column_name,
-        dim_reduction=reduction_method
+        dim_reduction=reduction_method, dimensions=dimensions, verbose=verbose
     )
 
     # DATA TEMPORAL MAP PLOTTING | CONDITIONAL
     plot_conditional_data_temporal_map(probs_maps_conditional)
 
+    igt_conditional = estimate_igt_projection(probs_maps_conditional, dimensions=dimensions,
+                                              embedding_type='classicalmds')
+
+    plot_IGT_projection(igt_conditional, dimensions=dimensions, trajectory=False, color_palette='viridis')
+
 if MULTIVARIATE:
     # DATA TEMPORAL MAP CALCULATION | MULTIVARIATE
     probs_maps_multivariate = estimate_multivariate_data_temporal_map(
         data=dataset_without_label, date_column_name=date_column_name, period=period, dim_reduction=reduction_method,
-        verbose=verbose, scatter_plot=True
+        verbose=verbose, scatter_plot=True, dimensions=dimensions
     )
 
     # DATA TEMPORAL MAP PLOTTING | MULTIVARIATE
     plot_multivariate_data_temporal_map(probs_maps_multivariate)
+
+    igt_multivariate = estimate_igt_projection(probs_maps_multivariate, dimensions=dimensions,
+                                               embedding_type='pca')
+
+    plot_IGT_projection(igt_multivariate, dimensions=dimensions, trajectory=False, color_palette='viridis')
 
 if IGT:
     # DATA TEMPORAL MAP CALCULATION | UNIVARIATE

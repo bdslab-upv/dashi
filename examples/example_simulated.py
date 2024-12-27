@@ -13,12 +13,12 @@ from dashi.unsupervised_characterization.igt.igt_projection_estimator import est
 from dashi.utils import format_data
 
 # EXAMPLE DATASET
-path = r'C:\Users\David\Desktop\Datasets\Simulated_Carlos\uci_heart_disease_full_simulshift_pcamix_csswitch_dim1_2y_nout 1.csv'
+path = r'C:\Users\David\Desktop\Datasets\Simulated_Carlos\uci_heart_disease_simulshift_pcamix_cs_4y.csv'
 # Read the CSV file
 dataset = pd.read_csv(path, sep=';')
 
 DATE_COLUMN = 'synthetic_date'
-CATEGORICAL_VARIABLES = ['sex', 'cp', 'fbs', 'restecg', 'slope', 'thal', 'ca', 'source', 'class_label']
+CATEGORICAL_VARIABLES = ['sex', 'cp', 'fbs', 'restecg', 'slope', 'thal', 'ca', 'exang']
 NUMERICAL_VARIABLES = ['age', 'trestbps', 'chol', 'thalach']
 dataset_formated = format_data(dataset, date_column_name=DATE_COLUMN, date_format='%Y-%m-%d',
                                numerical_column_names=NUMERICAL_VARIABLES,
@@ -27,71 +27,77 @@ dataset_formated['oldpeak'] = pd.Series(map(lambda x: float(x.replace(',', '.'))
 
 LABEL_NAME = 'class_label'
 data_without_label = dataset_formated.drop(columns=[LABEL_NAME])
-DIMENSIONS = 3
+DIMENSIONS = 2
 PERIOD = 'month'
 REDUCTION_METHOD = 'FAMD'
 SORTING_METHOD = 'frequency'
 
 UNSUPERVISED = True
+PRIOR_PROBABILITY_SHIFT = False
+COVARIATE = True
+CONDITIONAL = False
 SUPERVISED = False
 
 # UNSUPERVISED
 if UNSUPERVISED:
-    # Prior probability shift
-    prob_maps = estimate_univariate_data_temporal_map(data=dataset_formated, date_column_name=DATE_COLUMN,
-                                                      period=PERIOD, numeric_smoothing=False,
-                                                      verbose=True)
+    if PRIOR_PROBABILITY_SHIFT:
+        # Prior probability shift
+        prob_maps = estimate_univariate_data_temporal_map(data=dataset_formated, date_column_name=DATE_COLUMN,
+                                                          period=PERIOD, numeric_smoothing=False,
+                                                          verbose=True)
 
-    plot_univariate_data_temporal_map(data_temporal_map=prob_maps[LABEL_NAME], absolute=False,
-                                      sorting_method=SORTING_METHOD,
-                                      color_palette='Spectral',
-                                      mode='series')
+        plot_univariate_data_temporal_map(data_temporal_map=prob_maps[LABEL_NAME], absolute=False,
+                                          sorting_method=SORTING_METHOD,
+                                          color_palette='Spectral',
+                                          mode='series')
 
-    prior_igt_projection = estimate_igt_projection(
-        data_temporal_map=prob_maps[LABEL_NAME],
-        dimensions=DIMENSIONS,
-        embedding_type='classicalmds'
-    )
+        prior_igt_projection = estimate_igt_projection(
+            data_temporal_map=prob_maps[LABEL_NAME],
+            dimensions=DIMENSIONS,
+            embedding_type='classicalmds'
+        )
 
-    plot_IGT_projection(prior_igt_projection,
-                        dimensions=DIMENSIONS,
-                        trajectory=True,
-                        color_palette='Spectral')
+        plot_IGT_projection(prior_igt_projection,
+                            dimensions=DIMENSIONS,
+                            trajectory=True,
+                            color_palette='Spectral')
 
-    # Covariate shift
-    dtm = estimate_multivariate_data_temporal_map(data=data_without_label, date_column_name=DATE_COLUMN, kde_resolution=20,
-                                                  dimensions=DIMENSIONS, period=PERIOD,
-                                                  dim_reduction=REDUCTION_METHOD, scatter_plot=False, verbose=True)
+    if COVARIATE:
+        # Covariate shift
+        dtm = estimate_multivariate_data_temporal_map(data=data_without_label, date_column_name=DATE_COLUMN, kde_resolution=20,
+                                                      dimensions=DIMENSIONS, period=PERIOD,
+                                                      dim_reduction=REDUCTION_METHOD, scatter_plot=False, verbose=True)
 
-    plot_multivariate_data_temporal_map(data_temporal_map=dtm)
+        plot_multivariate_data_temporal_map(data_temporal_map=dtm)
 
-    igt_proj_covariate = estimate_igt_projection(dtm,
-                                                 dimensions=DIMENSIONS,
-                                                 embedding_type='classicalmds')
+        igt_proj_covariate = estimate_igt_projection(dtm,
+                                                     dimensions=DIMENSIONS,
+                                                     embedding_type='classicalmds')
 
-    plot_IGT_projection(igt_proj_covariate,
-                        dimensions=DIMENSIONS,
-                        trajectory=True,
-                        color_palette='Spectral')
+        plot_IGT_projection(igt_proj_covariate,
+                            dimensions=DIMENSIONS,
+                            trajectory=True,
+                            color_palette='Spectral')
 
-    # Concept shift
+    if CONDITIONAL:
+        # Concept shift
 
-    dtm_concept_shift = estimate_conditional_data_temporal_map(data=dataset_formated, date_column_name=DATE_COLUMN,
-                                                               label_column_name=LABEL_NAME, kde_resolution=30,
-                                                               dimensions=DIMENSIONS, period=PERIOD,
-                                                               dim_reduction=REDUCTION_METHOD, scatter_plot=True,
-                                                               verbose=True)
+        dtm_concept_shift = estimate_conditional_data_temporal_map(data=dataset_formated, date_column_name=DATE_COLUMN,
+                                                                   label_column_name=LABEL_NAME, kde_resolution=30,
+                                                                   dimensions=DIMENSIONS, period=PERIOD,
+                                                                   dim_reduction=REDUCTION_METHOD, scatter_plot=True,
+                                                                   verbose=True)
 
-    plot_conditional_data_temporal_map(data_temporal_map_dict=dtm_concept_shift)
+        plot_conditional_data_temporal_map(data_temporal_map_dict=dtm_concept_shift)
 
-    igt_proj_concept = estimate_igt_projection(dtm_concept_shift,
-                                               dimensions=DIMENSIONS,
-                                               embedding_type='classicalmds')
+        igt_proj_concept = estimate_igt_projection(dtm_concept_shift,
+                                                   dimensions=DIMENSIONS,
+                                                   embedding_type='classicalmds')
 
-    plot_IGT_projection(igt_proj_concept,
-                        dimensions=DIMENSIONS,
-                        trajectory=True,
-                        color_palette='Spectral')
+        plot_IGT_projection(igt_proj_concept,
+                            dimensions=DIMENSIONS,
+                            trajectory=True,
+                            color_palette='Spectral')
 
 # SUPERVISED
 if SUPERVISED:

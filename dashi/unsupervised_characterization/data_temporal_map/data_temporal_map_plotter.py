@@ -305,10 +305,7 @@ def plot_multivariate_data_temporal_map(
                                )
 
     font = dict(size=20, color='#7f7f7f')
-    x_axis = dict(
-        tickvals=dates[::2],
-        tickfont=font,
-        type='date')
+    x_axis_tickvals = dates[::2]
 
     for i, temporal_map in enumerate(probability_map_list):
         support = np.array(temporal_map.columns)
@@ -325,36 +322,34 @@ def plot_multivariate_data_temporal_map(
 
         subplot.add_trace(figure, row=i + 1, col=1)
 
-        y_axis = dict(
+        subplot.update_yaxes(
             title=f'PC {i + 1}',
             titlefont=font,
             automargin=True,
+            row=i + 1,
+            col=1
         )
 
-        subplot.update_yaxes(y_axis, row=i + 1, col=1)
+        subplot.update_xaxes(
+            tickvals=x_axis_tickvals,
+            tickfont={'size': 12},
+            type='date',
+            title_text='Date' if i == dimensions - 1 else None,
+            title_font=font if i == dimensions - 1 else None,
+            row=i + 1,
+            col=1
+        )
 
-        if i == dimensions - 1:
-            subplot.update_xaxes(title_text="Date", title_font=font, row=i + 1, col=1)
-        else:
-            subplot.update_xaxes(x_axis, row=i + 1, col=1)
-
-    subplot.update_layout(xaxis=x_axis,
-                          autosize=True,
-                          height=min(300 * dimensions, 800),
-                          showlegend=False,
-                          template='plotly_white',
-                          margin=dict(t=60, r=20, b=60, l=60),
-                          coloraxis=dict(
-                              colorscale='Spectral_r'
-                          )
-                          )
-    if plot_title is not None:
-        subplot.update_layout(title=plot_title)
-    else:
-        plot_title = 'Probability distribution data temporal heatmap'
-        if absolute:
-            plot_title = 'Absolute frequencies data temporal heatmap'
-        subplot.update_layout(title=plot_title)
+    subplot.update_layout(
+        autosize=True,
+        height=min(300 * dimensions, 800),
+        showlegend=False,
+        template='plotly_white',
+        margin=dict(t=60, r=20, b=60, l=60),
+        coloraxis=dict(colorscale='Spectral_r'),
+        title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
+              f'data temporal heatmap'
+    )
 
     subplot.show()
     return subplot
@@ -424,7 +419,7 @@ def plot_conditional_data_temporal_map(
     for dim in range(dimensions):
         subplot = sp.make_subplots(rows=len(labels),
                                    cols=1,
-                                   shared_xaxes=False,
+                                   shared_xaxes=True,
                                    vertical_spacing=0.04
                                    )
 
@@ -432,15 +427,7 @@ def plot_conditional_data_temporal_map(
 
         for label, probability_map_list in probability_map_dict.items():
             dates = dates_dict[label]
-
-            x_axis = dict(
-                tickvals=dates[::2],
-                tickfont={
-                    'size': 12,
-                },
-                type='date'
-            )
-
+            x_axis_tickvals = dates[::2]
             temporal_map = probability_map_list[dim]
             support = np.array(temporal_map.columns)
             counts_subarray = [row for row in temporal_map.values]
@@ -456,18 +443,23 @@ def plot_conditional_data_temporal_map(
 
             subplot.add_trace(figure, row=labels.index(label) + 1, col=1)
 
-            y_axis = dict(
+            subplot.update_yaxes(
                 title=f'Label: {label}',
                 titlefont=font,
                 automargin=True,
+                row=labels.index(label) + 1,
+                col=1
             )
 
-            subplot.update_yaxes(y_axis, row=labels.index(label) + 1, col=1)
-
-            if labels.index(label) == len(labels) - 1:
-                subplot.update_xaxes(title_text='Date', title_font=font, row=labels.index(label) + 1, col=1)
-            else:
-                subplot.update_xaxes(x_axis, row=labels.index(label) + 1, col=1)
+            subplot.update_xaxes(
+                tickvals=x_axis_tickvals,
+                tickfont={'size': 12},
+                type='date',
+                title_text='Date' if labels.index(label) == len(labels) - 1 else None,
+                title_font=font if labels.index(label) == len(labels) - 1 else None,
+                row=labels.index(label) + 1,
+                col=1
+            )
 
         subplot.update_layout(
             autosize=True,
@@ -475,14 +467,9 @@ def plot_conditional_data_temporal_map(
             showlegend=False,
             template='plotly_white',
             margin=dict(t=60, r=20, b=60, l=60),
-            coloraxis=dict(
-                colorscale='Spectral_r'
-            )
+            coloraxis=dict(colorscale='Spectral_r'),
+            title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
+                  f'data temporal heatmap of Principal Component {dim + 1}'
         )
-
-        plot_title = f'Probability distribution data temporal heatmap of Principal Component {dim + 1}'
-        if absolute:
-            plot_title = f'Absolute frequencies data temporal heatmap of Principal Component {dim + 1}'
-        subplot.update_layout(title=plot_title)
 
         subplot.show()
