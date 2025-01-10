@@ -16,7 +16,6 @@
 Main function for multi-batch metrics exploration.
 """
 
-# MODULES IMPORT
 from typing import Dict
 
 import plotly.graph_objects as go
@@ -25,7 +24,6 @@ from plotly.colors import get_colorscale
 
 from .arrange_metrics import arrange_performance_metrics
 
-# SETTINGS
 _FONTSIZE = 14
 
 
