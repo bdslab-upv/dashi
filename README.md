@@ -83,7 +83,7 @@ Part of the Python library `dashi` has been inspired by the R [EHRtemporalVariab
 
 ## Authorship
 
-- **Authors:** David Fernández-Narro (UPV), Pablo Ferri Borredá (UPV), Ángel Sánchez-García (UPV), Juan M García-Gómez (UPV), Carlos Sáez (UPV)
+- **Authors:** David Fernández Narro (UPV), Pablo Ferri Borredá (UPV), Ángel Sánchez-García (UPV), Juan M García-Gómez (UPV), Carlos Sáez (UPV)
 
 - **Contact:** carsaesi@upv.es
 
