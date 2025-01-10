@@ -943,7 +943,7 @@ def estimate_multivariate_data_temporal_map(
     dates_info = {
         'period': period,
         'unique_dates': unique_dates,
-        'value_counts': value_counts,
+        'value_counts': value_counts[value_counts > dimensions],
         'date_column_name': date_column_name
     }
 
