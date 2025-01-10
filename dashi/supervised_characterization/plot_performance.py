@@ -21,6 +21,7 @@ from typing import Dict
 
 import plotly.graph_objects as go
 import plotly.io as pio
+from plotly.colors import get_colorscale
 
 from .arrange_metrics import arrange_performance_metrics
 
@@ -88,14 +89,19 @@ def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) 
     # Metrics arrangement
     metrics_test_frame = arrange_performance_metrics(metrics=metrics, metric_name=metric_name)
 
+    # Color scale definition
+    colorscale = get_colorscale('RdYlGn')
+    if metric_name in ('MEAN_ABSOLUTE_ERROR', 'MEAN_SQUARED_ERROR', 'ROOT_MEAN_SQUARED_ERROR', 'LOGLOSS'):
+        colorscale = colorscale[::-1]
+
     # Plotting using Plotly
     heatmap_data = go.Heatmap(
-        z=metrics_test_frame.values,  # Values for the heatmap (reversed rows)
+        z=metrics_test_frame.iloc[::-1].values,  # Values for the heatmap (reversed rows)
         x=metrics_test_frame.columns,  # Columns as x-axis
         y=metrics_test_frame.index,  # Rows as y-axis
-        colorscale='RdYlGn',  # Color scale
+        colorscale=colorscale,  # Color scale
         colorbar=dict(title=metric_name),  # Colorbar label
-        zmid=0.5,  # Center color (0 value centered)
+        zmid=0,  # Center color (0 value centered)
         hovertemplate="%{y}<br>%{x}: %{z:.3f}",  # Tooltip on hover
         showscale=True  # Display colorbar scale
     )

@@ -30,8 +30,8 @@ from tqdm import tqdm
 
 
 # FUNCTION DEFINITION
-def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: List[str],
-                               inputs_categorical_column_names: List[str],
+def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: Optional[str] = None,
+                               inputs_categorical_column_names: Optional[str] = None,
                                output_regression_column_name: Optional[str] = None,
                                output_classification_column_name: Optional[str] = None,
                                date_column_name: Optional[str] = None,
@@ -46,11 +46,11 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     data : DataFrame
         The input data containing both numerical and categorical features, as well as the target variables.
 
-    inputs_numerical_column_names : List[str]
-        List of column names representing numerical input features.
+    inputs_numerical_column_names : Optional[str], default=None
+        List of column names representing numerical input features, if applicable.
 
-    inputs_categorical_column_names : List[str]
-        List of column names representing categorical input features.
+    inputs_categorical_column_names : Optional[str], default=None
+        List of column names representing categorical input features, if applicable.
 
     output_regression_column_name : Optional[str], default=None
         Column name for the regression target variable, if applicable.
@@ -146,14 +146,15 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
         raise ValueError('This casuistry has not been implemented yet.')
 
     # One-hot encoding for categorical features
-    inputs_categorical_columns_ = inputs_categorical_column_names.copy()
-    for cat_col in inputs_categorical_columns_:
-        data_encoded = get_dummies(data[cat_col], prefix=cat_col, prefix_sep='-', drop_first=False)
-        data = concat([data, data_encoded], axis=1)
-        data = data.drop(columns=[cat_col])
+    if inputs_categorical_column_names is not None:
+        inputs_categorical_columns_ = inputs_categorical_column_names.copy()
+        for cat_col in inputs_categorical_columns_:
+            data_encoded = get_dummies(data[cat_col], prefix=cat_col, prefix_sep='-', drop_first=False)
+            data = concat([data, data_encoded], axis=1)
+            data = data.drop(columns=[cat_col])
 
-        inputs_categorical_column_names.remove(cat_col)
-        inputs_categorical_column_names.extend(list(data_encoded.columns))
+            inputs_categorical_column_names.remove(cat_col)
+            inputs_categorical_column_names.extend(list(data_encoded.columns))
 
     # Generate split indexes based on batching
     split_indexes = _generate_split_indexes(data=data, batching_column_name=batching_column_name)
@@ -213,22 +214,30 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
         else:
             raise ValueError('Unconsidered casuistry.')
 
-        # Continuous features preprocessing
-        #   data selection
-        data_batch_cont = data_batch[inputs_numerical_column_names]
-        #   scaler initialization and training (if required)
-        if data_set == 'train':
-            # scaler initialization
-            robust_scaler = RobustScaler()
-            # scaler training
-            robust_scaler.fit(data_batch_cont)
-        #   scaling
-        data_batch[inputs_numerical_column_names] = robust_scaler.transform(data_batch_cont)
+        # Continuous features preprocessing, required
+        if inputs_numerical_column_names is not None:
+            #   data selection
+            data_batch_cont = data_batch[inputs_numerical_column_names]
+            #   scaler initialization and training (if required)
+            if data_set == 'train':
+                # scaler initialization
+                robust_scaler = RobustScaler()
+                # scaler training
+                robust_scaler.fit(data_batch_cont)
+            #   scaling
+            data_batch[inputs_numerical_column_names] = robust_scaler.transform(data_batch_cont)
 
         # Inputs extraction
-        inputs_batch = concat(
-            [data_batch[inputs_numerical_column_names], data_batch[inputs_categorical_column_names]], axis=1
-        )
+        if inputs_numerical_column_names is not None and inputs_categorical_column_names is not None:
+            inputs_batch = concat(
+                [data_batch[inputs_numerical_column_names], data_batch[inputs_categorical_column_names]], axis=1
+            )
+        elif inputs_numerical_column_names is not None and inputs_categorical_column_names is None:
+            inputs_batch = data_batch[inputs_numerical_column_names]
+        elif inputs_numerical_column_names is None and inputs_categorical_column_names is not None:
+            inputs_batch = data_batch[inputs_categorical_column_names]
+        else:
+            raise ValueError('At least one feature needs to be specified.')
 
         # Regression pipeline
         if output_regression_column_name is not None:
@@ -302,8 +311,9 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
 
 
 # INPUTS CHECKING
-def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: List[str],
-                  inputs_categorical_column_names: List[str], output_regression_column_name: Optional[str] = None,
+def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: Optional[str] = None,
+                  inputs_categorical_column_names: Optional[str] = None,
+                  output_regression_column_name: Optional[str] = None,
                   output_classification_column_names: Optional[str] = None, date_column_name: Optional[str] = None,
                   period: Optional[str] = None, source_column_name: Optional[str] = None,
                   learning_strategy: Optional[str] = 'from_scratch') -> None:
@@ -315,11 +325,11 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: List[str],
     data : DataFrame
         The input data containing features and target variables.
 
-    inputs_numerical_column_names : List[str]
-        List of column names representing numerical input features.
+    inputs_numerical_column_names : Optional[str], default=None
+        List of column names representing numerical input features, if applicable.
 
-    inputs_categorical_column_names : List[str]
-        List of column names representing categorical input features.
+    inputs_categorical_column_names : Optional[str], default=None
+        List of column names representing categorical input features, if applicable.
 
     output_regression_column_name : Optional[str], default=None
         Column name for the regression target variable, if applicable.
@@ -379,25 +389,39 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: List[str],
     if date_column_name is not None and source_column_name is not None:
         raise ValueError('Just one batching column can be considered (date or source but not both simultaneously).')
 
-    # Inputs numerical columns
-    if type(inputs_numerical_column_names) is not list:
-        raise TypeError('Numerical inputs columns need to be encapsulated in a list.')
-    for inp_num_col in inputs_numerical_column_names:
-        if type(inp_num_col) is not str:
-            raise TypeError('Numerical input column must be specified as a string.')
+    # Inputs numerical columns names
+    if inputs_numerical_column_names is not None:
+        if type(inputs_numerical_column_names) is not list:
+            raise TypeError('Numerical inputs columns need to be encapsulated in a list.')
         else:
-            if inp_num_col not in data.columns:
-                raise ValueError('Numerical input column not found in the current data frame.')
+            if len(inputs_numerical_column_names) == 0:
+                raise ValueError('Numerical inputs column names list is void.')
+            else:
+                for inp_num_col in inputs_numerical_column_names:
+                    if type(inp_num_col) is not str:
+                        raise TypeError('Numerical input column must be specified as a string.')
+                    else:
+                        if inp_num_col not in data.columns:
+                            raise ValueError('Numerical input column not found in the current data frame.')
 
-    # Inputs categorical columns
-    if type(inputs_categorical_column_names) is not list:
-        raise TypeError('Categorical inputs columns need to be encapsulated in a list.')
-    for inp_cat_col in inputs_categorical_column_names:
-        if type(inp_cat_col) is not str:
-            raise TypeError('Categorical input column must be specified as a string.')
+    # Inputs categorical columns names
+    if inputs_categorical_column_names is not None:
+        if type(inputs_categorical_column_names) is not list:
+            raise TypeError('Categorical inputs columns need to be encapsulated in a list.')
         else:
-            if inp_cat_col not in data.columns:
-                raise ValueError('Categorical input column not found in the current data frame.')
+            if len(inputs_categorical_column_names) == 0:
+                raise ValueError('Categorical inputs column names list is void.')
+            else:
+                for inp_cat_col in inputs_categorical_column_names:
+                    if type(inp_cat_col) is not str:
+                        raise TypeError('Categorical input column must be specified as a string.')
+                    else:
+                        if inp_cat_col not in data.columns:
+                            raise ValueError('Categorical input column not found in the current data frame.')
+
+    # Inputs numerical columns names and inputs categorical columns names
+    if inputs_numerical_column_names is None and inputs_categorical_column_names is None:
+        raise ValueError('At least one input feature needs to be specified.')
 
     # Output regression column
     if output_regression_column_name is not None:
