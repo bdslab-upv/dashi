@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Temporal periods
-from enum import Enum
+# Allowed variables in the code
 
+# Temporal periods
 TEMPORAL_PERIOD_WEEK = 'week'
 TEMPORAL_PERIOD_MONTH = 'month'
 TEMPORAL_PERIOD_YEAR = 'year'
@@ -27,7 +27,7 @@ VALID_INTEGER_TYPE = 'int64'
 VALID_DEFAULT_STRING_TYPE = 'object'  # recommended string type, more efficient than object
 VALID_STRING_TYPE = 'object'  # recommended string type, more efficient than object # string
 VALID_CONVERSION_STRING_TYPE = 'object'  # recommended string type, more efficient than object #string
-VALID_CATEGORICAL_TYPE = 'category'  # ?
+VALID_CATEGORICAL_TYPE = 'category'
 VALID_TYPES_WITHOUT_DATE = [VALID_INTEGER_TYPE, VALID_STRING_TYPE, VALID_FLOAT_TYPE,
                             VALID_CATEGORICAL_TYPE]  # Pandas types
 VALID_TYPES = VALID_TYPES_WITHOUT_DATE + [VALID_DATE_TYPE]  # Pandas types
@@ -39,27 +39,26 @@ MISSING_VALUE = 'NA'
 MONTH_SHORT_ABBREVIATIONS = ['J', 'F', 'M', 'A', 'm', 'j', 'x', 'a', 'S', 'O', 'N', 'D']
 MONTH_LONG_ABBREVIATIONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-# Dimensionality reduction methods
+# Dimensionality reduction
 FAMD = 'FAMD'
 PCA = 'PCA'
 MCA = 'MCA'
 VALID_DIM_REDUCTION_TYPES = [FAMD, PCA, MCA]
 
+# Sorting method
+Frequency = 'frequency'
+Alphabetical = 'alphabetical'
+VALID_SORTING_METHODS = [Frequency, Alphabetical]
 
-# Temporal map plotting sorting method
-class DataTemporalMapPlotSortingMethod(Enum):
-    Frequency = 'frequency'
-    Alphabetical = 'alphabetical'
+# Plot mode
+Heatmap = 'heatmap'
+Series = 'series'
+VALID_PLOT_MODES = [Heatmap, Series]
 
-
-class DataTemporalMapPlotMode(Enum):
-    Heatmap = 'heatmap'
-    Series = 'series'
-
-
-class PlotColorPalette(Enum):
-    Spectral = 'Spectral'
-    Viridis = 'viridis'
-    Viridis_reversed = 'viridis_r'
-    Magma = 'magma'
-    Magma_reversed = 'magma_r'
+# Color scale
+Spectral = 'Spectral'
+Viridis = 'viridis'
+Viridis_reversed = 'viridis_r'
+Magma = 'magma'
+Magma_reversed = 'magma_r'
+VALID_COLOR_PALETTES = [Spectral, Viridis,Viridis_reversed, Magma, Magma_reversed]

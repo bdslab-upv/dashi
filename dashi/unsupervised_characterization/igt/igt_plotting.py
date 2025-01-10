@@ -1,24 +1,36 @@
+# Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Information Geometric Temporal (IGT) plotting main functions and classes
 """
-# Author: David Fernández Narro <dfernar@upv.edu.es>
-#         Ángel Sánchez García <ansan12a@upv.es>
-#         Pablo Ferri Borredá <pabferb2@upv.es>
-#         Carlos Sáez Silvestre <carsaesi@upv.es>
-#         Juan Miguel García Gómez <juanmig@upv.es>
 
 from datetime import datetime
 from typing import Optional
 
 import numpy as np
 import plotly.graph_objs as go
+import plotly.io as pio
 from plotly.colors import sample_colorscale
 
-from dashi.constants import PlotColorPalette, TEMPORAL_PERIOD_YEAR, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK, \
+from dashi._constants import VALID_COLOR_PALETTES, TEMPORAL_PERIOD_YEAR, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK, \
     MONTH_LONG_ABBREVIATIONS
 from dashi.unsupervised_characterization.igt.igt_projection import IGTProjection
 from dashi.unsupervised_characterization.igt.igt_trajectory_estimator import _estimate_igt_trajectory
 from dashi.utils import _format_date_for_year, _format_date_for_month, _format_date_for_week
+
+pio.renderers.default = 'browser'
 
 
 def plot_IGT_projection(
@@ -26,7 +38,7 @@ def plot_IGT_projection(
         dimensions: int = 2,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        color_palette: PlotColorPalette = PlotColorPalette.Spectral,
+        color_palette: str = 'Spectral',
         trajectory: bool = False
 ) -> go.Figure:
     """
@@ -77,9 +89,8 @@ def plot_IGT_projection(
         raise ValueError(
             'Currently IGT plot can only be made on 2 or 3 dimensions, please set dimensions parameter accordingly')
 
-    if not isinstance(color_palette, PlotColorPalette) or \
-            color_palette.name not in [palette.name for palette in PlotColorPalette]:
-        raise ValueError('color_palette must be one of the defined in PlotColorPalette')
+    if color_palette not in VALID_COLOR_PALETTES:
+        raise ValueError(f'color_palette must be one of the defined in {VALID_COLOR_PALETTES}')
 
     if not start_date:
         start_date = min(igt_projection.data_temporal_map.dates)
@@ -105,9 +116,9 @@ def plot_IGT_projection(
     period_colors = []
 
     if period == TEMPORAL_PERIOD_YEAR:
-        colors = sample_colorscale(color_palette.value, [i/len(dates) for i in range(len(dates) + 1)])
+        colors = sample_colorscale(color_palette, [i / len(dates) for i in range(len(dates) + 1)])
     elif period in [TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK]:
-        color_list = sample_colorscale(color_palette.value, [i / (128 - 1) for i in range(128)])
+        color_list = sample_colorscale(color_palette, [i / (128 - 1) for i in range(128)])
         color_list.reverse()
 
         days_of_period = 12 if period == TEMPORAL_PERIOD_MONTH else 53
