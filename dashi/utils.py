@@ -97,7 +97,7 @@ def format_data(input_dataframe: pd.DataFrame,
         if verbose:
             print('Formating categorical columns as category')
         for col in categorical_column_names:
-            output_dataframe[col] = output_dataframe[col].astype('category')
+            output_dataframe[col] = output_dataframe[col].astype(str).astype('category')
 
     if output_dataframe[date_column_name].dtype == VALID_DATE_TYPE:
         return output_dataframe

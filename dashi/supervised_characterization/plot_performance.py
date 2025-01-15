@@ -94,12 +94,11 @@ def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) 
 
     # Plotting using Plotly
     heatmap_data = go.Heatmap(
-        z=metrics_test_frame.iloc[::-1].values,  # Values for the heatmap (reversed rows)
+        z=metrics_test_frame.values,  # Values for the heatmap (reversed rows)
         x=metrics_test_frame.columns,  # Columns as x-axis
         y=metrics_test_frame.index,  # Rows as y-axis
         colorscale=colorscale,  # Color scale
         colorbar=dict(title=metric_name),  # Colorbar label
-        zmid=0,  # Center color (0 value centered)
         hovertemplate="%{y}<br>%{x}: %{z:.3f}",  # Tooltip on hover
         showscale=True  # Display colorbar scale
     )
