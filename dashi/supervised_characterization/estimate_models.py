@@ -119,7 +119,7 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
         # label encoder initialization
         label_encoder = LabelEncoder()
         # label encoding
-        data[output_classification_column_name] = label_encoder.fit_transform(data[output_classification_column_name])
+        data.loc[:, output_classification_column_name] = label_encoder.fit_transform(data.loc[:, output_classification_column_name])
         # index to class map derivation
         index2class_map = dict(enumerate(label_encoder.classes_))
 
@@ -130,7 +130,7 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     # temporal analysis
     elif date_column_name is not None and source_column_name is None:
         # date parsing
-        data[date_column_name] = data[date_column_name].apply(lambda date_string: parse_date(date_string))
+        data.loc[:, date_column_name] = data.loc[:, date_column_name].apply(lambda date_string: parse_date(date_string))
         # sorting by date
         data = data.sort_values(by=date_column_name)
         # batching period adjusting
@@ -565,7 +565,7 @@ def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scor
     # single-class
     for index, class_ in index2class_map.items():
         # class identifier generation
-        class_idf = class_.upper()
+        class_idf = str(class_).upper()
         # binarization and extraction of scores per class
         if len(label_true.shape) == 1:
             label_true_class = label_true == index
@@ -628,7 +628,7 @@ def _get_postsaturation_classification_metrics(*, label_true: ndarray, label_pre
     # single-class
     for index, class_ in index2class_map.items():
         # class identifier generation
-        class_idf = class_.upper()
+        class_idf = str(class_).upper()
         # binarization
         label_true_binarized = label_true == index
         label_predicted_binarized = label_predicted == index
