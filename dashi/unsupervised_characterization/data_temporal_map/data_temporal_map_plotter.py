@@ -392,13 +392,23 @@ def plot_conditional_data_temporal_map(
         dimensions = len(supports)
 
         if absolute:
-            multivariate_map = data_temporal_map.multivariate_counts_map
+            if dimensions == 1:
+                multivariate_map = data_temporal_map.counts_map
+            else:
+                multivariate_map = data_temporal_map.multivariate_counts_map
         else:
-            multivariate_map = data_temporal_map.multivariate_probability_map
+            if dimensions == 1:
+                multivariate_map = data_temporal_map.probability_map
+            else:
+                multivariate_map = data_temporal_map.multivariate_probability_map
 
         probability_map_list = list()
 
-        if dimensions == 2:
+        if dimensions == 1:
+            probability_map_dim1 = pd.DataFrame(multivariate_map)
+            probability_map_list.append(probability_map_dim1)
+
+        elif dimensions == 2:
             probability_map_dim1 = pd.DataFrame([np.sum(dim1, axis=0) for dim1 in multivariate_map],
                                                 columns=supports[0])
             probability_map_dim2 = pd.DataFrame([np.sum(dim2, axis=1) for dim2 in multivariate_map],

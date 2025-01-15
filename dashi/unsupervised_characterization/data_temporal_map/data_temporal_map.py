@@ -1059,9 +1059,9 @@ def estimate_conditional_data_temporal_map(
         raise ValueError(
             f'Dimensionality reduction method must be one of the following: {", ".join(VALID_DIM_REDUCTION_TYPES)}')
 
-    if dimensions not in [2, 3]:
+    if dimensions not in [1, 2, 3]:
         raise ValueError(
-            f'The number of supported dimensions are 2 or 3')
+            f'The number of supported dimensions are 1, 2 or 3')
 
     # Separate analysis data from analysis dates
     labels_columns = data[label_column_name]
@@ -1145,7 +1145,7 @@ def estimate_conditional_data_temporal_map(
         date_column_name: pd.to_datetime(dates_for_batching)
     })
 
-    if scatter_plot:
+    if scatter_plot and dimensions > 1:
         warnings.filterwarnings('ignore', category=FutureWarning)
         if verbose:
             print(f'Plotting {dim_reduction} 2D Scatter Plot divided by class')
@@ -1243,7 +1243,51 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
     if verbose:
         print('Estimating the data temporal maps')
 
-    if dimensions == 2:
+    if dimensions == 1:
+        kde1 = list()
+        for date in dates_info['unique_dates']:
+            if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
+                kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
+                    columns=[dates_info['date_column_name']]),
+                                   xmin[:1], xmax[:1], kde_resolution)
+                kde1.append(kde)
+            else:
+                if verbose:
+                    print(f'Not enough data for calculating {date} probability map.')
+                kde = np.full((kde_resolution, kde_resolution), np.nan)
+                kde1.append(kde)
+
+        probability_map_1d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde1])
+        multivariate_probability_map_1d = [_normalize_kde(kde) for kde in kde1]
+        multivariate_support_1d = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin[:1], xmax[:1])]
+        non_nan_mask = ~np.isnan(probability_map_1d).any(axis=1)
+        non_nan_probability_map_1d = probability_map_1d[non_nan_mask]
+        non_nan_counts_map_1d = np.round(non_nan_probability_map_1d * dates_info['value_counts'].values[:, np.newaxis])
+        counts_map_1d = np.full(probability_map_1d.shape, np.nan)
+        counts_map_1d[non_nan_mask] = non_nan_counts_map_1d
+        multivariate_counts_map_1d = list()
+        index = 0
+        for prob_map in multivariate_probability_map_1d:
+            if np.isnan(prob_map).any():
+                multivariate_counts_map_1d.append(prob_map)
+            else:
+                multivariate_counts_map_1d.append(np.round(prob_map * dates_info['value_counts'].iloc[index]))
+                index += 1
+
+        dtm = MultiVariateDataTemporalMap(
+            probability_map=probability_map_1d,
+            multivariate_probability_map=multivariate_probability_map_1d,
+            counts_map=counts_map_1d,
+            multivariate_counts_map=multivariate_counts_map_1d,
+            dates=dates_info['unique_dates'],
+            support=pd.DataFrame(range(0, kde_resolution ** 2)),
+            multivariate_support=multivariate_support_1d,
+            variable_name='Dim.reduced.1D',
+            variable_type='float64',
+            period=dates_info['period']
+        )
+
+    elif dimensions == 2:
         kde2 = list()
         for date in dates_info['unique_dates']:
             if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:

@@ -257,7 +257,7 @@ def estimate_igt_projection(data_temporal_map: Union[DataTemporalMap, MultiVaria
 
         # Concatenate the probability maps and normalize
         concatenated_matrix = np.concatenate(probability_maps_list, axis=1)
-        row_sums = concatenated_matrix.sum(axis=1, keepdims=True)
+        row_sums = np.nansum(concatenated_matrix, axis=1, keepdims=True)
         normalized_matrix = np.divide(concatenated_matrix, row_sums)
 
         data_temporal_map = DataTemporalMap(
