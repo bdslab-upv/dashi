@@ -38,37 +38,45 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
                                period: Optional[str] = None, source_column_name: Optional[str] = None,
                                learning_strategy: Optional[str] = 'from_scratch') -> Dict[str, float]:
     """
-    Estimate models over multiple batches, either based on time (temporal) or source. RandomForest class weighted,
-    define metrics,
+    Estimates models across multiple batches, based on either time (temporal) or source.
+    Requires specifying one target variable (regression or classification) and at least one
+    numerical or categorical input feature within the input DataFrame.
 
     Parameters
     ----------
     data : DataFrame
-        The input data containing both numerical and categorical features, as well as the target variables.
+        The input data containing numerical and/or categorical features, as well as the target variable
+        (either a classification or regression target).
 
-    inputs_numerical_column_names : Optional[str], default=None
-        List of column names representing numerical input features, if applicable.
+    inputs_numerical_column_names : Optional[List[str]], default=None
+        List of column names representing numerical input features. If there are no numerical input features,
+        set this to None.
 
-    inputs_categorical_column_names : Optional[str], default=None
-        List of column names representing categorical input features, if applicable.
+    inputs_categorical_column_names : Optional[List[str]], default=None
+        List of column names representing categorical input features. If there are no categorical input features,
+        set this to None.
 
     output_regression_column_name : Optional[str], default=None
-        Column name for the regression target variable, if applicable.
+        Column name for the regression target variable. If there is no regression target, set this to None.
 
     output_classification_column_name : Optional[str], default=None
-        Column name for the classification target variable, if applicable.
+        Column name for the classification target variable. If there is no classification target, set this to None.
 
     date_column_name : Optional[str], default=None
-        Column name containing date or time information for temporal batching, if applicable.
+        Column name containing date or time information for temporal batching. If performing source-based
+        analysis instead of temporal batching, set this to None.
 
     period : Optional[str], default=None
-        Period for batching the data ('month' or 'year') when using temporal batching.
+        Period for batching the data ('month' or 'year') when using temporal batching. If not using temporal
+        batching, set this to None.
 
     source_column_name : Optional[str], default=None
-        Column name representing the source of the data (for multi-source batching).
+        Column name representing the source of the data (for multi-source batching). If performing temporal
+        batching, set this to None.
 
     learning_strategy : Optional[str], default='from_scratch'
-        Defines the learning strategy: 'from_scratch' or 'cumulative'.
+        Defines the learning strategy: either 'from_scratch' or 'cumulative'. Note that the 'cumulative' strategy
+        can only be applied to temporal analyses, not multi-source analyses.
 
     Returns
     -------
