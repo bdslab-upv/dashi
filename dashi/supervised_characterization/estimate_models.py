@@ -41,6 +41,11 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     Estimates models across multiple batches, based on either time (temporal) or source.
     Requires specifying one target variable (regression or classification) and at least one
     numerical or categorical input feature within the input DataFrame.
+    At the same time, it is necessary to provide either a date variable (indicating the period with the corresponding
+    argument) or a source variable. The date variable must be a valid date, and the source variable categories need to
+    be specified as strings.
+    Additionally, it is recommended that the amount of data in each batching group be  sufficient for statistical
+    representativeness.
 
     Parameters
     ----------
