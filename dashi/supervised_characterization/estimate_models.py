@@ -30,8 +30,8 @@ from tqdm import tqdm
 
 
 # FUNCTION DEFINITION
-def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: Optional[str] = None,
-                               inputs_categorical_column_names: Optional[str] = None,
+def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: Optional[List[str]] = None,
+                               inputs_categorical_column_names: Optional[List[str]] = None,
                                output_regression_column_name: Optional[str] = None,
                                output_classification_column_name: Optional[str] = None,
                                date_column_name: Optional[str] = None,
