@@ -17,7 +17,7 @@ Main function for estimating models over multiple temporal or multi-source batch
 """
 
 # MODULES IMPORT
-from typing import List, Dict, Optional
+from typing import Dict, Optional
 
 import sklearn.metrics as skmet
 from dateutil.parser import parse as parse_date
@@ -26,7 +26,7 @@ from pandas import DataFrame, concat, get_dummies
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import LabelEncoder, RobustScaler
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 # FUNCTION DEFINITION

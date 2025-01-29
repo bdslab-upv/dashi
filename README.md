@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg) 
 ![Python Version](https://img.shields.io/badge/python-3.10%2B-brightgreen.svg)
 
-Dataset shifts analysis and characterization in python
+Dataset shift analysis and characterization in python
 ## What is `dashi`?
 `dashi` is a Python library designed to **analyze and characterize temporal and multi-source dataset shifts**. It provides 
 robust tools for both **supervised and unsupervised evaluation of dataset shifts,** empowering users to detect, understand, 
