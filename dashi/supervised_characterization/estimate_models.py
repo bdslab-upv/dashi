@@ -17,7 +17,8 @@ Main function for estimating models over multiple temporal or multi-source batch
 """
 
 # MODULES IMPORT
-from typing import Dict, Optional
+import warnings
+from typing import List, Dict, Optional
 
 import sklearn.metrics as skmet
 from dateutil.parser import parse as parse_date
@@ -30,45 +31,58 @@ from tqdm.auto import tqdm
 
 
 # FUNCTION DEFINITION
-def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: Optional[str] = None,
-                               inputs_categorical_column_names: Optional[str] = None,
+def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: Optional[List[str]] = None,
+                               inputs_categorical_column_names: Optional[List[str]] = None,
                                output_regression_column_name: Optional[str] = None,
                                output_classification_column_name: Optional[str] = None,
                                date_column_name: Optional[str] = None,
                                period: Optional[str] = None, source_column_name: Optional[str] = None,
                                learning_strategy: Optional[str] = 'from_scratch') -> Dict[str, float]:
     """
-    Estimate models over multiple batches, either based on time (temporal) or source. RandomForest class weighted,
-    define metrics,
+    Estimates models across multiple batches, based on either time (temporal) or source.
+    Requires specifying one target variable (regression or classification) and at least one
+    numerical or categorical input feature within the input DataFrame.
+    At the same time, it is necessary to provide either a date variable (indicating the period with the corresponding
+    argument) or a source variable. The date variable must be a valid date, and the source variable categories need to
+    be specified as strings.
+    Additionally, it is recommended that the amount of data in each batching group be  sufficient for statistical
+    representativeness.
 
     Parameters
     ----------
     data : DataFrame
-        The input data containing both numerical and categorical features, as well as the target variables.
+        The input data containing numerical and/or categorical features, as well as the target variable
+        (either a classification or regression target).
 
-    inputs_numerical_column_names : Optional[str], default=None
-        List of column names representing numerical input features, if applicable.
+    inputs_numerical_column_names : Optional[List[str]], default=None
+        List of column names representing numerical input features. If there are no numerical input features,
+        set this to None.
 
-    inputs_categorical_column_names : Optional[str], default=None
-        List of column names representing categorical input features, if applicable.
+    inputs_categorical_column_names : Optional[List[str]], default=None
+        List of column names representing categorical input features. If there are no categorical input features,
+        set this to None.
 
     output_regression_column_name : Optional[str], default=None
-        Column name for the regression target variable, if applicable.
+        Column name for the regression target variable. If there is no regression target, set this to None.
 
     output_classification_column_name : Optional[str], default=None
-        Column name for the classification target variable, if applicable.
+        Column name for the classification target variable. If there is no classification target, set this to None.
 
     date_column_name : Optional[str], default=None
-        Column name containing date or time information for temporal batching, if applicable.
+        Column name containing date or time information for temporal batching. If performing source-based
+        analysis instead of temporal batching, set this to None.
 
     period : Optional[str], default=None
-        Period for batching the data ('month' or 'year') when using temporal batching.
+        Period for batching the data ('month' or 'year') when using temporal batching. If not using temporal
+        batching, set this to None.
 
     source_column_name : Optional[str], default=None
-        Column name representing the source of the data (for multi-source batching).
+        Column name representing the source of the data (for multi-source batching). If performing temporal
+        batching, set this to None.
 
     learning_strategy : Optional[str], default='from_scratch'
-        Defines the learning strategy: 'from_scratch' or 'cumulative'.
+        Defines the learning strategy: either 'from_scratch' or 'cumulative'. Note that the 'cumulative' strategy
+        can only be applied to temporal analyses, not multi-source analyses.
 
     Returns
     -------
@@ -562,36 +576,40 @@ def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scor
     # memory allocation
     auc_classes = []  # area under curve per class
 
-    # single-class
-    for index, class_ in index2class_map.items():
-        # class identifier generation
-        class_idf = str(class_).upper()
-        # binarization and extraction of scores per class
-        if len(label_true.shape) == 1:
-            label_true_class = label_true == index
-        else:  # one-hot encoding
-            label_true_class = label_true[:, index]
-        label_true_class = label_true_class.astype(int)
-        label_scores_class = label_scores[:, index]
-        # area under curve per class calculation
-        try:
-            auc_class = skmet.roc_auc_score(label_true_class, label_scores_class)
-        except:
-            auc_class = 0
-            print('Problem calculating area under curve.')
-        # arrangement
-        auc_classes.append(auc_class)
-        metrics['AUC_' + class_idf] = auc_class
+    # Catch warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
 
-    # multi-class
-    # area under curve
-    metrics['AUC_MACRO'] = sum(auc_classes) / len(auc_classes)
-    # cross-entropy loss
-    try:
-        metrics['LOGLOSS'] = skmet.log_loss(label_true, label_scores)
-    except:
-        metrics['LOGLOSS'] = 1
-        print('Problem calculating logloss.')
+        # single-class
+        for index, class_ in index2class_map.items():
+            # class identifier generation
+            class_idf = str(class_).upper()
+            # binarization and extraction of scores per class
+            if len(label_true.shape) == 1:
+                label_true_class = label_true == index
+            else:  # one-hot encoding
+                label_true_class = label_true[:, index]
+            label_true_class = label_true_class.astype(int)
+            label_scores_class = label_scores[:, index]
+            # area under curve per class calculation
+            try:
+                auc_class = skmet.roc_auc_score(label_true_class, label_scores_class)
+            except:
+                auc_class = 0
+                # print('Problem calculating area under curve.')
+            # arrangement
+            auc_classes.append(auc_class)
+            metrics['AUC_' + class_idf] = auc_class
+
+        # multi-class
+        # area under curve
+        metrics['AUC_MACRO'] = sum(auc_classes) / len(auc_classes)
+        # cross-entropy loss
+        try:
+            metrics['LOGLOSS'] = skmet.log_loss(label_true, label_scores)
+        except:
+            metrics['LOGLOSS'] = 1
+            # print('Problem calculating logloss.')
 
     # Output
     return metrics
@@ -625,38 +643,42 @@ def _get_postsaturation_classification_metrics(*, label_true: ndarray, label_pre
     metrics = dict()
 
     # Metrics calculation
-    # single-class
-    for index, class_ in index2class_map.items():
-        # class identifier generation
-        class_idf = str(class_).upper()
-        # binarization
-        label_true_binarized = label_true == index
-        label_predicted_binarized = label_predicted == index
-        # recall
-        metrics['RECALL_' + class_idf] = skmet.recall_score(
-            label_true_binarized, label_predicted_binarized, average='binary')
-        # precision
-        metrics['PRECISION_' + class_idf] = skmet.precision_score(
-            label_true_binarized, label_predicted_binarized, average='binary')
-        # f1_score
-        metrics['F1-SCORE_' + class_idf] = skmet.f1_score(
-            label_true_binarized, label_predicted_binarized, average='binary')
+    # Catch warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
 
-    # multi-class
-    # accuracy
-    metrics['ACCURACY'] = skmet.accuracy_score(label_true, label_predicted)
-    # recall
-    metrics['RECALL_MACRO'] = skmet.recall_score(label_true, label_predicted, average='macro')
-    metrics['RECALL_MICRO'] = skmet.recall_score(label_true, label_predicted, average='micro')
-    metrics['RECALL_WEIGHTED'] = skmet.recall_score(label_true, label_predicted, average='weighted')
-    # precision
-    metrics['PRECISION_MACRO'] = skmet.precision_score(label_true, label_predicted, average='macro')
-    metrics['PRECISION_MICRO'] = skmet.recall_score(label_true, label_predicted, average='micro')
-    metrics['PRECISION_WEIGHTED'] = skmet.recall_score(label_true, label_predicted, average='weighted')
-    # f1-score
-    metrics['F1-SCORE_MACRO'] = skmet.f1_score(label_true, label_predicted, average='macro')
-    metrics['F1-SCORE_MICRO'] = skmet.f1_score(label_true, label_predicted, average='micro')
-    metrics['F1-SCORE_WEIGHTED'] = skmet.f1_score(label_true, label_predicted, average='weighted')
+        # single-class
+        for index, class_ in index2class_map.items():
+            # class identifier generation
+            class_idf = str(class_).upper()
+            # binarization
+            label_true_binarized = label_true == index
+            label_predicted_binarized = label_predicted == index
+            # recall
+            metrics['RECALL_' + class_idf] = skmet.recall_score(
+                label_true_binarized, label_predicted_binarized, average='binary')
+            # precision
+            metrics['PRECISION_' + class_idf] = skmet.precision_score(
+                label_true_binarized, label_predicted_binarized, average='binary')
+            # f1_score
+            metrics['F1-SCORE_' + class_idf] = skmet.f1_score(
+                label_true_binarized, label_predicted_binarized, average='binary')
+
+        # multi-class
+        # accuracy
+        metrics['ACCURACY'] = skmet.accuracy_score(label_true, label_predicted)
+        # recall
+        metrics['RECALL_MACRO'] = skmet.recall_score(label_true, label_predicted, average='macro')
+        metrics['RECALL_MICRO'] = skmet.recall_score(label_true, label_predicted, average='micro')
+        metrics['RECALL_WEIGHTED'] = skmet.recall_score(label_true, label_predicted, average='weighted')
+        # precision
+        metrics['PRECISION_MACRO'] = skmet.precision_score(label_true, label_predicted, average='macro')
+        metrics['PRECISION_MICRO'] = skmet.recall_score(label_true, label_predicted, average='micro')
+        metrics['PRECISION_WEIGHTED'] = skmet.recall_score(label_true, label_predicted, average='weighted')
+        # f1-score
+        metrics['F1-SCORE_MACRO'] = skmet.f1_score(label_true, label_predicted, average='macro')
+        metrics['F1-SCORE_MICRO'] = skmet.f1_score(label_true, label_predicted, average='micro')
+        metrics['F1-SCORE_WEIGHTED'] = skmet.f1_score(label_true, label_predicted, average='weighted')
 
     # Output
     return metrics
