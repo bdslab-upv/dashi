@@ -17,6 +17,7 @@ Main function for estimating models over multiple temporal or multi-source batch
 """
 
 # MODULES IMPORT
+import warnings
 from typing import List, Dict, Optional
 
 import sklearn.metrics as skmet
@@ -575,36 +576,40 @@ def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scor
     # memory allocation
     auc_classes = []  # area under curve per class
 
-    # single-class
-    for index, class_ in index2class_map.items():
-        # class identifier generation
-        class_idf = str(class_).upper()
-        # binarization and extraction of scores per class
-        if len(label_true.shape) == 1:
-            label_true_class = label_true == index
-        else:  # one-hot encoding
-            label_true_class = label_true[:, index]
-        label_true_class = label_true_class.astype(int)
-        label_scores_class = label_scores[:, index]
-        # area under curve per class calculation
-        try:
-            auc_class = skmet.roc_auc_score(label_true_class, label_scores_class)
-        except:
-            auc_class = 0
-            print('Problem calculating area under curve.')
-        # arrangement
-        auc_classes.append(auc_class)
-        metrics['AUC_' + class_idf] = auc_class
+    # Catch warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
 
-    # multi-class
-    # area under curve
-    metrics['AUC_MACRO'] = sum(auc_classes) / len(auc_classes)
-    # cross-entropy loss
-    try:
-        metrics['LOGLOSS'] = skmet.log_loss(label_true, label_scores)
-    except:
-        metrics['LOGLOSS'] = 1
-        print('Problem calculating logloss.')
+        # single-class
+        for index, class_ in index2class_map.items():
+            # class identifier generation
+            class_idf = str(class_).upper()
+            # binarization and extraction of scores per class
+            if len(label_true.shape) == 1:
+                label_true_class = label_true == index
+            else:  # one-hot encoding
+                label_true_class = label_true[:, index]
+            label_true_class = label_true_class.astype(int)
+            label_scores_class = label_scores[:, index]
+            # area under curve per class calculation
+            try:
+                auc_class = skmet.roc_auc_score(label_true_class, label_scores_class)
+            except:
+                auc_class = 0
+                # print('Problem calculating area under curve.')
+            # arrangement
+            auc_classes.append(auc_class)
+            metrics['AUC_' + class_idf] = auc_class
+
+        # multi-class
+        # area under curve
+        metrics['AUC_MACRO'] = sum(auc_classes) / len(auc_classes)
+        # cross-entropy loss
+        try:
+            metrics['LOGLOSS'] = skmet.log_loss(label_true, label_scores)
+        except:
+            metrics['LOGLOSS'] = 1
+            # print('Problem calculating logloss.')
 
     # Output
     return metrics
@@ -638,38 +643,42 @@ def _get_postsaturation_classification_metrics(*, label_true: ndarray, label_pre
     metrics = dict()
 
     # Metrics calculation
-    # single-class
-    for index, class_ in index2class_map.items():
-        # class identifier generation
-        class_idf = str(class_).upper()
-        # binarization
-        label_true_binarized = label_true == index
-        label_predicted_binarized = label_predicted == index
-        # recall
-        metrics['RECALL_' + class_idf] = skmet.recall_score(
-            label_true_binarized, label_predicted_binarized, average='binary')
-        # precision
-        metrics['PRECISION_' + class_idf] = skmet.precision_score(
-            label_true_binarized, label_predicted_binarized, average='binary')
-        # f1_score
-        metrics['F1-SCORE_' + class_idf] = skmet.f1_score(
-            label_true_binarized, label_predicted_binarized, average='binary')
+    # Catch warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
 
-    # multi-class
-    # accuracy
-    metrics['ACCURACY'] = skmet.accuracy_score(label_true, label_predicted)
-    # recall
-    metrics['RECALL_MACRO'] = skmet.recall_score(label_true, label_predicted, average='macro')
-    metrics['RECALL_MICRO'] = skmet.recall_score(label_true, label_predicted, average='micro')
-    metrics['RECALL_WEIGHTED'] = skmet.recall_score(label_true, label_predicted, average='weighted')
-    # precision
-    metrics['PRECISION_MACRO'] = skmet.precision_score(label_true, label_predicted, average='macro')
-    metrics['PRECISION_MICRO'] = skmet.recall_score(label_true, label_predicted, average='micro')
-    metrics['PRECISION_WEIGHTED'] = skmet.recall_score(label_true, label_predicted, average='weighted')
-    # f1-score
-    metrics['F1-SCORE_MACRO'] = skmet.f1_score(label_true, label_predicted, average='macro')
-    metrics['F1-SCORE_MICRO'] = skmet.f1_score(label_true, label_predicted, average='micro')
-    metrics['F1-SCORE_WEIGHTED'] = skmet.f1_score(label_true, label_predicted, average='weighted')
+        # single-class
+        for index, class_ in index2class_map.items():
+            # class identifier generation
+            class_idf = str(class_).upper()
+            # binarization
+            label_true_binarized = label_true == index
+            label_predicted_binarized = label_predicted == index
+            # recall
+            metrics['RECALL_' + class_idf] = skmet.recall_score(
+                label_true_binarized, label_predicted_binarized, average='binary')
+            # precision
+            metrics['PRECISION_' + class_idf] = skmet.precision_score(
+                label_true_binarized, label_predicted_binarized, average='binary')
+            # f1_score
+            metrics['F1-SCORE_' + class_idf] = skmet.f1_score(
+                label_true_binarized, label_predicted_binarized, average='binary')
+
+        # multi-class
+        # accuracy
+        metrics['ACCURACY'] = skmet.accuracy_score(label_true, label_predicted)
+        # recall
+        metrics['RECALL_MACRO'] = skmet.recall_score(label_true, label_predicted, average='macro')
+        metrics['RECALL_MICRO'] = skmet.recall_score(label_true, label_predicted, average='micro')
+        metrics['RECALL_WEIGHTED'] = skmet.recall_score(label_true, label_predicted, average='weighted')
+        # precision
+        metrics['PRECISION_MACRO'] = skmet.precision_score(label_true, label_predicted, average='macro')
+        metrics['PRECISION_MICRO'] = skmet.recall_score(label_true, label_predicted, average='micro')
+        metrics['PRECISION_WEIGHTED'] = skmet.recall_score(label_true, label_predicted, average='weighted')
+        # f1-score
+        metrics['F1-SCORE_MACRO'] = skmet.f1_score(label_true, label_predicted, average='macro')
+        metrics['F1-SCORE_MICRO'] = skmet.f1_score(label_true, label_predicted, average='micro')
+        metrics['F1-SCORE_WEIGHTED'] = skmet.f1_score(label_true, label_predicted, average='weighted')
 
     # Output
     return metrics
