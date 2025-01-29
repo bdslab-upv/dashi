@@ -115,7 +115,7 @@ def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) 
     # Set the Plotly renderer for Jupyter or standalone use
     # pio.renderers.default = 'notebook'  # For Jupyter Notebooks (use 'notebook' or 'jupyterlab')
     # For standalone (non-Jupyter) use, you can also use:
-    pio.renderers.default = 'browser'
+    #pio.renderers.default = 'browser'
 
     # Create the figure and plot
     fig = go.Figure(data=[heatmap_data], layout=layout)

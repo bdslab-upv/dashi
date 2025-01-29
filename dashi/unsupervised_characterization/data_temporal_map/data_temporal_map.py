@@ -295,7 +295,7 @@ def estimate_univariate_data_temporal_map(
     Returns
     -------
     DataTemporalMap
-        The DataTemporalMap object or a dictionary of DataTemporalMap objects depending on teh number of
+        The DataTemporalMap object or a dictionary of DataTemporalMap objects depending on the number of
         analysis variables.
     """
     # Validation of parameters
@@ -746,7 +746,7 @@ def estimate_multivariate_data_temporal_map(
         variable. One column should represent the analysis date (typically the acquisition date).
 
     date_column_name: str
-        A string indicating teh name of the column in data containing the analysis date variable.
+        A string indicating the name of the column in data containing the analysis date variable.
 
     kde_resolution: int
         The resolution of the grid used for Kernel Density Estimation (KDE). This determines the granularity
@@ -977,7 +977,7 @@ def estimate_conditional_data_temporal_map(
         variable. One column should represent the analysis date (typically the acquisition date).
 
     date_column_name: str
-        A string indicating teh name of the column in data containing the analysis date variable.
+        A string indicating the name of the column in data containing the analysis date variable.
 
     label_column_name: str
         The name of the column that contains the labels or class/category for each observation
@@ -990,7 +990,7 @@ def estimate_conditional_data_temporal_map(
     dimensions: int
         The number of dimensions to keep after applying dimensionality reduction (e.g., PCA).
         Default is 2, meaning the data will be projected into a 2D space. The maximum number of dimensions
-        available are 3.
+        available are 3. For single variable datasets, dimensions can be set to 1
 
     period: str
         The period to batch the data for analysis. Options are:
@@ -1007,13 +1007,13 @@ def estimate_conditional_data_temporal_map(
         different from the last chronological date in the date column.
 
     dim_reduction: str
-        A dimensionality reduction technique to be used on the data. Default is `PCA` (Principal Component Analysis)
+        A dimensionality reduction technique to be used on the data. Default is 'PCA' (Principal Component Analysis)
         for numerical data. Other options can include 'MCA' (Multiple Correspondence Analysis) for categorical data or
         'FAMD' (Factor Analysis of Mixed Data) for mixed data. Note: in case of using 'FAMD', numerical variables must be
         in float type. Otherwise they will be treated as categorical.
 
     scatter_plot: bool
-        Whether to generate a scatter plot of the first two principal components of the dimensionality reduction
+        Whether to generate a scatter plot of the first two principal components of the dimensionality reduction.
 
     verbose: bool
         Whether to display additional information during the process. Defaults to `False`.
@@ -1254,7 +1254,7 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
             else:
                 if verbose:
                     print(f'Not enough data for calculating {date} probability map.')
-                kde = np.full((kde_resolution, kde_resolution), np.nan)
+                kde = np.full(kde_resolution, np.nan)
                 kde1.append(kde)
 
         probability_map_1d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde1])

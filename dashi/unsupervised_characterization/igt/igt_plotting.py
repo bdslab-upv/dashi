@@ -65,7 +65,7 @@ def plot_IGT_projection(
         The `IGTProjection` object containing the data for the temporal plot.
 
     dimensions : int, optional
-        The number of dimensions to be used for plotting (2D or 3D). Default is 2.
+        The number of dimensions to be used for plotting the IGT projection (2D or 3D). Default is 2.
 
     start_date : Optional[datetime], optional
         The starting date for the temporal plot. If None, it is not constrained. Default is None.
@@ -204,6 +204,7 @@ def plot_IGT_projection(
             'y': 0.95,
             'xanchor': 'center',
             'yanchor': 'top',
+            'font': {'color': 'black'}
         }
 
     elif dimensions == 3:
@@ -284,10 +285,12 @@ def plot_IGT_projection(
             'y': 0.9,
             'xanchor': 'center',
             'yanchor': 'top',
+            'font': {'color': 'black'}
         }
 
     fig.update_layout(
         plot_bgcolor='white',
+        paper_bgcolor='white',
         showlegend=False,
         title=title,
         margin=dict(
@@ -302,21 +305,27 @@ def plot_IGT_projection(
                 backgroundcolor="rgba(0, 0, 0, 0)",
                 gridcolor="lightgrey",
                 showbackground=True,
-                zerolinecolor="black"
+                zerolinecolor="black",
+                titlefont=dict(color='black'),
+                tickfont=dict(color='black')
             ),
             yaxis=dict(
                 title='D2',
                 backgroundcolor="rgba(0, 0, 0, 0)",
                 gridcolor="lightgrey",
                 showbackground=True,
-                zerolinecolor="black"
+                zerolinecolor="black",
+                titlefont=dict(color='black'),
+                tickfont=dict(color='black')
             ),
             zaxis=dict(
                 title='D3',
                 backgroundcolor="rgba(0, 0, 0,0)",
                 gridcolor="lightgrey",
                 showbackground=True,
-                zerolinecolor="black"
+                zerolinecolor="black",
+                titlefont=dict(color='black'),
+                tickfont=dict(color='black')
             ),
         ),
     )
@@ -326,7 +335,9 @@ def plot_IGT_projection(
         ticks='outside',
         showline=True,
         gridcolor='lightgrey',
-        zerolinecolor='black'
+        zerolinecolor='black',
+        titlefont=dict(color='black'),
+        tickfont=dict(color='black')
     )
     fig.update_yaxes(
         title='D2',
@@ -334,7 +345,9 @@ def plot_IGT_projection(
         ticks='outside',
         showline=True,
         gridcolor='lightgrey',
-        zerolinecolor='black'
+        zerolinecolor='black',
+        titlefont=dict(color='black'),
+        tickfont=dict(color='black')
     )
     fig.show()
     return fig
