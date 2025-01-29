@@ -14,7 +14,7 @@ from dashi.unsupervised_characterization.igt.igt_plotting import plot_IGT_projec
 from dashi.unsupervised_characterization.igt.igt_projection_estimator import estimate_igt_projection
 from dashi.utils import format_data
 
-path = r'C:\Users\David\Desktop\Datasets\COVID_mexico'
+path = r'C:\Users\David\Desktop\Datasets\datos_mexico\COVID'
 
 data = pd.read_csv(os.path.join(path, 'SAMPLE_FULLCOVIDMEXICO.csv'), low_memory=False)
 data = data.drop(columns=['FECHA_ACTUALIZACION', 'ID_REGISTRO', 'FECHA_SINTOMAS', 'FECHA_DEF', 'YEAR'])
@@ -33,7 +33,7 @@ CATEGORICAL_VARIABLES = ['ORIGEN', 'SECTOR', 'ENTIDAD_UM', 'SEXO', 'ENTIDAD_NAC'
                          'CLASIFICACION_FINAL_FLU']
 
 LABEL_NAME = 'CLASIFICACION_FINAL_COVID'
-DIMENSIONS = 2
+DIMENSIONS = 3
 PERIOD = 'year'
 REDUCTION_METHOD = 'MCA'
 
@@ -43,7 +43,7 @@ dataset_without_label = dataset_formated.drop(columns=[LABEL_NAME])
 
 univariate = False
 multivariate = False
-conditional = True
+conditional = False
 supervised = True
 # UNSUPERVISED
 if univariate:
@@ -66,7 +66,7 @@ if multivariate:
 
     plot_multivariate_data_temporal_map(data_temporal_map=multivariate_dtm)
 
-    multivariate_igt = estimate_igt_projection(data_temporal_map=multivariate_dtm, dimensions=DIMENSIONS)
+    multivariate_igt = estimate_igt_projection(data_temporal_map=multivariate_dtm, dimensions=2)
 
     plot_IGT_projection(multivariate_igt, dimensions=DIMENSIONS, trajectory=True)
 
@@ -86,18 +86,34 @@ if conditional:
 # SUPERVISED
 if supervised:
     data_without_nan = data.dropna(axis=1, how='any')
-    INPUT_CATEGORICAL_VARIABLES = ['ORIGEN', 'SECTOR', 'ENTIDAD_UM', 'SEXO', 'ENTIDAD_NAC', 'ENTIDAD_RES',
-                                 'MUNICIPIO_RES', 'TIPO_PACIENTE', 'INTUBADO',
-                                 'NEUMONIA', 'EDAD', 'NACIONALIDAD', 'EMBARAZO', 'HABLA_LENGUA_INDIG',
-                                 'INDIGENA', 'DIABETES', 'EPOC', 'ASMA', 'INMUSUPR', 'HIPERTENSION',
-                                 'OTRA_COM', 'CARDIOVASCULAR', 'OBESIDAD', 'RENAL_CRONICA', 'TABAQUISMO',
-                                 'OTRO_CASO', 'TOMA_MUESTRA_LAB', 'TOMA_MUESTRA_ANTIGENO',
-                                 'RESULTADO_ANTIGENO', 'MIGRANTE',
-                                 'PAIS_NACIONALIDAD', 'PAIS_ORIGEN', 'UCI']
 
-    metrics = estimate_multibatch_models(data=data_without_nan,
-                                         inputs_categorical_column_names=INPUT_CATEGORICAL_VARIABLES,
-                                         output_classification_column_name=LABEL_NAME, date_column_name=DATE_COLUMN,
-                                         period=PERIOD, learning_strategy='cumulative')
+    INPUT_CATEGORICAL_VARIABLES = ['ORIGEN', 'ENTIDAD_UM', 'SEXO', 'ENTIDAD_NAC', 'ENTIDAD_RES',
+                                   'MUNICIPIO_RES', 'TIPO_PACIENTE', 'INTUBADO',
+                                   'NEUMONIA', 'EDAD', 'NACIONALIDAD', 'EMBARAZO', 'HABLA_LENGUA_INDIG',
+                                   'INDIGENA', 'DIABETES', 'EPOC', 'ASMA', 'INMUSUPR', 'HIPERTENSION',
+                                   'OTRA_COM', 'CARDIOVASCULAR', 'OBESIDAD', 'RENAL_CRONICA', 'TABAQUISMO',
+                                   'OTRO_CASO', 'TOMA_MUESTRA_LAB', 'TOMA_MUESTRA_ANTIGENO',
+                                   'RESULTADO_ANTIGENO', 'MIGRANTE',
+                                   'PAIS_NACIONALIDAD', 'PAIS_ORIGEN', 'UCI']
 
-    plot_multibatch_performance(metrics=metrics, metric_name='RECALL_MACRO')
+    # Temporal batched
+    # metrics = estimate_multibatch_models(data=data_without_nan,
+    #                                      inputs_categorical_column_names=INPUT_CATEGORICAL_VARIABLES,
+    #                                      output_classification_column_name=LABEL_NAME, date_column_name=DATE_COLUMN,
+    #                                      period=PERIOD, learning_strategy='cumulative')
+    #
+    # plot_multibatch_performance(metrics=metrics, metric_name='RECALL_MACRO')
+
+    # Source batched
+    data_prepared = data_without_nan.sample(n=15000, random_state=42)
+
+    sector_counts = data_prepared['SECTOR'].value_counts()
+    mask = data_prepared['SECTOR'].map(sector_counts) > 4
+    data_prepared = data_prepared[mask == True]
+    data_prepared.loc[:, 'SECTOR'] = data_prepared.loc[:, 'SECTOR'].apply(str)
+    metrics_source = estimate_multibatch_models(data=data_prepared,
+                                                inputs_categorical_column_names=INPUT_CATEGORICAL_VARIABLES,
+                                                output_classification_column_name=LABEL_NAME,
+                                                source_column_name='SECTOR')
+
+    plot_multibatch_performance(metrics=metrics_source, metric_name='F1-SCORE_MACRO')

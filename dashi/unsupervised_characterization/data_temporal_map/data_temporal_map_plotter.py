@@ -76,7 +76,7 @@ def plot_univariate_data_temporal_map(
         The ending date for the plot (filters the data). If None, uses the last date in the data. Default is None.
 
     sorting_method : str, optional
-        The method by which to sort the data for visualization (e.g., 'frequency', 'alphabetical').
+        The method by which the data will be sorted for display (e.g., 'frequency', 'alphabetical').
         Default is 'frequency'.
 
     color_palette : str, optional
@@ -155,8 +155,11 @@ def plot_univariate_data_temporal_map(
     font = dict(size=20, color='#7f7f7f')
     x_axis = dict(title='Date',
                   tickvals=dates[::2],
-                  titlefont=font,
-                  type='date')
+                  titlefont={'color': 'black'},
+                  tickfont={'color': 'black'},
+                  type='date',
+                  ticks='outside',
+                  tickcolor='black')
 
     if log_transform:
         temporal_map = np.log(temporal_map)
@@ -179,24 +182,36 @@ def plot_univariate_data_temporal_map(
             title=data_temporal_map.variable_name,
             titlefont=font,
             automargin=True,
+            tickfont={'color': 'black'},
+            ticks='outside',
+            tickcolor='black'
         )
 
         figure.update_xaxes(x_axis)
 
         figure.update_layout(yaxis=y_axis,
-                             autosize=True)
+                             autosize=True,
+                             paper_bgcolor='white',
+                             plot_bgcolor='white'
+                             )
 
         # Avoid type casting in plotly
         if variable_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
             figure.update_layout(yaxis_type='category')
 
         if plot_title is not None:
-            figure.update_layout(title=plot_title)
+            figure.update_layout(title={'text': plot_title,
+                                        'font': {'color': 'black'
+                                                 }
+                                        })
         else:
             plot_title = 'Probability distribution data temporal heatmap'
             if absolute:
                 plot_title = 'Absolute frequencies data temporal heatmap'
-            figure.update_layout(title=plot_title)
+            figure.update_layout(title={'text': plot_title,
+                                        'font': {'color': 'black'
+                                                 }
+                                        })
 
     elif mode == 'series':
         figure = go.Figure()
@@ -219,6 +234,9 @@ def plot_univariate_data_temporal_map(
             title=y_axis_title,
             titlefont=font,
             automargin=True,
+            tickfont={'color': 'black'},
+            ticks='outside',
+            tickcolor='black'
         )
 
         figure.update_xaxes(x_axis)
@@ -231,9 +249,17 @@ def plot_univariate_data_temporal_map(
         )
 
         if plot_title is not None:
-            figure.update_layout(title=plot_title)
+            figure.update_layout(title={'text': plot_title,
+                                        'font': {'color': 'black'
+                                                 }
+                                        }
+                                 )
         else:
-            figure.update_layout(title='Evolution of ' + data_temporal_map.variable_name)
+            figure.update_layout(title={'text': 'Evolution of ' + data_temporal_map.variable_name,
+                                        'font': {'color': 'black'
+                                                 }
+                                        }
+                                 )
 
     figure.show()
     return figure
@@ -327,7 +353,9 @@ def plot_multivariate_data_temporal_map(
             titlefont=font,
             automargin=True,
             row=i + 1,
-            col=1
+            col=1,
+            ticks='outside',
+            tickcolor='black'
         )
 
         subplot.update_xaxes(
@@ -337,7 +365,9 @@ def plot_multivariate_data_temporal_map(
             title_text='Date' if i == dimensions - 1 else None,
             title_font=font if i == dimensions - 1 else None,
             row=i + 1,
-            col=1
+            col=1,
+            ticks='outside',
+            tickcolor='black'
         )
 
     subplot.update_layout(
@@ -367,7 +397,7 @@ def plot_conditional_data_temporal_map(
     ----------
     data_temporal_map_dict : Dict[str, MultiVariateDataTemporalMap]
         A dictionary where keys are labels (strings), and values are the corresponding
-        `MultiVariateDataTemporalMap` objects obtained from the 'estimate_multidim_concept_shift' function.
+        `MultiVariateDataTemporalMap` objects obtained from the 'estimate_conditional_data_temporal_map' function.
 
     absolute : bool, optional
         If True, plot absolute values; otherwise, relative probabilities are plotted. Default is False.
@@ -458,7 +488,9 @@ def plot_conditional_data_temporal_map(
                 titlefont=font,
                 automargin=True,
                 row=labels.index(label) + 1,
-                col=1
+                col=1,
+                ticks='outside',
+                tickcolor='black'
             )
 
             subplot.update_xaxes(
@@ -468,7 +500,9 @@ def plot_conditional_data_temporal_map(
                 title_text='Date' if labels.index(label) == len(labels) - 1 else None,
                 title_font=font if labels.index(label) == len(labels) - 1 else None,
                 row=labels.index(label) + 1,
-                col=1
+                col=1,
+                ticks='outside',
+                tickcolor='black'
             )
 
         subplot.update_layout(

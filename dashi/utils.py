@@ -47,7 +47,7 @@ def _format_date_for_week(date: datetime) -> str:
 
 def format_data(input_dataframe: pd.DataFrame,
                 *,
-                date_column_name: str = None,
+                date_column_name: str,
                 date_format: str = '%y/%m/%d',
                 verbose: bool = False,
                 numerical_column_names: Optional[List[str]] = None,
@@ -80,7 +80,8 @@ def format_data(input_dataframe: pd.DataFrame,
     Returns
     -------
     pd.DataFrame
-        An object of class pd.DataFrame with the date columns transformed into 'Date' Python format.
+        An object of class pd.DataFrame with the date column transformed into 'Date' Python format, the categorical
+        variables into category type and the numerical variables into float type.
     """
     if date_column_name not in input_dataframe.columns:
         raise ValueError(f'There is no column in your DataFrame named as: {date_column_name}')
@@ -115,12 +116,14 @@ def format_data(input_dataframe: pd.DataFrame,
         if verbose:
             print('The data format contains year and month but not day')
             print(
-                'Take into account that if you perform an analysis by week, the day will be automatically assigned as the first day of the month.')
+                'Take into account that if you perform an analysis by week, the day will be automatically assigned as '
+                'the first day of the month.')
     elif _is_letter_in_date_format(date_format, ['Y', 'y']):
         if verbose:
             print('The data format contains only the year')
             print(
-                'Take into account that if you perform an analysis by week or by month, they will be automatically assigned as the first day of the month and first month of the year.')
+                'Take into account that if you perform an analysis by week or by month, they will be automatically '
+                'assigned as the first day of the month and first month of the year.')
     else:
         print('Please, check the format of the date. At least it should contain the year.')
         raise ValueError('Invalid date format')
@@ -136,7 +139,8 @@ def format_data(input_dataframe: pd.DataFrame,
     else:
         output_dataframe = date_rows_without_na.copy()
         print(
-            f'There are {len(output_dataframe) - len(date_rows_without_na)} rows that do not contain date information. They have been removed.')
+            f'There are {len(output_dataframe) - len(date_rows_without_na)} rows that do not contain date '
+            f'information. They have been removed.')
         output_dataframe = output_dataframe.reset_index(drop=True)
         return output_dataframe
 

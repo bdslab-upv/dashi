@@ -3,7 +3,6 @@ import io
 import pandas as pd
 import requests
 
-from dashi import _constants
 from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import \
     estimate_univariate_data_temporal_map
 from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter import \

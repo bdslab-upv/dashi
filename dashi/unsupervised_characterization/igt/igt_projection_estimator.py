@@ -219,9 +219,10 @@ def estimate_igt_projection(data_temporal_map: Union[DataTemporalMap, MultiVaria
     Parameters
     ----------
     data_temporal_map : Union[DataTemporalMap, MultiVariateDataTemporalMap, Dict[str, MultiVariateDataTemporalMap]]
-        The temporal data map to project. This can either be a `DataTemporalMap` (result of estimate_data_temporal_map),
-        a `MultiVariateDataTemporalMap` (result of estimate_multidim_data_temporal_map), or a dictionary
-        of `MultiVariateDataTemporalMap` objects where the keys are labels (result of estimate_multidim_concept_shift).
+        The temporal data map to project. This can either be a `DataTemporalMap` object
+        (result of estimate_univariate_data_temporal_map), a `MultiVariateDataTemporalMap` object
+        (result of estimate_multivariate_data_temporal_map), or a dictionary of `MultiVariateDataTemporalMap` objects
+        where the keys are the selected labels (result of estimate_conditional_data_temporal_map).
 
     dimensions : int, optional
         The number of dimensions to use for the projection (2 or 3). Defaults to 2.

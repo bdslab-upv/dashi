@@ -22,8 +22,8 @@ LABEL_NAME = 'class'
 DIMENSIONS = 3
 PERIOD = 'month'
 
-univariate = True
-conditional = True
+univariate = False
+conditional = False
 supervised = True
 
 df_formated = format_data(df, date_column_name=DATE_COLUMN, date_format='%d/%m/%Y', verbose=True,
@@ -67,7 +67,7 @@ if conditional:
 
 if supervised:
     df['class'] = df['class'].astype('category')
-    metrics = estimate_multibatch_models(data=df_formated, inputs_numerical_column_names=NUMERICAL_VARIABLES,
+    metrics = estimate_multibatch_models(data=df, inputs_numerical_column_names=NUMERICAL_VARIABLES,
                                          output_classification_column_name=LABEL_NAME,
                                          date_column_name=DATE_COLUMN,
                                          period=PERIOD, learning_strategy='cumulative')
