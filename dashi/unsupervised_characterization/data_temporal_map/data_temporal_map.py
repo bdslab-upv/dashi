@@ -287,7 +287,7 @@ def estimate_univariate_data_temporal_map(
 
     date_gaps_smoothing: bool
         Logical value indicating whether a linear smoothing is applied to those time
-        batches without data. By default gaps are filled with NAs.
+        batches without data. By default, gaps are filled with NAs.
 
     verbose: bool
         Whether to display additional information during the process. Defaults to `False`.
@@ -539,8 +539,7 @@ def estimate_univariate_data_temporal_map(
     support_singles_indexes = np.array(support_lengths) < 2
     if np.any(support_singles_indexes):
         if verbose:
-            print(
-                f'Removing variables with less than two distinct values in their supports: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
+            print(f'Removing variables with less than two distinct values in their supports: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
         print(
             f'The following variable/s have less than two distinct values in their supports and were excluded from the analysis: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
         data_without_date_column = data_without_date_column.loc[:, ~support_singles_indexes]
@@ -1249,7 +1248,7 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
             if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
                 kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
                     columns=[dates_info['date_column_name']]),
-                                   xmin[:1], xmax[:1], kde_resolution)
+                    xmin[:1], xmax[:1], kde_resolution)
                 kde1.append(kde)
             else:
                 if verbose:
@@ -1293,7 +1292,7 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
             if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
                 kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
                     columns=[dates_info['date_column_name']]),
-                                   xmin[:2], xmax[:2], kde_resolution)
+                    xmin[:2], xmax[:2], kde_resolution)
                 kde2.append(kde)
             else:
                 if verbose:
@@ -1336,7 +1335,7 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
             if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
                 kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
                     columns=[dates_info['date_column_name']]),
-                                   xmin, xmax, kde_resolution)
+                    xmin, xmax, kde_resolution)
                 kde3.append(kde)
             else:
                 kde = np.full((kde_resolution, kde_resolution, kde_resolution), np.nan)
