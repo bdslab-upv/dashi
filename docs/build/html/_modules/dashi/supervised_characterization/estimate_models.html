@@ -69,13 +69,26 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dashi.supervised_characterization.estimate_models</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">DESCRIPTION: main function for estimating models over multiple temporal or multi-source batches.</span>
-<span class="sd">AUTHOR: Pablo Ferri-Borredà</span>
-<span class="sd">DATE: 17/10/24</span>
+<span></span><span class="c1"># Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Main function for estimating models over multiple temporal or multi-source batches.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="c1"># MODULES IMPORT</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">sklearn.metrics</span> <span class="k">as</span> <span class="nn">skmet</span>
@@ -85,56 +98,91 @@
 <span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestClassifier</span><span class="p">,</span> <span class="n">RandomForestRegressor</span>
 <span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span><span class="p">,</span> <span class="n">KFold</span>
 <span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">LabelEncoder</span><span class="p">,</span> <span class="n">RobustScaler</span>
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
 
 <span class="c1"># FUNCTION DEFINITION</span>
 <div class="viewcode-block" id="estimate_multibatch_models">
 <a class="viewcode-back" href="../../../dashi.supervised_characterization.html#dashi.supervised_characterization.estimate_models.estimate_multibatch_models">[docs]</a>
-<span class="k">def</span> <span class="nf">estimate_multibatch_models</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="n">inputs_numerical_column_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-                                <span class="n">inputs_categorical_column_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-                                <span class="n">output_regression_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                                <span class="n">output_classification_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                                <span class="n">date_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                                <span class="n">period</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">source_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                                <span class="n">learning_strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;from_scratch&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="k">def</span> <span class="nf">estimate_multibatch_models</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="n">inputs_numerical_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                               <span class="n">inputs_categorical_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                               <span class="n">output_regression_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                               <span class="n">output_classification_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                               <span class="n">date_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                               <span class="n">period</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">source_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                               <span class="n">learning_strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;from_scratch&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Estimate models over multiple batches, either based on time (temporal) or source. RandomForest class weighted,</span>
-<span class="sd">    define metrics,</span>
+<span class="sd">    Estimates models across multiple batches, based on either time (temporal) or source.</span>
+<span class="sd">    Requires specifying one target variable (regression or classification) and at least one</span>
+<span class="sd">    numerical or categorical input feature within the input DataFrame.</span>
+<span class="sd">    At the same time, it is necessary to provide either a date variable (indicating the period with the corresponding</span>
+<span class="sd">    argument) or a source variable. The date variable must be a valid date, and the source variable categories need to</span>
+<span class="sd">    be specified as strings.</span>
+<span class="sd">    Additionally, it is recommended that the amount of data in each batching group be  sufficient for statistical</span>
+<span class="sd">    representativeness.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    data : DataFrame</span>
-<span class="sd">        The input data containing both numerical and categorical features, as well as the target variables.</span>
+<span class="sd">        The input data containing numerical and/or categorical features, as well as the target variable</span>
+<span class="sd">        (either a classification or regression target).</span>
 
-<span class="sd">    inputs_numerical_column_names : List[str]</span>
-<span class="sd">        List of column names representing numerical input features.</span>
+<span class="sd">    inputs_numerical_column_names : Optional[List[str]], default=None</span>
+<span class="sd">        List of column names representing numerical input features. If there are no numerical input features,</span>
+<span class="sd">        set this to None.</span>
 
-<span class="sd">    inputs_categorical_column_names : List[str]</span>
-<span class="sd">        List of column names representing categorical input features.</span>
+<span class="sd">    inputs_categorical_column_names : Optional[List[str]], default=None</span>
+<span class="sd">        List of column names representing categorical input features. If there are no categorical input features,</span>
+<span class="sd">        set this to None.</span>
 
 <span class="sd">    output_regression_column_name : Optional[str], default=None</span>
-<span class="sd">        Column name for the regression target variable, if applicable.</span>
+<span class="sd">        Column name for the regression target variable. If there is no regression target, set this to None.</span>
 
 <span class="sd">    output_classification_column_name : Optional[str], default=None</span>
-<span class="sd">        Column name for the classification target variable, if applicable.</span>
+<span class="sd">        Column name for the classification target variable. If there is no classification target, set this to None.</span>
 
 <span class="sd">    date_column_name : Optional[str], default=None</span>
-<span class="sd">        Column name containing date or time information for temporal batching, if applicable.</span>
+<span class="sd">        Column name containing date or time information for temporal batching. If performing source-based</span>
+<span class="sd">        analysis instead of temporal batching, set this to None.</span>
 
 <span class="sd">    period : Optional[str], default=None</span>
-<span class="sd">        Period for batching the data (&#39;month&#39; or &#39;year&#39;) when using temporal batching.</span>
+<span class="sd">        Period for batching the data (&#39;month&#39; or &#39;year&#39;) when using temporal batching. If not using temporal</span>
+<span class="sd">        batching, set this to None.</span>
 
 <span class="sd">    source_column_name : Optional[str], default=None</span>
-<span class="sd">        Column name representing the source of the data (for multi-source batching).</span>
+<span class="sd">        Column name representing the source of the data (for multi-source batching). If performing temporal</span>
+<span class="sd">        batching, set this to None.</span>
 
 <span class="sd">    learning_strategy : Optional[str], default=&#39;from_scratch&#39;</span>
-<span class="sd">        Defines the learning strategy: &#39;from_scratch&#39; or &#39;cumulative&#39;.</span>
+<span class="sd">        Defines the learning strategy: either &#39;from_scratch&#39; or &#39;cumulative&#39;. Note that the &#39;cumulative&#39; strategy</span>
+<span class="sd">        can only be applied to temporal analyses, not multi-source analyses.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    Dict[str, float]</span>
 <span class="sd">        A dictionary containing the calculated metrics for each batch and model combination.</span>
+<span class="sd">        Regression metrics, if applicable:</span>
+<span class="sd">            - &#39;MEAN_ABSOLUTE_ERROR&#39;</span>
+<span class="sd">            - &#39;MEAN_SQUARED_ERROR&#39;</span>
+<span class="sd">            - &#39;ROOT_MEAN_SQUARED_ERROR&#39;</span>
+<span class="sd">            - &#39;R_SQUARED&#39;</span>
+<span class="sd">        Classification metrics, if applicable:</span>
+<span class="sd">            - &#39;AUC_{class_identifier}&#39;</span>
+<span class="sd">            - &#39;AUC_MACRO&#39;</span>
+<span class="sd">            - &#39;LOGLOSS&#39;</span>
+<span class="sd">            - &#39;RECALL_{class_identifier}&#39;</span>
+<span class="sd">            - &#39;PRECISION_{class_identifier}&#39;</span>
+<span class="sd">            - &#39;F1-SCORE_{class_identifier}&#39;</span>
+<span class="sd">            - &#39;ACCURACY&#39;</span>
+<span class="sd">            - &#39;RECALL_MACRO&#39;</span>
+<span class="sd">            - &#39;RECALL_MICRO&#39;</span>
+<span class="sd">            - &#39;RECALL_WEIGHTED&#39;</span>
+<span class="sd">            - &#39;PRECISION_MACRO&#39;</span>
+<span class="sd">            - &#39;PRECISION_MICRO&#39;</span>
+<span class="sd">            - &#39;PRECISION_WEIGHTED&#39;</span>
+<span class="sd">            - &#39;F1-SCORE_MACRO&#39;</span>
+<span class="sd">            - &#39;F1-SCORE_MICRO&#39;</span>
+<span class="sd">            - &#39;F1-SCORE_WEIGHTED&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Input checking</span>
@@ -158,7 +206,7 @@
         <span class="c1"># label encoder initialization</span>
         <span class="n">label_encoder</span> <span class="o">=</span> <span class="n">LabelEncoder</span><span class="p">()</span>
         <span class="c1"># label encoding</span>
-        <span class="n">data</span><span class="p">[</span><span class="n">output_classification_column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">label_encoder</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">output_classification_column_name</span><span class="p">])</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">output_classification_column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">label_encoder</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">output_classification_column_name</span><span class="p">])</span>
         <span class="c1"># index to class map derivation</span>
         <span class="n">index2class_map</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">label_encoder</span><span class="o">.</span><span class="n">classes_</span><span class="p">))</span>
 
@@ -169,7 +217,7 @@
     <span class="c1"># temporal analysis</span>
     <span class="k">elif</span> <span class="n">date_column_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">source_column_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># date parsing</span>
-        <span class="n">data</span><span class="p">[</span><span class="n">date_column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">date_column_name</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">date_string</span><span class="p">:</span> <span class="n">parse_date</span><span class="p">(</span><span class="n">date_string</span><span class="p">))</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">date_column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">date_column_name</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">date_string</span><span class="p">:</span> <span class="n">parse_date</span><span class="p">(</span><span class="n">date_string</span><span class="p">))</span>
         <span class="c1"># sorting by date</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="n">date_column_name</span><span class="p">)</span>
         <span class="c1"># batching period adjusting</span>
@@ -185,14 +233,15 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;This casuistry has not been implemented yet.&#39;</span><span class="p">)</span>
 
     <span class="c1"># One-hot encoding for categorical features</span>
-    <span class="n">inputs_categorical_columns_</span> <span class="o">=</span> <span class="n">inputs_categorical_column_names</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">cat_col</span> <span class="ow">in</span> <span class="n">inputs_categorical_columns_</span><span class="p">:</span>
-        <span class="n">data_encoded</span> <span class="o">=</span> <span class="n">get_dummies</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">cat_col</span><span class="p">],</span> <span class="n">prefix</span><span class="o">=</span><span class="n">cat_col</span><span class="p">,</span> <span class="n">prefix_sep</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">drop_first</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">concat</span><span class="p">([</span><span class="n">data</span><span class="p">,</span> <span class="n">data_encoded</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">cat_col</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">inputs_categorical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">inputs_categorical_columns_</span> <span class="o">=</span> <span class="n">inputs_categorical_column_names</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">cat_col</span> <span class="ow">in</span> <span class="n">inputs_categorical_columns_</span><span class="p">:</span>
+            <span class="n">data_encoded</span> <span class="o">=</span> <span class="n">get_dummies</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">cat_col</span><span class="p">],</span> <span class="n">prefix</span><span class="o">=</span><span class="n">cat_col</span><span class="p">,</span> <span class="n">prefix_sep</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">drop_first</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">concat</span><span class="p">([</span><span class="n">data</span><span class="p">,</span> <span class="n">data_encoded</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">cat_col</span><span class="p">])</span>
 
-        <span class="n">inputs_categorical_column_names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">cat_col</span><span class="p">)</span>
-        <span class="n">inputs_categorical_column_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data_encoded</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
+            <span class="n">inputs_categorical_column_names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">cat_col</span><span class="p">)</span>
+            <span class="n">inputs_categorical_column_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data_encoded</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
 
     <span class="c1"># Generate split indexes based on batching</span>
     <span class="n">split_indexes</span> <span class="o">=</span> <span class="n">_generate_split_indexes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">batching_column_name</span><span class="o">=</span><span class="n">batching_column_name</span><span class="p">)</span>
@@ -252,22 +301,30 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unconsidered casuistry.&#39;</span><span class="p">)</span>
 
-        <span class="c1"># Continuous features preprocessing</span>
-        <span class="c1">#   data selection</span>
-        <span class="n">data_batch_cont</span> <span class="o">=</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">inputs_numerical_column_names</span><span class="p">]</span>
-        <span class="c1">#   scaler initialization and training (if required)</span>
-        <span class="k">if</span> <span class="n">data_set</span> <span class="o">==</span> <span class="s1">&#39;train&#39;</span><span class="p">:</span>
-            <span class="c1"># scaler initialization</span>
-            <span class="n">robust_scaler</span> <span class="o">=</span> <span class="n">RobustScaler</span><span class="p">()</span>
-            <span class="c1"># scaler training</span>
-            <span class="n">robust_scaler</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data_batch_cont</span><span class="p">)</span>
-        <span class="c1">#   scaling</span>
-        <span class="n">data_batch</span><span class="p">[</span><span class="n">inputs_numerical_column_names</span><span class="p">]</span> <span class="o">=</span> <span class="n">robust_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">data_batch_cont</span><span class="p">)</span>
+        <span class="c1"># Continuous features preprocessing, required</span>
+        <span class="k">if</span> <span class="n">inputs_numerical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1">#   data selection</span>
+            <span class="n">data_batch_cont</span> <span class="o">=</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">inputs_numerical_column_names</span><span class="p">]</span>
+            <span class="c1">#   scaler initialization and training (if required)</span>
+            <span class="k">if</span> <span class="n">data_set</span> <span class="o">==</span> <span class="s1">&#39;train&#39;</span><span class="p">:</span>
+                <span class="c1"># scaler initialization</span>
+                <span class="n">robust_scaler</span> <span class="o">=</span> <span class="n">RobustScaler</span><span class="p">()</span>
+                <span class="c1"># scaler training</span>
+                <span class="n">robust_scaler</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data_batch_cont</span><span class="p">)</span>
+            <span class="c1">#   scaling</span>
+            <span class="n">data_batch</span><span class="p">[</span><span class="n">inputs_numerical_column_names</span><span class="p">]</span> <span class="o">=</span> <span class="n">robust_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">data_batch_cont</span><span class="p">)</span>
 
         <span class="c1"># Inputs extraction</span>
-        <span class="n">inputs_batch</span> <span class="o">=</span> <span class="n">concat</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">data_batch</span><span class="p">[</span><span class="n">inputs_numerical_column_names</span><span class="p">],</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">inputs_categorical_column_names</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">inputs_numerical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">inputs_categorical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">inputs_batch</span> <span class="o">=</span> <span class="n">concat</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">data_batch</span><span class="p">[</span><span class="n">inputs_numerical_column_names</span><span class="p">],</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">inputs_categorical_column_names</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">inputs_numerical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">inputs_categorical_column_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">inputs_batch</span> <span class="o">=</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">inputs_numerical_column_names</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">inputs_numerical_column_names</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">inputs_categorical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">inputs_batch</span> <span class="o">=</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">inputs_categorical_column_names</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;At least one feature needs to be specified.&#39;</span><span class="p">)</span>
 
         <span class="c1"># Regression pipeline</span>
         <span class="k">if</span> <span class="n">output_regression_column_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -342,8 +399,9 @@
 
 
 <span class="c1"># INPUTS CHECKING</span>
-<span class="k">def</span> <span class="nf">_check_inputs</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="n">inputs_numerical_column_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-                  <span class="n">inputs_categorical_column_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">output_regression_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="k">def</span> <span class="nf">_check_inputs</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="n">inputs_numerical_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                  <span class="n">inputs_categorical_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                  <span class="n">output_regression_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                   <span class="n">output_classification_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">date_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                   <span class="n">period</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">source_column_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                   <span class="n">learning_strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;from_scratch&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -355,11 +413,11 @@
 <span class="sd">    data : DataFrame</span>
 <span class="sd">        The input data containing features and target variables.</span>
 
-<span class="sd">    inputs_numerical_column_names : List[str]</span>
-<span class="sd">        List of column names representing numerical input features.</span>
+<span class="sd">    inputs_numerical_column_names : Optional[str], default=None</span>
+<span class="sd">        List of column names representing numerical input features, if applicable.</span>
 
-<span class="sd">    inputs_categorical_column_names : List[str]</span>
-<span class="sd">        List of column names representing categorical input features.</span>
+<span class="sd">    inputs_categorical_column_names : Optional[str], default=None</span>
+<span class="sd">        List of column names representing categorical input features, if applicable.</span>
 
 <span class="sd">    output_regression_column_name : Optional[str], default=None</span>
 <span class="sd">        Column name for the regression target variable, if applicable.</span>
@@ -419,25 +477,39 @@
     <span class="k">if</span> <span class="n">date_column_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">source_column_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Just one batching column can be considered (date or source but not both simultaneously).&#39;</span><span class="p">)</span>
 
-    <span class="c1"># Inputs numerical columns</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inputs_numerical_column_names</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Numerical inputs columns need to be encapsulated in a list.&#39;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">inp_num_col</span> <span class="ow">in</span> <span class="n">inputs_numerical_column_names</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inp_num_col</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Numerical input column must be specified as a string.&#39;</span><span class="p">)</span>
+    <span class="c1"># Inputs numerical columns names</span>
+    <span class="k">if</span> <span class="n">inputs_numerical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inputs_numerical_column_names</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Numerical inputs columns need to be encapsulated in a list.&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">inp_num_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Numerical input column not found in the current data frame.&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs_numerical_column_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Numerical inputs column names list is void.&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">inp_num_col</span> <span class="ow">in</span> <span class="n">inputs_numerical_column_names</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inp_num_col</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Numerical input column must be specified as a string.&#39;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">inp_num_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Numerical input column not found in the current data frame.&#39;</span><span class="p">)</span>
 
-    <span class="c1"># Inputs categorical columns</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inputs_categorical_column_names</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Categorical inputs columns need to be encapsulated in a list.&#39;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">inp_cat_col</span> <span class="ow">in</span> <span class="n">inputs_categorical_column_names</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inp_cat_col</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Categorical input column must be specified as a string.&#39;</span><span class="p">)</span>
+    <span class="c1"># Inputs categorical columns names</span>
+    <span class="k">if</span> <span class="n">inputs_categorical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inputs_categorical_column_names</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Categorical inputs columns need to be encapsulated in a list.&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">inp_cat_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Categorical input column not found in the current data frame.&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs_categorical_column_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Categorical inputs column names list is void.&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">inp_cat_col</span> <span class="ow">in</span> <span class="n">inputs_categorical_column_names</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inp_cat_col</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Categorical input column must be specified as a string.&#39;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">inp_cat_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Categorical input column not found in the current data frame.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Inputs numerical columns names and inputs categorical columns names</span>
+    <span class="k">if</span> <span class="n">inputs_numerical_column_names</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">inputs_categorical_column_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;At least one input feature needs to be specified.&#39;</span><span class="p">)</span>
 
     <span class="c1"># Output regression column</span>
     <span class="k">if</span> <span class="n">output_regression_column_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -578,36 +650,40 @@
     <span class="c1"># memory allocation</span>
     <span class="n">auc_classes</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># area under curve per class</span>
 
-    <span class="c1"># single-class</span>
-    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">class_</span> <span class="ow">in</span> <span class="n">index2class_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="c1"># class identifier generation</span>
-        <span class="n">class_idf</span> <span class="o">=</span> <span class="n">class_</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
-        <span class="c1"># binarization and extraction of scores per class</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">label_true</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">label_true_class</span> <span class="o">=</span> <span class="n">label_true</span> <span class="o">==</span> <span class="n">index</span>
-        <span class="k">else</span><span class="p">:</span>  <span class="c1"># one-hot encoding</span>
-            <span class="n">label_true_class</span> <span class="o">=</span> <span class="n">label_true</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span>
-        <span class="n">label_true_class</span> <span class="o">=</span> <span class="n">label_true_class</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-        <span class="n">label_scores_class</span> <span class="o">=</span> <span class="n">label_scores</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span>
-        <span class="c1"># area under curve per class calculation</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">auc_class</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">roc_auc_score</span><span class="p">(</span><span class="n">label_true_class</span><span class="p">,</span> <span class="n">label_scores_class</span><span class="p">)</span>
-        <span class="k">except</span><span class="p">:</span>
-            <span class="n">auc_class</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Problem calculating area under curve.&#39;</span><span class="p">)</span>
-        <span class="c1"># arrangement</span>
-        <span class="n">auc_classes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">auc_class</span><span class="p">)</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;AUC_&#39;</span> <span class="o">+</span> <span class="n">class_idf</span><span class="p">]</span> <span class="o">=</span> <span class="n">auc_class</span>
+    <span class="c1"># Catch warnings</span>
+    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
 
-    <span class="c1"># multi-class</span>
-    <span class="c1"># area under curve</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;AUC_MACRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">auc_classes</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">auc_classes</span><span class="p">)</span>
-    <span class="c1"># cross-entropy loss</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;LOGLOSS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">log_loss</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_scores</span><span class="p">)</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;LOGLOSS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Problem calculating logloss.&#39;</span><span class="p">)</span>
+        <span class="c1"># single-class</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">class_</span> <span class="ow">in</span> <span class="n">index2class_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># class identifier generation</span>
+            <span class="n">class_idf</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">class_</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="c1"># binarization and extraction of scores per class</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">label_true</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">label_true_class</span> <span class="o">=</span> <span class="n">label_true</span> <span class="o">==</span> <span class="n">index</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># one-hot encoding</span>
+                <span class="n">label_true_class</span> <span class="o">=</span> <span class="n">label_true</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span>
+            <span class="n">label_true_class</span> <span class="o">=</span> <span class="n">label_true_class</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">label_scores_class</span> <span class="o">=</span> <span class="n">label_scores</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span>
+            <span class="c1"># area under curve per class calculation</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">auc_class</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">roc_auc_score</span><span class="p">(</span><span class="n">label_true_class</span><span class="p">,</span> <span class="n">label_scores_class</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">auc_class</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="c1"># print(&#39;Problem calculating area under curve.&#39;)</span>
+            <span class="c1"># arrangement</span>
+            <span class="n">auc_classes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">auc_class</span><span class="p">)</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;AUC_&#39;</span> <span class="o">+</span> <span class="n">class_idf</span><span class="p">]</span> <span class="o">=</span> <span class="n">auc_class</span>
+
+        <span class="c1"># multi-class</span>
+        <span class="c1"># area under curve</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;AUC_MACRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">auc_classes</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">auc_classes</span><span class="p">)</span>
+        <span class="c1"># cross-entropy loss</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;LOGLOSS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">log_loss</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_scores</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;LOGLOSS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c1"># print(&#39;Problem calculating logloss.&#39;)</span>
 
     <span class="c1"># Output</span>
     <span class="k">return</span> <span class="n">metrics</span>
@@ -641,38 +717,42 @@
     <span class="n">metrics</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
     <span class="c1"># Metrics calculation</span>
-    <span class="c1"># single-class</span>
-    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">class_</span> <span class="ow">in</span> <span class="n">index2class_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="c1"># class identifier generation</span>
-        <span class="n">class_idf</span> <span class="o">=</span> <span class="n">class_</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
-        <span class="c1"># binarization</span>
-        <span class="n">label_true_binarized</span> <span class="o">=</span> <span class="n">label_true</span> <span class="o">==</span> <span class="n">index</span>
-        <span class="n">label_predicted_binarized</span> <span class="o">=</span> <span class="n">label_predicted</span> <span class="o">==</span> <span class="n">index</span>
-        <span class="c1"># recall</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;RECALL_&#39;</span> <span class="o">+</span> <span class="n">class_idf</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span>
-            <span class="n">label_true_binarized</span><span class="p">,</span> <span class="n">label_predicted_binarized</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">)</span>
-        <span class="c1"># precision</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;PRECISION_&#39;</span> <span class="o">+</span> <span class="n">class_idf</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">precision_score</span><span class="p">(</span>
-            <span class="n">label_true_binarized</span><span class="p">,</span> <span class="n">label_predicted_binarized</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">)</span>
-        <span class="c1"># f1_score</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;F1-SCORE_&#39;</span> <span class="o">+</span> <span class="n">class_idf</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span>
-            <span class="n">label_true_binarized</span><span class="p">,</span> <span class="n">label_predicted_binarized</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">)</span>
+    <span class="c1"># Catch warnings</span>
+    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
 
-    <span class="c1"># multi-class</span>
-    <span class="c1"># accuracy</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;ACCURACY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">)</span>
-    <span class="c1"># recall</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;RECALL_MACRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">)</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;RECALL_MICRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">)</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;RECALL_WEIGHTED&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
-    <span class="c1"># precision</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;PRECISION_MACRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">precision_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">)</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;PRECISION_MICRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">)</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;PRECISION_WEIGHTED&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
-    <span class="c1"># f1-score</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;F1-SCORE_MACRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">)</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;F1-SCORE_MICRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">)</span>
-    <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;F1-SCORE_WEIGHTED&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
+        <span class="c1"># single-class</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">class_</span> <span class="ow">in</span> <span class="n">index2class_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># class identifier generation</span>
+            <span class="n">class_idf</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">class_</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="c1"># binarization</span>
+            <span class="n">label_true_binarized</span> <span class="o">=</span> <span class="n">label_true</span> <span class="o">==</span> <span class="n">index</span>
+            <span class="n">label_predicted_binarized</span> <span class="o">=</span> <span class="n">label_predicted</span> <span class="o">==</span> <span class="n">index</span>
+            <span class="c1"># recall</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;RECALL_&#39;</span> <span class="o">+</span> <span class="n">class_idf</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span>
+                <span class="n">label_true_binarized</span><span class="p">,</span> <span class="n">label_predicted_binarized</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">)</span>
+            <span class="c1"># precision</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;PRECISION_&#39;</span> <span class="o">+</span> <span class="n">class_idf</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">precision_score</span><span class="p">(</span>
+                <span class="n">label_true_binarized</span><span class="p">,</span> <span class="n">label_predicted_binarized</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">)</span>
+            <span class="c1"># f1_score</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;F1-SCORE_&#39;</span> <span class="o">+</span> <span class="n">class_idf</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span>
+                <span class="n">label_true_binarized</span><span class="p">,</span> <span class="n">label_predicted_binarized</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">)</span>
+
+        <span class="c1"># multi-class</span>
+        <span class="c1"># accuracy</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;ACCURACY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">)</span>
+        <span class="c1"># recall</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;RECALL_MACRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;RECALL_MICRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;RECALL_WEIGHTED&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
+        <span class="c1"># precision</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;PRECISION_MACRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">precision_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;PRECISION_MICRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;PRECISION_WEIGHTED&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
+        <span class="c1"># f1-score</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;F1-SCORE_MACRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;F1-SCORE_MICRO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;F1-SCORE_WEIGHTED&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">skmet</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span><span class="n">label_true</span><span class="p">,</span> <span class="n">label_predicted</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
 
     <span class="c1"># Output</span>
     <span class="k">return</span> <span class="n">metrics</span>
