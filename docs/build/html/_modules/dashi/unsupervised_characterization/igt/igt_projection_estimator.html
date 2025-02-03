@@ -69,15 +69,23 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dashi.unsupervised_characterization.igt.igt_projection_estimator</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="c1"># Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Functions for Information Geometric Temporal creation</span>
 <span class="sd">&quot;&quot;&quot;</span>
-
-<span class="c1"># Author: David Fernández Narro &lt;dfernar@upv.edu.es&gt;</span>
-<span class="c1">#         Ángel Sánchez García &lt;ansan12a@upv.es&gt;</span>
-<span class="c1">#         Pablo Ferri Borredá &lt;pabferb2@upv.es&gt;</span>
-<span class="c1">#         Carlos Sáez Silvestre &lt;carsaesi@upv.es&gt;</span>
-<span class="c1">#         Juan Miguel García Gómez &lt;juanmig@upv.es&gt;</span>
 
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span>
@@ -284,9 +292,10 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    data_temporal_map : Union[DataTemporalMap, MultiVariateDataTemporalMap, Dict[str, MultiVariateDataTemporalMap]]</span>
-<span class="sd">        The temporal data map to project. This can either be a `DataTemporalMap` (result of estimate_data_temporal_map),</span>
-<span class="sd">        a `MultiVariateDataTemporalMap` (result of estimate_multidim_data_temporal_map), or a dictionary</span>
-<span class="sd">        of `MultiVariateDataTemporalMap` objects where the keys are labels (result of estimate_multidim_concept_shift).</span>
+<span class="sd">        The temporal data map to project. This can either be a `DataTemporalMap` object</span>
+<span class="sd">        (result of estimate_univariate_data_temporal_map), a `MultiVariateDataTemporalMap` object</span>
+<span class="sd">        (result of estimate_multivariate_data_temporal_map), or a dictionary of `MultiVariateDataTemporalMap` objects</span>
+<span class="sd">        where the keys are the selected labels (result of estimate_conditional_data_temporal_map).</span>
 
 <span class="sd">    dimensions : int, optional</span>
 <span class="sd">        The number of dimensions to use for the projection (2 or 3). Defaults to 2.</span>
@@ -322,7 +331,7 @@
 
         <span class="c1"># Concatenate the probability maps and normalize</span>
         <span class="n">concatenated_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">probability_maps_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">row_sums</span> <span class="o">=</span> <span class="n">concatenated_matrix</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">row_sums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">concatenated_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">normalized_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">concatenated_matrix</span><span class="p">,</span> <span class="n">row_sums</span><span class="p">)</span>
 
         <span class="n">data_temporal_map</span> <span class="o">=</span> <span class="n">DataTemporalMap</span><span class="p">(</span>

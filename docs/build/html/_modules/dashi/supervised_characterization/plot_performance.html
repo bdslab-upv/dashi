@@ -69,21 +69,32 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dashi.supervised_characterization.plot_performance</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">DESCRIPTION: main function for multi-batch metrics exploration.</span>
-<span class="sd">AUTHOR: Pablo Ferri-Borredà</span>
-<span class="sd">DATE: 17/10/24</span>
+<span></span><span class="c1"># Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Main function for multi-batch metrics exploration.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="c1"># MODULES IMPORT</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
 
 <span class="kn">import</span> <span class="nn">plotly.graph_objects</span> <span class="k">as</span> <span class="nn">go</span>
 <span class="kn">import</span> <span class="nn">plotly.io</span> <span class="k">as</span> <span class="nn">pio</span>
+<span class="kn">from</span> <span class="nn">plotly.colors</span> <span class="kn">import</span> <span class="n">get_colorscale</span>
 
 <span class="kn">from</span> <span class="nn">.arrange_metrics</span> <span class="kn">import</span> <span class="n">arrange_performance_metrics</span>
 
-<span class="c1"># SETTINGS</span>
 <span class="n">_FONTSIZE</span> <span class="o">=</span> <span class="mi">14</span>
 
 
@@ -108,8 +119,30 @@
 <span class="sd">        The `dataset_type` should be `&#39;test&#39;` to include the metric in the heatmap.</span>
 
 <span class="sd">    metric_name : str</span>
-<span class="sd">        The name of the metric to visualize (e.g., &#39;accuracy&#39;, &#39;loss&#39;, etc.).</span>
+<span class="sd">        The name of the metric to visualize.</span>
 <span class="sd">        The function will filter metrics based on this identifier and only plot those for the &#39;test&#39; set.</span>
+<span class="sd">        Regression metric names, when applicable:</span>
+<span class="sd">            - &#39;MEAN_ABSOLUTE_ERROR&#39;</span>
+<span class="sd">            - &#39;MEAN_SQUARED_ERROR&#39;</span>
+<span class="sd">            - &#39;ROOT_MEAN_SQUARED_ERROR&#39;</span>
+<span class="sd">            - &#39;R_SQUARED&#39;</span>
+<span class="sd">        Classification metric names, when applicable:</span>
+<span class="sd">            - &#39;AUC_{class_identifier}&#39;</span>
+<span class="sd">            - &#39;AUC_MACRO&#39;</span>
+<span class="sd">            - &#39;LOGLOSS&#39;</span>
+<span class="sd">            - &#39;RECALL_{class_identifier}&#39;</span>
+<span class="sd">            - &#39;PRECISION_{class_identifier}&#39;</span>
+<span class="sd">            - &#39;F1-SCORE_{class_identifier}&#39;</span>
+<span class="sd">            - &#39;ACCURACY&#39;</span>
+<span class="sd">            - &#39;RECALL_MACRO&#39;</span>
+<span class="sd">            - &#39;RECALL_MICRO&#39;</span>
+<span class="sd">            - &#39;RECALL_WEIGHTED&#39;</span>
+<span class="sd">            - &#39;PRECISION_MACRO&#39;</span>
+<span class="sd">            - &#39;PRECISION_MICRO&#39;</span>
+<span class="sd">            - &#39;PRECISION_WEIGHTED&#39;</span>
+<span class="sd">            - &#39;F1-SCORE_MACRO&#39;</span>
+<span class="sd">            - &#39;F1-SCORE_MICRO&#39;</span>
+<span class="sd">            - &#39;F1-SCORE_WEIGHTED&#39;</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -127,14 +160,18 @@
     <span class="c1"># Metrics arrangement</span>
     <span class="n">metrics_test_frame</span> <span class="o">=</span> <span class="n">arrange_performance_metrics</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">,</span> <span class="n">metric_name</span><span class="o">=</span><span class="n">metric_name</span><span class="p">)</span>
 
+    <span class="c1"># Color scale definition</span>
+    <span class="n">colorscale</span> <span class="o">=</span> <span class="n">get_colorscale</span><span class="p">(</span><span class="s1">&#39;RdYlGn&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">metric_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;MEAN_ABSOLUTE_ERROR&#39;</span><span class="p">,</span> <span class="s1">&#39;MEAN_SQUARED_ERROR&#39;</span><span class="p">,</span> <span class="s1">&#39;ROOT_MEAN_SQUARED_ERROR&#39;</span><span class="p">,</span> <span class="s1">&#39;LOGLOSS&#39;</span><span class="p">):</span>
+        <span class="n">colorscale</span> <span class="o">=</span> <span class="n">colorscale</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
     <span class="c1"># Plotting using Plotly</span>
     <span class="n">heatmap_data</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">(</span>
         <span class="n">z</span><span class="o">=</span><span class="n">metrics_test_frame</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>  <span class="c1"># Values for the heatmap (reversed rows)</span>
         <span class="n">x</span><span class="o">=</span><span class="n">metrics_test_frame</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>  <span class="c1"># Columns as x-axis</span>
         <span class="n">y</span><span class="o">=</span><span class="n">metrics_test_frame</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>  <span class="c1"># Rows as y-axis</span>
-        <span class="n">colorscale</span><span class="o">=</span><span class="s1">&#39;RdYlGn&#39;</span><span class="p">,</span>  <span class="c1"># Color scale</span>
+        <span class="n">colorscale</span><span class="o">=</span><span class="n">colorscale</span><span class="p">,</span>  <span class="c1"># Color scale</span>
         <span class="n">colorbar</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">metric_name</span><span class="p">),</span>  <span class="c1"># Colorbar label</span>
-        <span class="n">zmid</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>  <span class="c1"># Center color (0 value centered)</span>
         <span class="n">hovertemplate</span><span class="o">=</span><span class="s2">&quot;%</span><span class="si">{y}</span><span class="s2">&lt;br&gt;%</span><span class="si">{x}</span><span class="s2">: %</span><span class="si">{z:.3f}</span><span class="s2">&quot;</span><span class="p">,</span>  <span class="c1"># Tooltip on hover</span>
         <span class="n">showscale</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Display colorbar scale</span>
     <span class="p">)</span>
@@ -151,7 +188,7 @@
     <span class="c1"># Set the Plotly renderer for Jupyter or standalone use</span>
     <span class="c1"># pio.renderers.default = &#39;notebook&#39;  # For Jupyter Notebooks (use &#39;notebook&#39; or &#39;jupyterlab&#39;)</span>
     <span class="c1"># For standalone (non-Jupyter) use, you can also use:</span>
-    <span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s1">&#39;browser&#39;</span>
+    <span class="c1">#pio.renderers.default = &#39;browser&#39;</span>
 
     <span class="c1"># Create the figure and plot</span>
     <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="n">heatmap_data</span><span class="p">],</span> <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">)</span>

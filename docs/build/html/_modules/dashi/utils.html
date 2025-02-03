@@ -69,13 +69,30 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dashi.utils</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span></span><span class="c1"># Copyright 2024 Biomedical Data Science Lab, Universitat Politècnica de València (Spain)</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Utils functions</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">dashi.constants</span> <span class="kn">import</span> <span class="n">MONTH_SHORT_ABBREVIATIONS</span><span class="p">,</span> <span class="n">VALID_DATE_TYPE</span>
+<span class="kn">from</span> <span class="nn">dashi._constants</span> <span class="kn">import</span> <span class="n">MONTH_SHORT_ABBREVIATIONS</span><span class="p">,</span> <span class="n">VALID_DATE_TYPE</span>
 
 
 <span class="k">def</span> <span class="nf">_format_date_for_year</span><span class="p">(</span><span class="n">date</span><span class="p">:</span> <span class="n">datetime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -103,11 +120,11 @@
 <a class="viewcode-back" href="../../dashi.html#dashi.utils.format_data">[docs]</a>
 <span class="k">def</span> <span class="nf">format_data</span><span class="p">(</span><span class="n">input_dataframe</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
                 <span class="o">*</span><span class="p">,</span>
-                <span class="n">date_column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">date_column_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                 <span class="n">date_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;%y/%m/</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
                 <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="n">inputs_numerical_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="n">inputs_categorical_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+                <span class="n">numerical_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">categorical_column_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function to transform dates into &#39;Date&#39; Python format</span>
 
@@ -125,31 +142,36 @@
 <span class="sd">    verbose: bool</span>
 <span class="sd">        Whether to display additional information during the process. Defaults to `False`.</span>
 
-<span class="sd">    inputs_numerical_column_names: Optional[List[str]]</span>
-<span class="sd">        A list of numerical column names in the dataset. If this parameter is `None`, the variables types must be</span>
-<span class="sd">        managed by the user.</span>
+<span class="sd">    numerical_column_names: Optional[List[str]]</span>
+<span class="sd">        A list containing all the numerical column names in the dataset. If this parameter is `None`, the variables</span>
+<span class="sd">        types must be managed by the user.</span>
 
-<span class="sd">    inputs_categorical_column_names: Optional[List[str]]</span>
-<span class="sd">        A list of categorical column names in the dataset. If this parameter is `None`, the variables types must be</span>
-<span class="sd">        managed by the user.</span>
+<span class="sd">    categorical_column_names: Optional[List[str]]</span>
+<span class="sd">        A list containing all the categorical column names in the dataset. If this parameter is `None`, the variables</span>
+<span class="sd">        types must be managed by the user.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    pd.DataFrame</span>
-<span class="sd">        An object of class pd.DataFrame with the date columns transformed into &#39;Date&#39; Python format.</span>
+<span class="sd">        An object of class pd.DataFrame with the date column transformed into &#39;Date&#39; Python format, the categorical</span>
+<span class="sd">        variables into category type and the numerical variables into float type.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">date_column_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">input_dataframe</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;There is no column in your DataFrame named as: </span><span class="si">{</span><span class="n">date_column_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
     <span class="n">output_dataframe</span> <span class="o">=</span> <span class="n">input_dataframe</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">inputs_numerical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">inputs_numerical_column_names</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">numerical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Formating numerical columns as float&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">numerical_column_names</span><span class="p">:</span>
             <span class="n">output_dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">inputs_categorical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">inputs_categorical_column_names</span><span class="p">:</span>
-            <span class="n">output_dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">categorical_column_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Formating categorical columns as category&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">categorical_column_names</span><span class="p">:</span>
+            <span class="n">output_dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_dataframe</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">output_dataframe</span><span class="p">[</span><span class="n">date_column_name</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">VALID_DATE_TYPE</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">output_dataframe</span>
@@ -167,12 +189,14 @@
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The data format contains year and month but not day&#39;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="s1">&#39;Take into account that if you perform an analysis by week, the day will be automatically assigned as the first day of the month.&#39;</span><span class="p">)</span>
+                <span class="s1">&#39;Take into account that if you perform an analysis by week, the day will be automatically assigned as &#39;</span>
+                <span class="s1">&#39;the first day of the month.&#39;</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">_is_letter_in_date_format</span><span class="p">(</span><span class="n">date_format</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]):</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The data format contains only the year&#39;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="s1">&#39;Take into account that if you perform an analysis by week or by month, they will be automatically assigned as the first day of the month and first month of the year.&#39;</span><span class="p">)</span>
+                <span class="s1">&#39;Take into account that if you perform an analysis by week or by month, they will be automatically &#39;</span>
+                <span class="s1">&#39;assigned as the first day of the month and first month of the year.&#39;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Please, check the format of the date. At least it should contain the year.&#39;</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid date format&#39;</span><span class="p">)</span>
@@ -183,11 +207,14 @@
     <span class="c1"># If there are rows with na remove the complete rows</span>
     <span class="n">date_rows_without_na</span> <span class="o">=</span> <span class="n">output_dataframe</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="n">date_column_name</span><span class="p">])</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">date_rows_without_na</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_dataframe</span><span class="p">):</span>
+        <span class="n">output_dataframe</span> <span class="o">=</span> <span class="n">output_dataframe</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">output_dataframe</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">output_dataframe</span> <span class="o">=</span> <span class="n">date_rows_without_na</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;There are </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">output_dataframe</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">date_rows_without_na</span><span class="p">)</span><span class="si">}</span><span class="s1"> rows that do not contain date information. They have been removed.&#39;</span><span class="p">)</span>
+            <span class="sa">f</span><span class="s1">&#39;There are </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">output_dataframe</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">date_rows_without_na</span><span class="p">)</span><span class="si">}</span><span class="s1"> rows that do not contain date &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;information. They have been removed.&#39;</span><span class="p">)</span>
+        <span class="n">output_dataframe</span> <span class="o">=</span> <span class="n">output_dataframe</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">output_dataframe</span></div>
 
 
