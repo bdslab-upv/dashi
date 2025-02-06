@@ -55,7 +55,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="dashi.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi.constants">dashi.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.html#dashi-constants-module">dashi.constants module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi.utils">dashi.utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi">Module contents</a></li>
 </ul>
@@ -321,14 +321,14 @@ to handle high dimensional data.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<em>pd.DataFrame</em>) – A DataFrame where each row represents an individual or data point, and each column represents a
 variable. One column should represent the analysis date (typically the acquisition date).</p></li>
-<li><p><strong>date_column_name</strong> (<em>str</em>) – A string indicating teh name of the column in data containing the analysis date variable.</p></li>
+<li><p><strong>date_column_name</strong> (<em>str</em>) – A string indicating the name of the column in data containing the analysis date variable.</p></li>
 <li><p><strong>label_column_name</strong> (<em>str</em>) – The name of the column that contains the labels or class/category for each observation
 (used for concept shift analysis).</p></li>
 <li><p><strong>kde_resolution</strong> (<em>int</em>) – The resolution of the grid used for Kernel Density Estimation (KDE). This determines the granularity
 of the KDE grid and how fine or coarse the estimated density maps will be. Default is 10.</p></li>
 <li><p><strong>dimensions</strong> (<em>int</em>) – The number of dimensions to keep after applying dimensionality reduction (e.g., PCA).
 Default is 2, meaning the data will be projected into a 2D space. The maximum number of dimensions
-available are 3.</p></li>
+available are 3. For single variable datasets, dimensions can be set to 1</p></li>
 <li><p><strong>period</strong> (<em>str</em>) – The period to batch the data for analysis. Options are:
 - ‘week’ (weekly analysis)
 - ‘month’ (monthly analysis, default)
@@ -337,11 +337,11 @@ available are 3.</p></li>
 from the first chronological date in the date column.</p></li>
 <li><p><strong>end_date</strong> (<em>pd.Timestamp</em>) – A date object indicating the date at which to end the analysis, in case of being
 different from the last chronological date in the date column.</p></li>
-<li><p><strong>dim_reduction</strong> (<em>str</em>) – A dimensionality reduction technique to be used on the data. Default is <cite>PCA</cite> (Principal Component Analysis)
+<li><p><strong>dim_reduction</strong> (<em>str</em>) – A dimensionality reduction technique to be used on the data. Default is ‘PCA’ (Principal Component Analysis)
 for numerical data. Other options can include ‘MCA’ (Multiple Correspondence Analysis) for categorical data or
 ‘FAMD’ (Factor Analysis of Mixed Data) for mixed data. Note: in case of using ‘FAMD’, numerical variables must be
 in float type. Otherwise they will be treated as categorical.</p></li>
-<li><p><strong>scatter_plot</strong> (<em>bool</em>) – Whether to generate a scatter plot of the first two principal components of the dimensionality reduction</p></li>
+<li><p><strong>scatter_plot</strong> (<em>bool</em>) – Whether to generate a scatter plot of the first two principal components of the dimensionality reduction.</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>) – Whether to display additional information during the process. Defaults to <cite>False</cite>.</p></li>
 </ul>
 </dd>
@@ -365,7 +365,7 @@ in float type. Otherwise they will be treated as categorical.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<em>pd.DataFrame</em>) – A DataFrame where each row represents an individual or data point, and each column represents a
 variable. One column should represent the analysis date (typically the acquisition date).</p></li>
-<li><p><strong>date_column_name</strong> (<em>str</em>) – A string indicating teh name of the column in data containing the analysis date variable.</p></li>
+<li><p><strong>date_column_name</strong> (<em>str</em>) – A string indicating the name of the column in data containing the analysis date variable.</p></li>
 <li><p><strong>kde_resolution</strong> (<em>int</em>) – The resolution of the grid used for Kernel Density Estimation (KDE). This determines the granularity
 of the KDE grid and how fine or coarse the estimated density maps will be. Default is 10.</p></li>
 <li><p><strong>dimensions</strong> (<em>int</em>) – The number of dimensions to keep after applying dimensionality reduction (e.g., PCA).
@@ -424,12 +424,12 @@ variables when their support is not provided. 100 as default.</p></li>
 (Gaussian kernel, default bandwidth) is to be applied on numerical variables
 or traditional histogram instead.</p></li>
 <li><p><strong>date_gaps_smoothing</strong> (<em>bool</em>) – Logical value indicating whether a linear smoothing is applied to those time
-batches without data. By default gaps are filled with NAs.</p></li>
+batches without data. By default, gaps are filled with NAs.</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>) – Whether to display additional information during the process. Defaults to <cite>False</cite>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The DataTemporalMap object or a dictionary of DataTemporalMap objects depending on teh number of
+<dd class="field-even"><p>The DataTemporalMap object or a dictionary of DataTemporalMap objects depending on the number of
 analysis variables.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -474,7 +474,7 @@ Data Temporal heatmap of each label in that dimension</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data_temporal_map_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap"><em>MultiVariateDataTemporalMap</em></a><em>]</em>) – A dictionary where keys are labels (strings), and values are the corresponding
-<cite>MultiVariateDataTemporalMap</cite> objects obtained from the ‘estimate_multidim_concept_shift’ function.</p></li>
+<cite>MultiVariateDataTemporalMap</cite> objects obtained from the ‘estimate_conditional_data_temporal_map’ function.</p></li>
 <li><p><strong>absolute</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, plot absolute values; otherwise, relative probabilities are plotted. Default is False.</p></li>
 </ul>
 </dd>
@@ -507,7 +507,7 @@ Data Temporal heatmap of each label in that dimension</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_univariate_data_temporal_map">
-<span class="sig-name descname"><span class="pre">plot_univariate_data_temporal_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_temporal_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absolute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sorting_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DataTemporalMapPlotSortingMethod.Frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_palette</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PlotColorPalette.Spectral</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DataTemporalMapPlotMode.Heatmap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/data_temporal_map/data_temporal_map_plotter.html#plot_univariate_data_temporal_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_univariate_data_temporal_map" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot_univariate_data_temporal_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_temporal_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absolute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sorting_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'frequency'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_palette</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Spectral'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'heatmap'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/data_temporal_map/data_temporal_map_plotter.html#plot_univariate_data_temporal_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_univariate_data_temporal_map" title="Link to this definition"></a></dt>
 <dd><p>Plots a Data Temporal heatmap or series from a DataTemporalMap object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -519,9 +519,11 @@ Data Temporal heatmap of each label in that dimension</p>
 <li><p><strong>end_value</strong> (<em>int</em><em>, </em><em>optional</em>) – The value at which to end the plot. If None, the plot extends to the last value. Default is None.</p></li>
 <li><p><strong>start_date</strong> (<em>datetime</em><em>, </em><em>optional</em>) – The starting date for the plot (filters the data). If None, uses the first date in the data. Default is None.</p></li>
 <li><p><strong>end_date</strong> (<em>datetime</em><em>, </em><em>optional</em>) – The ending date for the plot (filters the data). If None, uses the last date in the data. Default is None.</p></li>
-<li><p><strong>sorting_method</strong> (<a class="reference internal" href="dashi.html#dashi.constants.DataTemporalMapPlotSortingMethod" title="dashi.constants.DataTemporalMapPlotSortingMethod"><em>DataTemporalMapPlotSortingMethod</em></a><em>, </em><em>optional</em>) – The method by which to sort the data for visualization. Default is Frequency.</p></li>
-<li><p><strong>color_palette</strong> (<a class="reference internal" href="dashi.html#dashi.constants.PlotColorPalette" title="dashi.constants.PlotColorPalette"><em>PlotColorPalette</em></a><em>, </em><em>optional</em>) – The color palette to be used for the plot. Default is Spectral.</p></li>
-<li><p><strong>mode</strong> (<a class="reference internal" href="dashi.html#dashi.constants.DataTemporalMapPlotMode" title="dashi.constants.DataTemporalMapPlotMode"><em>DataTemporalMapPlotMode</em></a><em>, </em><em>optional</em>) – The mode of visualization (e.g., Heatmap, Series). Default is Heatmap.</p></li>
+<li><p><strong>sorting_method</strong> (<em>str</em><em>, </em><em>optional</em>) – The method by which the data will be sorted for display (e.g., ‘frequency’, ‘alphabetical’).
+Default is ‘frequency’.</p></li>
+<li><p><strong>color_palette</strong> (<em>str</em><em>, </em><em>optional</em>) – The color palette to be used for the plot (e.g., ‘Spectral’, ‘viridis’, ‘viridis_r’, ‘magma’, ‘magma_r).
+Default is ‘Spectral’.</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – The mode of visualization (e.g., ‘heatmap’, ‘series’). Default is ‘heatmap’.</p></li>
 <li><p><strong>plot_title</strong> (<em>str</em><em>, </em><em>optional</em>) – The title of the plot. If None, a default title is used. Default is None.</p></li>
 </ul>
 </dd>

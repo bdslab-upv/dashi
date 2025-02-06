@@ -58,7 +58,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="dashi.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi.constants">dashi.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.html#dashi-constants-module">dashi.constants module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi.utils">dashi.utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi">Module contents</a></li>
 </ul>
@@ -97,9 +97,7 @@
 </section>
 <section id="module-dashi.supervised_characterization.arrange_metrics">
 <span id="dashi-supervised-characterization-arrange-metrics-module"></span><h2>dashi.supervised_characterization.arrange_metrics module<a class="headerlink" href="#module-dashi.supervised_characterization.arrange_metrics" title="Link to this heading"></a></h2>
-<p>DESCRIPTION: functions for arranging metrics in a data frame from the original metrics dictionary.
-AUTHOR: Pablo Ferri-Borredà
-DATE: 28/11/24</p>
+<p>Functions for arranging metrics in a data frame from the original metrics dictionary.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="dashi.supervised_characterization.arrange_metrics.arrange_performance_metrics">
 <span class="sig-name descname"><span class="pre">arrange_performance_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/arrange_metrics.html#arrange_performance_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.arrange_metrics.arrange_performance_metrics" title="Link to this definition"></a></dt>
@@ -111,7 +109,38 @@ index.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>metrics</strong> (<em>dict</em><em> of </em><em>{str: float}</em>) – A dictionary containing the calculated metrics for each batch and model combination.</p></li>
-<li><p><strong>metric_name</strong> (<em>str</em>) – The name of the metric to be selected from the <cite>metrics</cite> dictionary.</p></li>
+<li><p><strong>metric_name</strong> (<em>str</em>) – <p>The name of the metric to be selected from the <cite>metrics</cite> dictionary.
+Regression metric names, when applicable:</p>
+<blockquote>
+<div><ul>
+<li><p>’MEAN_ABSOLUTE_ERROR’</p></li>
+<li><p>’MEAN_SQUARED_ERROR’</p></li>
+<li><p>’ROOT_MEAN_SQUARED_ERROR’</p></li>
+<li><p>’R_SQUARED’</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Classification metric names, when applicable:</dt><dd><ul>
+<li><p>’AUC_{class_identifier}’</p></li>
+<li><p>’AUC_MACRO’</p></li>
+<li><p>’LOGLOSS’</p></li>
+<li><p>’RECALL_{class_identifier}’</p></li>
+<li><p>’PRECISION_{class_identifier}’</p></li>
+<li><p>’F1-SCORE_{class_identifier}’</p></li>
+<li><p>’ACCURACY’</p></li>
+<li><p>’RECALL_MACRO’</p></li>
+<li><p>’RECALL_MICRO’</p></li>
+<li><p>’RECALL_WEIGHTED’</p></li>
+<li><p>’PRECISION_MACRO’</p></li>
+<li><p>’PRECISION_MICRO’</p></li>
+<li><p>’PRECISION_WEIGHTED’</p></li>
+<li><p>’F1-SCORE_MACRO’</p></li>
+<li><p>’F1-SCORE_MICRO’</p></li>
+<li><p>’F1-SCORE_WEIGHTED’</p></li>
+</ul>
+</dd>
+</dl>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -133,30 +162,72 @@ filtering the relevant metrics.</p>
 </section>
 <section id="module-dashi.supervised_characterization.estimate_models">
 <span id="dashi-supervised-characterization-estimate-models-module"></span><h2>dashi.supervised_characterization.estimate_models module<a class="headerlink" href="#module-dashi.supervised_characterization.estimate_models" title="Link to this heading"></a></h2>
-<p>DESCRIPTION: main function for estimating models over multiple temporal or multi-source batches.
-AUTHOR: Pablo Ferri-Borredà
-DATE: 17/10/24</p>
+<p>Main function for estimating models over multiple temporal or multi-source batches.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="dashi.supervised_characterization.estimate_models.estimate_multibatch_models">
-<span class="sig-name descname"><span class="pre">estimate_multibatch_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_numerical_column_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_categorical_column_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_regression_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_classification_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'from_scratch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/estimate_models.html#estimate_multibatch_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.estimate_models.estimate_multibatch_models" title="Link to this definition"></a></dt>
-<dd><p>Estimate models over multiple batches, either based on time (temporal) or source. RandomForest class weighted,
-define metrics,</p>
+<span class="sig-name descname"><span class="pre">estimate_multibatch_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_numerical_column_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_categorical_column_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_regression_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_classification_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'from_scratch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/estimate_models.html#estimate_multibatch_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.estimate_models.estimate_multibatch_models" title="Link to this definition"></a></dt>
+<dd><p>Estimates models across multiple batches, based on either time (temporal) or source.
+Requires specifying one target variable (regression or classification) and at least one
+numerical or categorical input feature within the input DataFrame.
+At the same time, it is necessary to provide either a date variable (indicating the period with the corresponding
+argument) or a source variable. The date variable must be a valid date, and the source variable categories need to
+be specified as strings.
+Additionally, it is recommended that the amount of data in each batching group be  sufficient for statistical
+representativeness.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>DataFrame</em>) – The input data containing both numerical and categorical features, as well as the target variables.</p></li>
-<li><p><strong>inputs_numerical_column_names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of column names representing numerical input features.</p></li>
-<li><p><strong>inputs_categorical_column_names</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of column names representing categorical input features.</p></li>
-<li><p><strong>output_regression_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name for the regression target variable, if applicable.</p></li>
-<li><p><strong>output_classification_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name for the classification target variable, if applicable.</p></li>
-<li><p><strong>date_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name containing date or time information for temporal batching, if applicable.</p></li>
-<li><p><strong>period</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Period for batching the data (‘month’ or ‘year’) when using temporal batching.</p></li>
-<li><p><strong>source_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name representing the source of the data (for multi-source batching).</p></li>
-<li><p><strong>learning_strategy</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default='from_scratch'</em>) – Defines the learning strategy: ‘from_scratch’ or ‘cumulative’.</p></li>
+<li><p><strong>data</strong> (<em>DataFrame</em>) – The input data containing numerical and/or categorical features, as well as the target variable
+(either a classification or regression target).</p></li>
+<li><p><strong>inputs_numerical_column_names</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>default=None</em>) – List of column names representing numerical input features. If there are no numerical input features,
+set this to None.</p></li>
+<li><p><strong>inputs_categorical_column_names</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>default=None</em>) – List of column names representing categorical input features. If there are no categorical input features,
+set this to None.</p></li>
+<li><p><strong>output_regression_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name for the regression target variable. If there is no regression target, set this to None.</p></li>
+<li><p><strong>output_classification_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name for the classification target variable. If there is no classification target, set this to None.</p></li>
+<li><p><strong>date_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name containing date or time information for temporal batching. If performing source-based
+analysis instead of temporal batching, set this to None.</p></li>
+<li><p><strong>period</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Period for batching the data (‘month’ or ‘year’) when using temporal batching. If not using temporal
+batching, set this to None.</p></li>
+<li><p><strong>source_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name representing the source of the data (for multi-source batching). If performing temporal
+batching, set this to None.</p></li>
+<li><p><strong>learning_strategy</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default='from_scratch'</em>) – Defines the learning strategy: either ‘from_scratch’ or ‘cumulative’. Note that the ‘cumulative’ strategy
+can only be applied to temporal analyses, not multi-source analyses.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A dictionary containing the calculated metrics for each batch and model combination.</p>
+<dd class="field-even"><p><p>A dictionary containing the calculated metrics for each batch and model combination.
+Regression metrics, if applicable:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>’MEAN_ABSOLUTE_ERROR’</p></li>
+<li><p>’MEAN_SQUARED_ERROR’</p></li>
+<li><p>’ROOT_MEAN_SQUARED_ERROR’</p></li>
+<li><p>’R_SQUARED’</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Classification metrics, if applicable:</dt><dd><ul class="simple">
+<li><p>’AUC_{class_identifier}’</p></li>
+<li><p>’AUC_MACRO’</p></li>
+<li><p>’LOGLOSS’</p></li>
+<li><p>’RECALL_{class_identifier}’</p></li>
+<li><p>’PRECISION_{class_identifier}’</p></li>
+<li><p>’F1-SCORE_{class_identifier}’</p></li>
+<li><p>’ACCURACY’</p></li>
+<li><p>’RECALL_MACRO’</p></li>
+<li><p>’RECALL_MICRO’</p></li>
+<li><p>’RECALL_WEIGHTED’</p></li>
+<li><p>’PRECISION_MACRO’</p></li>
+<li><p>’PRECISION_MICRO’</p></li>
+<li><p>’PRECISION_WEIGHTED’</p></li>
+<li><p>’F1-SCORE_MACRO’</p></li>
+<li><p>’F1-SCORE_MICRO’</p></li>
+<li><p>’F1-SCORE_WEIGHTED’</p></li>
+</ul>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Dict[str, float]</p>
@@ -167,9 +238,7 @@ define metrics,</p>
 </section>
 <section id="module-dashi.supervised_characterization.plot_performance">
 <span id="dashi-supervised-characterization-plot-performance-module"></span><h2>dashi.supervised_characterization.plot_performance module<a class="headerlink" href="#module-dashi.supervised_characterization.plot_performance" title="Link to this heading"></a></h2>
-<p>DESCRIPTION: main function for multi-batch metrics exploration.
-AUTHOR: Pablo Ferri-Borredà
-DATE: 17/10/24</p>
+<p>Main function for multi-batch metrics exploration.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="dashi.supervised_characterization.plot_performance.plot_multibatch_performance">
 <span class="sig-name descname"><span class="pre">plot_multibatch_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/plot_performance.html#plot_multibatch_performance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.plot_performance.plot_multibatch_performance" title="Link to this definition"></a></dt>
@@ -185,8 +254,39 @@ values of the specified metric.</p>
 <li><p><strong>metrics</strong> (<em>dict</em>) – A dictionary where keys are tuples of (training_batch, test_batch, dataset_type),
 and values are the metric values for the corresponding combination.
 The <cite>dataset_type</cite> should be <cite>‘test’</cite> to include the metric in the heatmap.</p></li>
-<li><p><strong>metric_name</strong> (<em>str</em>) – The name of the metric to visualize (e.g., ‘accuracy’, ‘loss’, etc.).
-The function will filter metrics based on this identifier and only plot those for the ‘test’ set.</p></li>
+<li><p><strong>metric_name</strong> (<em>str</em>) – <p>The name of the metric to visualize.
+The function will filter metrics based on this identifier and only plot those for the ‘test’ set.
+Regression metric names, when applicable:</p>
+<blockquote>
+<div><ul>
+<li><p>’MEAN_ABSOLUTE_ERROR’</p></li>
+<li><p>’MEAN_SQUARED_ERROR’</p></li>
+<li><p>’ROOT_MEAN_SQUARED_ERROR’</p></li>
+<li><p>’R_SQUARED’</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Classification metric names, when applicable:</dt><dd><ul>
+<li><p>’AUC_{class_identifier}’</p></li>
+<li><p>’AUC_MACRO’</p></li>
+<li><p>’LOGLOSS’</p></li>
+<li><p>’RECALL_{class_identifier}’</p></li>
+<li><p>’PRECISION_{class_identifier}’</p></li>
+<li><p>’F1-SCORE_{class_identifier}’</p></li>
+<li><p>’ACCURACY’</p></li>
+<li><p>’RECALL_MACRO’</p></li>
+<li><p>’RECALL_MICRO’</p></li>
+<li><p>’RECALL_WEIGHTED’</p></li>
+<li><p>’PRECISION_MACRO’</p></li>
+<li><p>’PRECISION_MICRO’</p></li>
+<li><p>’PRECISION_WEIGHTED’</p></li>
+<li><p>’F1-SCORE_MACRO’</p></li>
+<li><p>’F1-SCORE_MICRO’</p></li>
+<li><p>’F1-SCORE_WEIGHTED’</p></li>
+</ul>
+</dd>
+</dl>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
