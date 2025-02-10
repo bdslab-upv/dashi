@@ -47,14 +47,12 @@ pip install .
 
 ## Usage & Examples
 
-Here’s a basic example of how to use `dashi`:
-
-Find more examples in the [examples](examples/) directory.
+You can find `dashi` usage tutorials in the [examples](examples/) directory.
 
 
 ## Documentation
 
-Detailed documentation is available at [WIP](https://example.com/docs).
+Detailed documentation is available at [documentation](docs/build/html/dashi.html).
 
 ## License
 
