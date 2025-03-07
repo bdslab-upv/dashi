@@ -776,7 +776,7 @@ def estimate_multivariate_data_temporal_map(
         'FAMD' (Factor Analysis of Mixed Data) for mixed data. Note: in case of using 'FAMD', numerical variables must be
         in float type. Otherwise they will be treated as categorical.
 
-    scale: str
+    scale: bool
         Applicable just when using PCA dimensionality reduction. If true scales the input data using z-score
         normalization. Defaults to `True`.
 
