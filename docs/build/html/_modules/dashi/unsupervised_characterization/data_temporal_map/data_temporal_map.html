@@ -86,17 +86,15 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Data Temporal Map main functions and classes</span>
 <span class="sd">&quot;&quot;&quot;</span>
-
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">import</span> <span class="nn">prince</span>
-
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">plotly.express</span> <span class="k">as</span> <span class="nn">px</span>
+<span class="kn">import</span> <span class="nn">prince</span>
 <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">gaussian_kde</span>
 
 <span class="kn">from</span> <span class="nn">dashi._constants</span> <span class="kn">import</span> <span class="n">VALID_TEMPORAL_PERIODS</span><span class="p">,</span> <span class="n">VALID_TYPES</span><span class="p">,</span> <span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">,</span> \
@@ -627,7 +625,8 @@
     <span class="n">support_singles_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">support_lengths</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">support_singles_indexes</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Removing variables with less than two distinct values in their supports: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">support_singles_indexes</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Removing variables with less than two distinct values in their supports: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">support_singles_indexes</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span>
             <span class="sa">f</span><span class="s1">&#39;The following variable/s have less than two distinct values in their supports and were excluded from the analysis: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">support_singles_indexes</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="n">data_without_date_column</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="o">~</span><span class="n">support_singles_indexes</span><span class="p">]</span>
@@ -822,6 +821,7 @@
         <span class="n">start_date</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">end_date</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dim_reduction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;PCA&#39;</span><span class="p">,</span>
+        <span class="n">scale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">scatter_plot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">:</span>
@@ -866,6 +866,10 @@
 <span class="sd">        for numerical data. Other options can include &#39;MCA&#39; (Multiple Correspondence Analysis) for categorical data or</span>
 <span class="sd">        &#39;FAMD&#39; (Factor Analysis of Mixed Data) for mixed data. Note: in case of using &#39;FAMD&#39;, numerical variables must be</span>
 <span class="sd">        in float type. Otherwise they will be treated as categorical.</span>
+
+<span class="sd">    scale: str</span>
+<span class="sd">        Applicable just when using PCA dimensionality reduction. If true scales the input data using z-score</span>
+<span class="sd">        normalization. Defaults to `True`.</span>
 
 <span class="sd">    scatter_plot: bool</span>
 <span class="sd">        Whether to generate a scatter plot of the first two principal components of the dimensionality reduction</span>
@@ -980,15 +984,13 @@
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Applying dimensionality reduction with </span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">dim_reduction</span> <span class="o">==</span> <span class="n">PCA</span><span class="p">:</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="n">prince</span><span class="o">.</span><span class="n">PCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">112</span><span class="p">)</span>
-        <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">dim_reduction</span> <span class="o">==</span> <span class="n">FAMD</span><span class="p">:</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="n">prince</span><span class="o">.</span><span class="n">FAMD</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">112</span><span class="p">)</span>
-        <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">dim_reduction</span> <span class="o">==</span> <span class="n">MCA</span><span class="p">:</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="n">prince</span><span class="o">.</span><span class="n">MCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">112</span><span class="p">)</span>
-        <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="p">)</span>
+    <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">_perform_dimensionality_reduction</span><span class="p">(</span>
+        <span class="n">data_without_date_column</span><span class="p">,</span>
+        <span class="n">dim_reduction</span><span class="o">=</span><span class="n">dim_reduction</span><span class="p">,</span>
+        <span class="n">n_components</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="n">scale</span><span class="o">=</span><span class="n">scale</span>
+    <span class="p">)</span>
 
     <span class="n">reduced_data</span><span class="p">[[</span><span class="n">date_column_name</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
         <span class="n">date_column_name</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">dates_for_batching</span><span class="p">)</span>
@@ -1017,11 +1019,11 @@
                 <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">}</span>
             <span class="p">},</span>
             <span class="n">xaxis_title</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC1 (</span><span class="si">{</span><span class="n">method</span><span class="o">.</span><span class="n">eigenvalues_summary</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> variance)&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC1&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">}</span>
             <span class="p">},</span>
             <span class="n">yaxis_title</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC2 (</span><span class="si">{</span><span class="n">method</span><span class="o">.</span><span class="n">eigenvalues_summary</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> variance)&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC2&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">}</span>
             <span class="p">}</span>
 
@@ -1055,6 +1057,7 @@
         <span class="n">start_date</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">end_date</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dim_reduction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;PCA&#39;</span><span class="p">,</span>
+        <span class="n">scale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">scatter_plot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">]:</span>
@@ -1104,6 +1107,10 @@
 <span class="sd">        for numerical data. Other options can include &#39;MCA&#39; (Multiple Correspondence Analysis) for categorical data or</span>
 <span class="sd">        &#39;FAMD&#39; (Factor Analysis of Mixed Data) for mixed data. Note: in case of using &#39;FAMD&#39;, numerical variables must be</span>
 <span class="sd">        in float type. Otherwise they will be treated as categorical.</span>
+
+<span class="sd">    scale: str</span>
+<span class="sd">        Applicable just when using PCA dimensionality reduction. If true scales the input data using z-score</span>
+<span class="sd">        normalization. Defaults to `True`</span>
 
 <span class="sd">    scatter_plot: bool</span>
 <span class="sd">        Whether to generate a scatter plot of the first two principal components of the dimensionality reduction.</span>
@@ -1223,15 +1230,13 @@
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Applying dimensionality reduction with </span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">dim_reduction</span> <span class="o">==</span> <span class="n">PCA</span><span class="p">:</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="n">prince</span><span class="o">.</span><span class="n">PCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">112</span><span class="p">)</span>
-        <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">dim_reduction</span> <span class="o">==</span> <span class="n">FAMD</span><span class="p">:</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="n">prince</span><span class="o">.</span><span class="n">FAMD</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">112</span><span class="p">)</span>
-        <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">dim_reduction</span> <span class="o">==</span> <span class="n">MCA</span><span class="p">:</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="n">prince</span><span class="o">.</span><span class="n">MCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">112</span><span class="p">)</span>
-        <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="p">)</span>
+    <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">_perform_dimensionality_reduction</span><span class="p">(</span>
+        <span class="n">data_without_date_column</span><span class="p">,</span>
+        <span class="n">dim_reduction</span><span class="o">=</span><span class="n">dim_reduction</span><span class="p">,</span>
+        <span class="n">n_components</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="n">scale</span><span class="o">=</span><span class="n">scale</span>
+    <span class="p">)</span>
 
     <span class="n">reduced_data</span><span class="p">[[</span><span class="n">label_column_name</span><span class="p">,</span> <span class="n">date_column_name</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
         <span class="n">label_column_name</span><span class="p">:</span> <span class="n">labels_columns</span><span class="p">,</span>
@@ -1262,11 +1267,11 @@
                 <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">}</span>
             <span class="p">},</span>
             <span class="n">xaxis_title</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC1 (</span><span class="si">{</span><span class="n">method</span><span class="o">.</span><span class="n">eigenvalues_summary</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> variance)&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC1&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">}</span>
             <span class="p">},</span>
             <span class="n">yaxis_title</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC2 (</span><span class="si">{</span><span class="n">method</span><span class="o">.</span><span class="n">eigenvalues_summary</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> variance)&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC2&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">}</span>
             <span class="p">}</span>
 
@@ -1466,6 +1471,38 @@
             <span class="n">period</span><span class="o">=</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;period&#39;</span><span class="p">]</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">dtm</span>
+
+
+<span class="k">def</span> <span class="nf">_perform_dimensionality_reduction</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">dim_reduction</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">n_components</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">reduction_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+
+    <span class="n">reduction_strategies</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;PCA&#39;</span><span class="p">:</span> <span class="n">prince</span><span class="o">.</span><span class="n">PCA</span><span class="p">,</span>
+        <span class="s1">&#39;MCA&#39;</span><span class="p">:</span> <span class="n">prince</span><span class="o">.</span><span class="n">MCA</span><span class="p">,</span>
+        <span class="s1">&#39;FAMD&#39;</span><span class="p">:</span> <span class="n">prince</span><span class="o">.</span><span class="n">FAMD</span>
+    <span class="p">}</span>
+
+    <span class="n">MethodClass</span> <span class="o">=</span> <span class="n">reduction_strategies</span><span class="p">[</span><span class="n">dim_reduction</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="s1">&#39;scale&#39;</span> <span class="ow">in</span> <span class="n">reduction_kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dim_reduction</span> <span class="o">==</span> <span class="s1">&#39;PCA&#39;</span><span class="p">:</span>
+            <span class="n">scale_value</span> <span class="o">=</span> <span class="n">reduction_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;scale&#39;</span><span class="p">)</span>
+            <span class="n">reduction_kwargs</span><span class="p">[</span><span class="s1">&#39;rescale_with_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_value</span>
+            <span class="n">reduction_kwargs</span><span class="p">[</span><span class="s1">&#39;rescale_with_std&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reduction_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;scale&#39;</span><span class="p">)</span>
+
+    <span class="n">reduction_method</span> <span class="o">=</span> <span class="n">MethodClass</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">112</span><span class="p">,</span> <span class="o">**</span><span class="n">reduction_kwargs</span><span class="p">)</span>
+    <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">reduction_method</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Eigenvalues summary:</span><span class="se">\n</span><span class="si">{</span><span class="n">reduction_method</span><span class="o">.</span><span class="n">eigenvalues_summary</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">reduced_data</span>
 </pre></div>
 
            </div>
