@@ -47,12 +47,13 @@ pip install .
 
 ## Usage & Examples
 
-You can find `dashi` usage tutorials in the [examples](examples/) directory.
+You can find the tutorial on ho to use `dashi` in this [link](https://bdslab-upv.github.io/dashi/examples/Usage_tutorial.html) 
+or in the [examples](examples/) directory.
 
 
 ## Documentation
 
-Detailed documentation is available at [documentation](docs/build/html/dashi.html).
+Detailed documentation is available at [documentation](https://bdslab-upv.github.io/dashi/docs/build/html/).
 
 ## License
 
