@@ -15,17 +15,15 @@
 """
 Data Temporal Map main functions and classes
 """
-
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Union, List, Dict, Optional
 
-import prince
-
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import prince
 from scipy.stats import gaussian_kde
 
 from dashi._constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, \
@@ -539,7 +537,8 @@ def estimate_univariate_data_temporal_map(
     support_singles_indexes = np.array(support_lengths) < 2
     if np.any(support_singles_indexes):
         if verbose:
-            print(f'Removing variables with less than two distinct values in their supports: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
+            print(
+                f'Removing variables with less than two distinct values in their supports: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
         print(
             f'The following variable/s have less than two distinct values in their supports and were excluded from the analysis: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
         data_without_date_column = data_without_date_column.loc[:, ~support_singles_indexes]
@@ -731,6 +730,7 @@ def estimate_multivariate_data_temporal_map(
         start_date: pd.Timestamp = None,
         end_date: pd.Timestamp = None,
         dim_reduction: str = 'PCA',
+        scale: bool = True,
         scatter_plot: bool = False,
         verbose: bool = False
 ) -> MultiVariateDataTemporalMap:
@@ -775,6 +775,10 @@ def estimate_multivariate_data_temporal_map(
         for numerical data. Other options can include 'MCA' (Multiple Correspondence Analysis) for categorical data or
         'FAMD' (Factor Analysis of Mixed Data) for mixed data. Note: in case of using 'FAMD', numerical variables must be
         in float type. Otherwise they will be treated as categorical.
+
+    scale: str
+        Applicable just when using PCA dimensionality reduction. If true scales the input data using z-score
+        normalization. Defaults to `True`.
 
     scatter_plot: bool
         Whether to generate a scatter plot of the first two principal components of the dimensionality reduction
@@ -889,15 +893,13 @@ def estimate_multivariate_data_temporal_map(
     if verbose:
         print(f'Applying dimensionality reduction with {dim_reduction}')
 
-    if dim_reduction == PCA:
-        method = prince.PCA(n_components=dimensions, random_state=112)
-        reduced_data = method.fit_transform(data_without_date_column)
-    elif dim_reduction == FAMD:
-        method = prince.FAMD(n_components=dimensions, random_state=112)
-        reduced_data = method.fit_transform(data_without_date_column)
-    elif dim_reduction == MCA:
-        method = prince.MCA(n_components=dimensions, random_state=112)
-        reduced_data = method.fit_transform(data_without_date_column)
+    reduced_data = _perform_dimensionality_reduction(
+        data_without_date_column,
+        dim_reduction=dim_reduction,
+        n_components=dimensions,
+        verbose=verbose,
+        scale=scale
+    )
 
     reduced_data[[date_column_name]] = pd.DataFrame({
         date_column_name: pd.to_datetime(dates_for_batching)
@@ -926,11 +928,11 @@ def estimate_multivariate_data_temporal_map(
                 'font': {'size': 25}
             },
             xaxis_title={
-                'text': f'PC1 ({method.eigenvalues_summary.iloc[0, 1]} variance)',
+                'text': f'PC1',
                 'font': {'size': 18}
             },
             yaxis_title={
-                'text': f'PC2 ({method.eigenvalues_summary.iloc[1, 1]} variance)',
+                'text': f'PC2',
                 'font': {'size': 18}
             }
 
@@ -961,6 +963,7 @@ def estimate_conditional_data_temporal_map(
         start_date: pd.Timestamp = None,
         end_date: pd.Timestamp = None,
         dim_reduction: str = 'PCA',
+        scale: bool = True,
         scatter_plot: bool = False,
         verbose: bool = False
 ) -> Dict[str, MultiVariateDataTemporalMap]:
@@ -1010,6 +1013,10 @@ def estimate_conditional_data_temporal_map(
         for numerical data. Other options can include 'MCA' (Multiple Correspondence Analysis) for categorical data or
         'FAMD' (Factor Analysis of Mixed Data) for mixed data. Note: in case of using 'FAMD', numerical variables must be
         in float type. Otherwise they will be treated as categorical.
+
+    scale: str
+        Applicable just when using PCA dimensionality reduction. If true scales the input data using z-score
+        normalization. Defaults to `True`
 
     scatter_plot: bool
         Whether to generate a scatter plot of the first two principal components of the dimensionality reduction.
@@ -1129,15 +1136,13 @@ def estimate_conditional_data_temporal_map(
     if verbose:
         print(f'Applying dimensionality reduction with {dim_reduction}')
 
-    if dim_reduction == PCA:
-        method = prince.PCA(n_components=dimensions, random_state=112)
-        reduced_data = method.fit_transform(data_without_date_column)
-    elif dim_reduction == FAMD:
-        method = prince.FAMD(n_components=dimensions, random_state=112)
-        reduced_data = method.fit_transform(data_without_date_column)
-    elif dim_reduction == MCA:
-        method = prince.MCA(n_components=dimensions, random_state=112)
-        reduced_data = method.fit_transform(data_without_date_column)
+    reduced_data = _perform_dimensionality_reduction(
+        data_without_date_column,
+        dim_reduction=dim_reduction,
+        n_components=dimensions,
+        verbose=verbose,
+        scale=scale
+    )
 
     reduced_data[[label_column_name, date_column_name]] = pd.DataFrame({
         label_column_name: labels_columns,
@@ -1168,11 +1173,11 @@ def estimate_conditional_data_temporal_map(
                 'font': {'size': 25}
             },
             xaxis_title={
-                'text': f'PC1 ({method.eigenvalues_summary.iloc[0, 1]} variance)',
+                'text': f'PC1',
                 'font': {'size': 18}
             },
             yaxis_title={
-                'text': f'PC2 ({method.eigenvalues_summary.iloc[1, 1]} variance)',
+                'text': f'PC2',
                 'font': {'size': 18}
             }
 
@@ -1371,3 +1376,35 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
             period=dates_info['period']
         )
     return dtm
+
+
+def _perform_dimensionality_reduction(
+        data: pd.DataFrame,
+        dim_reduction: str,
+        n_components: int,
+        verbose: bool = True,
+        **reduction_kwargs) -> pd.DataFrame:
+
+    reduction_strategies = {
+        'PCA': prince.PCA,
+        'MCA': prince.MCA,
+        'FAMD': prince.FAMD
+    }
+
+    MethodClass = reduction_strategies[dim_reduction]
+
+    if 'scale' in reduction_kwargs:
+        if dim_reduction == 'PCA':
+            scale_value = reduction_kwargs.pop('scale')
+            reduction_kwargs['rescale_with_mean'] = scale_value
+            reduction_kwargs['rescale_with_std'] = scale_value
+        else:
+            reduction_kwargs.pop('scale')
+
+    reduction_method = MethodClass(n_components=n_components, random_state=112, **reduction_kwargs)
+    reduced_data = reduction_method.fit_transform(data)
+
+    if verbose:
+        print(f'Eigenvalues summary:\n{reduction_method.eigenvalues_summary}')
+
+    return reduced_data

@@ -1,18 +1,18 @@
 [project]
 name = "dashi"
 version = "0.1.0"
-description = "Dataset shifts analysis and characterization in python"
+description = "Dataset shift analysis and characterization in python"
 readme = "README.md"
 authors = [
     { name = "David Fernández-Narro (UPV), Pablo Ferri Borredá (UPV), Ángel Sánchez-García (UPV), Juan M García-Gómez (UPV), Carlos Sáez (UPV); Biomedical Data Science Lab, ITACA Institute, Universitat Politècnica de València, Spain", email = "carsaesi@upv.es" }
 ]
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"
-keywords = ["dashi", "dataset shifts", "machine learning", "artificial intelligence", "exploratory analysis", "time", "variability"]
+keywords = ["dashi", "dataset shift", "machine learning", "artificial intelligence", "exploratory analysis", "time", "source", "variability"]
 dependencies = [
     "numpy>=1.26.1",
     "pandas>=2.2.2",
-    "plotly>=5.18.0",
+    "plotly==5.18.0",
     "scikit-learn==1.5.1",
     "python-dateutil>=2.8.2",
     "tqdm>=4.66.5",
