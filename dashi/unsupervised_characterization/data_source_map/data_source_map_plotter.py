@@ -13,11 +13,8 @@
 # limitations under the License.
 
 """
-Data Temporal Map plotting main functions and classes
+Data Source Map plotting main functions and classes
 """
-
-from datetime import datetime
-
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
@@ -27,38 +24,31 @@ from typing import Optional, Dict
 
 from dashi._constants import VALID_SORTING_METHODS, VALID_COLOR_PALETTES, \
     VALID_PLOT_MODES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
-
-from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (DataTemporalMap,
-                                                                                     MultiVariateDataTemporalMap,
-                                                                                     trim_data_temporal_map)
+from dashi.unsupervised_characterization.data_source_map.data_source_map import DataSourceMap, MultiVariateDataSourceMap
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
                                                        _create_heatmap_figure, _create_series_figure,
                                                        _marginalize_multivariate_map)
 
-# SETTINGS
-pio.renderers.default = 'browser'
+pio.renderers.default = "browser"
 
-
-def plot_univariate_data_temporal_map(
-        data_temporal_map: DataTemporalMap,
+def plot_univariate_data_source_map(
+        data_source_map: DataSourceMap,
         absolute: bool = False,
         log_transform: bool = False,
         start_value: Optional[int] = 0,
         end_value: Optional[int] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        sorting_method: str = 'frequency',
+        sorting_method: str = 'alphabetical',
         color_palette: str = 'Spectral',
         mode: str = 'heatmap',
         title: Optional[str] = None
 ) -> go.Figure:
     """
-    Plots a Data Temporal heatmap or series from a DataTemporalMap object.
+    Plots a Data Source heatmap or series from a DataSourceMap object.
 
     Parameters
     ----------
-    data_temporal_map : DataTemporalMap
-        The DataTemporalMap object that contains the temporal data to be plotted.
+    data_source_map : DataTemporalMap
+        The DataSourceMap object that contains data to be plotted.
 
     absolute : bool
         If True, plot absolute values; otherwise, the relative probabilities are plotted. Default is False.
@@ -71,12 +61,6 @@ def plot_univariate_data_temporal_map(
 
     end_value : int, optional
         The value at which to end the plot. If None, the plot extends to the last value. Default is None.
-
-    start_date : datetime, optional
-        The starting date for the plot (filters the data). If None, uses the first date in the data. Default is None.
-
-    end_date : datetime, optional
-        The ending date for the plot (filters the data). If None, uses the last date in the data. Default is None.
 
     sorting_method : str, optional
         The method by which the data will be sorted for display (e.g., 'frequency', 'alphabetical').
@@ -97,9 +81,8 @@ def plot_univariate_data_temporal_map(
     Figure
         The Plotly figure object representing the plot
     """
-    if not type(data_temporal_map) == DataTemporalMap:
-        raise TypeError('data_temporal_map must be of type DataTemporalMap. For multivariate plot'
-                        ' use plot_multivariate_data_temporal_map function')
+    if not type(data_source_map) == DataSourceMap:
+        raise TypeError('data_source_map must be an instance of DataSourceMap.')
     _validate_plot_args(
         mode=mode,
         color_palette=color_palette,
@@ -109,51 +92,48 @@ def plot_univariate_data_temporal_map(
         sorting_method=sorting_method
     )
 
-    data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date, end_date)
-
     if absolute:
-        temporal_map = data_temporal_map.counts_map
+        source_map = data_source_map.counts_map
     else:
-        temporal_map = data_temporal_map.probability_map
+        source_map = data_source_map.probability_map
 
-    dates = data_temporal_map.dates
+    sources = data_source_map.sources
+    support = np.array(data_source_map.support.iloc[:, 0].tolist())
+    variable_type = data_source_map.variable_type
 
-    support = np.array(data_temporal_map.support.iloc[:, 0].tolist())
-    variable_type = data_temporal_map.variable_type
-
-    support, temporal_map = _sort_support_and_map(
+    support, source_map = _sort_support_and_map(
         support=support,
-        data_map=temporal_map,
+        data_map=source_map,
         variable_type=variable_type,
         sorting_method=sorting_method
     )
 
-    if not end_value or end_value > temporal_map.shape[0]:
-        end_value = temporal_map.shape[1]
+    if not end_value or end_value > source_map.shape[0]:
+        end_value = source_map.shape[1]
 
-    if start_value > temporal_map.shape[0]:
-        start_value = temporal_map.shape[1]
+    if start_value > source_map.shape[0]:
+        start_value = source_map.shape[1]
 
     counts_subarray = _get_counts_array(
-        data_map=temporal_map,
+        data_map=source_map,
         start_value=start_value,
         end_value=end_value,
         log_transform=log_transform
     )
 
     font = dict(size=20, color='#7f7f7f')
-    x_axis = dict(title='Date',
-                  tickvals=dates[::2] if len(dates) > 2 else dates,
+    x_axis = dict(title='Source',
+                  tickvals=sources[::2] if len(sources) > 2 else sources,
                   titlefont={'color': 'black'},
                   tickfont={'color': 'black'},
-                  type='date',
                   ticks='outside',
                   tickcolor='black')
 
+
     if mode == 'heatmap':
         figure = _create_heatmap_figure(
-            data_map=data_temporal_map,
-            x=dates,
+            data_map=data_source_map,
+            x=sources,
             y=support[start_value:end_value],
             z=counts_subarray,
             color_palette=color_palette,
@@ -162,12 +142,13 @@ def plot_univariate_data_temporal_map(
             title=title,
             absolute=absolute,
         )
+
         return figure
 
     elif mode == 'series':
         figure = _create_series_figure(
-            data_map=data_temporal_map,
-            x=dates,
+            data_map=data_source_map,
+            x=sources,
             y=counts_subarray,
             name=support,
             absolute=absolute,
@@ -180,18 +161,17 @@ def plot_univariate_data_temporal_map(
         return figure
     return None
 
-
-def plot_multivariate_data_temporal_map(
-        data_temporal_map: MultiVariateDataTemporalMap,
-        absolute: bool = False,
+def plot_multivariate_data_source_map(
+        data_source_map: MultiVariateDataSourceMap,
+        absolute: bool = False
 ) -> go.Figure:
     """
-    Plots a Data Temporal heatmap from a MultiVariateDataTemporalMap object.
+    Plots a multivariate Data Source heatmap from a MultiVariateDataSourceMap object.
 
     Parameters
     ----------
-    data_temporal_map : MultiVariateDataTemporalMap
-        The MultiVariateDataTemporalMap object that contains the temporal data to be plotted.
+    data_source_map : MultiVariateDataSourceMap
+        The MultiVariateDataSourceMap object that contains multivariate data to be plotted.
 
     absolute : bool, optional
         If True, plot absolute values; otherwise, the relative probabilities are plotted. Default is False.
@@ -199,53 +179,56 @@ def plot_multivariate_data_temporal_map(
     Returns
     -------
     Figure
-        The Plotly figure object representing the plot.
+        The Plotly figure object representing the multivariate heatmap.
     """
-    if not type(data_temporal_map) == MultiVariateDataTemporalMap:
-        raise TypeError('data_temporal_map must be of type MultiVariateDataTemporalMap, obtained from the '
-                        'estimate_multivariate_data_temporal_map function.')
+    if not type(data_source_map) == MultiVariateDataSourceMap:
+        raise TypeError('data_source_map must be an instance of MultiVariateDataSourceMap, obtained from the'
+                        ' estimate_multivariate_data_source_map function.')
 
     if not isinstance(absolute, bool):
         raise TypeError('absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.')
 
-    dates = data_temporal_map.dates
-
-    supports = data_temporal_map.multivariate_support
+    sources = data_source_map.sources
+    supports = data_source_map.multivariate_support
     dimensions = len(supports)
 
     if absolute:
-        multivariate_map = data_temporal_map.multivariate_counts_map
+        multivariate_map = data_source_map.multivariate_counts_map
     else:
-        multivariate_map = data_temporal_map.multivariate_probability_map
+        multivariate_map = data_source_map.multivariate_probability_map
 
     probability_map_list = _marginalize_multivariate_map(
         multivariate_map=multivariate_map,
-        supports=supports,
+        supports=supports ,
         dimensions=dimensions)
 
-    subplot = sp.make_subplots(rows=dimensions,
-                               cols=1,
-                               shared_xaxes=True,
-                               vertical_spacing=0.02
-                               )
-
+    subplot = sp.make_subplots(
+        rows=dimensions,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.02
+    )
     font = dict(size=20, color='#7f7f7f')
-    x_axis_tickvals = dates[::2] if len(dates) > 2 else dates
+    x_axis_tickvals = sources[::2] if len(sources) > 2 else sources
 
-    for i, temporal_map in enumerate(probability_map_list):
-        support = np.array(temporal_map.columns)
-        counts_subarray = [row for row in temporal_map.values]
+    for i, source_map in enumerate(probability_map_list):
+        support = np.array(source_map.columns)
+        counts_subarray = [row for row in source_map.values]
         counts_subarray = list(zip(*counts_subarray))
 
         figure = go.Heatmap(
-            x=dates,
+            x=sources,
             y=support,
             z=counts_subarray,
             reversescale=True,
             coloraxis='coloraxis'
         )
 
-        subplot.add_trace(figure, row=i + 1, col=1)
+        subplot.add_trace(
+            figure,
+            row=i + 1,
+            col=1
+        )
 
         subplot.update_yaxes(
             title=f'PC {i + 1}',
@@ -260,8 +243,7 @@ def plot_multivariate_data_temporal_map(
         subplot.update_xaxes(
             tickvals=x_axis_tickvals,
             tickfont={'size': 12},
-            type='date',
-            title_text='Date' if i == dimensions - 1 else None,
+            title_text='Source' if i == dimensions - 1 else None,
             title_font=font if i == dimensions - 1 else None,
             row=i + 1,
             col=1,
@@ -269,34 +251,33 @@ def plot_multivariate_data_temporal_map(
             tickcolor='black'
         )
 
-    subplot.update_layout(
-        autosize=True,
-        height=min(300 * dimensions, 800),
-        showlegend=False,
-        template='plotly_white',
-        margin=dict(t=60, r=20, b=60, l=60),
-        coloraxis=dict(colorscale='Spectral_r'),
-        title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
-              f'data temporal heatmap'
-    )
+        subplot.update_layout(
+            autosize=True,
+            height=min(300 * dimensions, 800),
+            showlegend=False,
+            template='plotly_white',
+            margin=dict(t=60, r=20, b=60, l=60),
+            coloraxis=dict(colorscale='Spectral_r'),
+            title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
+                  f'data source heatmap'
+        )
 
     subplot.show()
     return subplot
 
-
-def plot_conditional_data_temporal_map(
-        data_temporal_map_dict: Dict[str, MultiVariateDataTemporalMap],
-        absolute: bool = False,
-):
+def plot_conditional_data_source_map(
+        data_source_map_dict: Dict[str, MultiVariateDataSourceMap],
+        absolute: bool = False
+) -> None:
     """
     Plots a Figure for each dimension selected in the data_temporal_map_dict. Each Figure represents the
     Data Temporal heatmap of each label in that dimension
 
     Parameters
     ----------
-    data_temporal_map_dict : Dict[str, MultiVariateDataTemporalMap]
+    data_source_map_dict : Dict[str, MultiVariateDataSourceMap]
         A dictionary where keys are labels (strings), and values are the corresponding
-        `MultiVariateDataTemporalMap` objects obtained from the 'estimate_conditional_data_temporal_map' function.
+        `MultiVariateDataSourceMap` objects obtained from the 'estimate_conditional_data_source_map' function.
 
     absolute : bool, optional
         If True, plot absolute values; otherwise, relative probabilities are plotted. Default is False.
@@ -305,58 +286,65 @@ def plot_conditional_data_temporal_map(
     -------
     None
     """
-    if not type(data_temporal_map_dict) == dict:
-        raise TypeError('data_temporal_map must be a dictionary of objects MultiVariateDataTemporalMap, resultant of '
-                        'the estimate_conditional_data_temporal_map function')
+
+    if not isinstance(data_source_map_dict, dict) and not all(
+            isinstance(value, MultiVariateDataSourceMap) for value in data_source_map_dict.values()
+    ):
+        raise TypeError('data_source_map_dict must be a dictionary with MultiVariateDataSourceMap instances, resultant'
+                        'of the estimate_conditional_data_source_map function.')
 
     if not isinstance(absolute, bool):
-        raise ValueError('absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.')
+        raise TypeError('absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.')
 
-    labels = list(data_temporal_map_dict.keys())
-    probability_map_dict = dict()
-    dates_dict = dict()
-    for label, data_temporal_map in data_temporal_map_dict.items():
-        dates_dict[label] = data_temporal_map.dates
-        supports = data_temporal_map.multivariate_support
+
+    labels = list(data_source_map_dict.keys())
+    probability_map_dict: dict = {}
+    sources_dict: dict = {}
+
+    for label, data_source_map in data_source_map_dict.items():
+        sources_dict[label] = data_source_map.sources
+        supports = data_source_map.multivariate_support
         dimensions = len(supports)
 
         if absolute:
             if dimensions == 1:
-                multivariate_map = data_temporal_map.counts_map
+                multivariate_map = data_source_map.counts_map
             else:
-                multivariate_map = data_temporal_map.multivariate_counts_map
+                multivariate_map = data_source_map.multivariate_counts_map
         else:
             if dimensions == 1:
-                multivariate_map = data_temporal_map.probability_map
+                multivariate_map = data_source_map.probability_map
             else:
-                multivariate_map = data_temporal_map.multivariate_probability_map
+                multivariate_map = data_source_map.multivariate_probability_map
 
         probability_map_list = _marginalize_multivariate_map(
             multivariate_map=multivariate_map,
             supports=supports,
-            dimensions=dimensions)
+            dimensions=dimensions
+        )
 
         probability_map_dict[label] = probability_map_list
 
     for dim in range(dimensions):
-        subplot = sp.make_subplots(rows=len(labels),
-                                   cols=1,
-                                   shared_xaxes=True,
-                                   vertical_spacing=0.04
-                                   )
+        subplot = sp.make_subplots(
+            rows=len(labels),
+            cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.04
+        )
 
         font = dict(size=20, color='#7f7f7f')
 
         for label, probability_map_list in probability_map_dict.items():
-            dates = dates_dict[label]
-            x_axis_tickvals = dates[::2] if len(dates) > 2 else dates
-            temporal_map = probability_map_list[dim]
-            support = np.array(temporal_map.columns)
-            counts_subarray = [row for row in temporal_map.values]
+            sources = sources_dict[label]
+            x_axis_tickvals = sources[::2] if len(sources) > 2 else sources
+            source_map = probability_map_list[dim]
+            support = np.array(source_map.columns)
+            counts_subarray = [row for row in source_map.values]
             counts_subarray = list(zip(*counts_subarray))
 
             figure = go.Heatmap(
-                x=dates.astype(str),
+                x=sources,
                 y=support,
                 z=counts_subarray,
                 reversescale=True,
@@ -378,8 +366,7 @@ def plot_conditional_data_temporal_map(
             subplot.update_xaxes(
                 tickvals=x_axis_tickvals,
                 tickfont={'size': 12},
-                type='date',
-                title_text='Date' if labels.index(label) == len(labels) - 1 else None,
+                title_text='Source' if labels.index(label) == len(labels) - 1 else None,
                 title_font=font if labels.index(label) == len(labels) - 1 else None,
                 row=labels.index(label) + 1,
                 col=1,
@@ -395,8 +382,14 @@ def plot_conditional_data_temporal_map(
             margin=dict(t=60, r=20, b=60, l=60),
             coloraxis=dict(colorscale='Spectral_r'),
             title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
-                  f'conditional data temporal heatmap of Principal Component {dim + 1}'
+                  f'conditional data source heatmap of Principal Component {dim + 1}'
         )
 
         subplot.show()
     return None
+
+
+
+
+
+
