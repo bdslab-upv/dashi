@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import UnivariateSpline
 
-from dashi.unsupervised_characterization.igt.igt_projection import IGTProjection
+from dashi.unsupervised_characterization.variability_metrics.igt_projection import IGTProjection
 
 
 def _estimate_igt_trajectory(igt_projection: IGTProjection, number_of_points=None):
