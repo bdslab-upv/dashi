@@ -44,11 +44,33 @@ def _format_date_for_week(date: datetime) -> str:
 
     return year_part + month_part + day_part
 
+def _validate_date_format(date_format, verbose=False):
+    """Valida el formato de fecha y muestra mensajes informativos si verbose=True."""
+    has_year = _is_letter_in_date_format(date_format, ['Y', 'y'])
+    has_month = _is_letter_in_date_format(date_format, ['m', 'M', 'b', 'B', 'h'])
+    has_day = _is_letter_in_date_format(date_format, ['d', 'D'])
+
+    if has_year and has_month and has_day:
+        if verbose:
+            print('The data format contains year, month, and day')
+    elif has_year and has_month:
+        if verbose:
+            print('The data format contains year and month but not day')
+            print('Take into account that if you perform an analysis by week, the day will be automatically assigned as the first day of the month.')
+    elif has_year:
+        if verbose:
+            print('The data format contains only the year')
+            print('Take into account that if you perform an analysis by week or by month, they will be automatically assigned as the first day of the month and first month of the year.')
+    else:
+        print('Please, check the format of the date. At least it should contain the year.')
+        raise ValueError('Invalid date format')
+
 
 def format_data(input_dataframe: pd.DataFrame,
                 *,
-                date_column_name: str,
-                date_format: str = '%y/%m/%d',
+                date_column_name: Optional[str] = None,
+                source_column_name: Optional[str] = None,
+                date_format: Optional[str] = '%y/%m/%d',
                 verbose: bool = False,
                 numerical_column_names: Optional[List[str]] = None,
                 categorical_column_names: Optional[List[str]] = None) -> pd.DataFrame:
@@ -60,10 +82,15 @@ def format_data(input_dataframe: pd.DataFrame,
     input_dataframe : pd.DataFrame
         Pandas dataframe object with at least one columns of dates.
 
-    date_column_name: str
-        The name of the column containing the dates.
+    date_column_name: Optional[str]
+        The name of the column containing the dates. If you are not performing a temporal analysis, set this parameter
+        to `None`.
 
-    date_format: str
+    source_column_name: Optional[str]
+        The name of the column containing the source information. If you are not performing a multi-source analysis,
+        set this parameter to `None`.
+
+    date_format: Optional[str]
         Structure of date format. By default '%y/%m/%d'.
 
     verbose: bool
@@ -80,11 +107,14 @@ def format_data(input_dataframe: pd.DataFrame,
     Returns
     -------
     pd.DataFrame
-        An object of class pd.DataFrame with the date column transformed into 'Date' Python format, the categorical
-        variables into category type and the numerical variables into float type.
+        A `pandas.DataFrame` with each column cast to its correct dtype and any rows containing missing values in the
+        date or source fields dropped.
     """
-    if date_column_name not in input_dataframe.columns:
+    if date_column_name is not None and date_column_name not in input_dataframe.columns:
         raise ValueError(f'There is no column in your DataFrame named as: {date_column_name}')
+
+    if source_column_name is not None and source_column_name not in input_dataframe.columns:
+        raise ValueError(f'There is no column in your DataFrame named as: {source_column_name}')
 
     output_dataframe = input_dataframe.copy()
 
@@ -100,49 +130,35 @@ def format_data(input_dataframe: pd.DataFrame,
         for col in categorical_column_names:
             output_dataframe[col] = output_dataframe[col].astype(str).astype('category')
 
-    if output_dataframe[date_column_name].dtype == VALID_DATE_TYPE:
+
+    if date_column_name is not None:
+        if output_dataframe[date_column_name].dtype == VALID_DATE_TYPE:
+            return output_dataframe
+
+        if verbose:
+            print(f'Formatting the {date_column_name} column')
+
+        _validate_date_format(date_format, verbose)
+
+        output_dataframe[date_column_name] = pd.to_datetime(output_dataframe[date_column_name], format=date_format)
+
+        initial_len = len(output_dataframe)
+        output_dataframe = output_dataframe.dropna(subset=[date_column_name]).reset_index(drop=True)
+        removed_rows = initial_len - len(output_dataframe)
+        if removed_rows > 0:
+            print(f'There are {removed_rows} rows that do not contain date information. They have been removed.')
         return output_dataframe
 
-    if verbose:
-        print(f'Formatting the {date_column_name} column')
+    elif source_column_name is not None:
+        initial_len = len(output_dataframe)
+        output_dataframe = output_dataframe.dropna(subset=[source_column_name]).reset_index(drop=True)
+        removed_rows = initial_len - len(output_dataframe)
+        if removed_rows > 0:
+            print(f'There are {removed_rows} rows that do not contain source information. They have been removed.')
+        return output_dataframe
 
-    if (_is_letter_in_date_format(date_format, ['Y', 'y'])
-            and _is_letter_in_date_format(date_format, ['m', 'M', 'b', 'B', 'h'])
-            and _is_letter_in_date_format(date_format, ['d', 'D'])):
-        if verbose:
-            print('The data format contains year, month, and day')
-    elif (_is_letter_in_date_format(date_format, ['Y', 'y'])
-          and _is_letter_in_date_format(date_format, ['m', 'M', 'b', 'B', 'h'])):
-        if verbose:
-            print('The data format contains year and month but not day')
-            print(
-                'Take into account that if you perform an analysis by week, the day will be automatically assigned as '
-                'the first day of the month.')
-    elif _is_letter_in_date_format(date_format, ['Y', 'y']):
-        if verbose:
-            print('The data format contains only the year')
-            print(
-                'Take into account that if you perform an analysis by week or by month, they will be automatically '
-                'assigned as the first day of the month and first month of the year.')
     else:
-        print('Please, check the format of the date. At least it should contain the year.')
-        raise ValueError('Invalid date format')
-
-    output_dataframe[date_column_name] = pd.to_datetime(output_dataframe[date_column_name], format=date_format)
-
-    # Check if there are rows with na
-    # If there are rows with na remove the complete rows
-    date_rows_without_na = output_dataframe.dropna(subset=[date_column_name])
-    if len(date_rows_without_na) == len(output_dataframe):
-        output_dataframe = output_dataframe.reset_index(drop=True)
-        return output_dataframe
-    else:
-        output_dataframe = date_rows_without_na.copy()
-        print(
-            f'There are {len(output_dataframe) - len(date_rows_without_na)} rows that do not contain date '
-            f'information. They have been removed.')
-        output_dataframe = output_dataframe.reset_index(drop=True)
-        return output_dataframe
+        raise ValueError('Please specify the date column or source column.')
 
 
 def _is_letter_in_date_format(date_format, date_pattern):

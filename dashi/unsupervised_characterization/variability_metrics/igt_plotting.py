@@ -26,12 +26,11 @@ from plotly.colors import sample_colorscale
 
 from dashi._constants import VALID_COLOR_PALETTES, TEMPORAL_PERIOD_YEAR, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK, \
     MONTH_LONG_ABBREVIATIONS
-from dashi.unsupervised_characterization.igt.igt_projection import IGTProjection
-from dashi.unsupervised_characterization.igt.igt_trajectory_estimator import _estimate_igt_trajectory
+from dashi.unsupervised_characterization.variability_metrics.igt_projection import IGTProjection
+from dashi.unsupervised_characterization.variability_metrics.igt_trajectory_estimator import _estimate_igt_trajectory
 from dashi.utils import _format_date_for_year, _format_date_for_month, _format_date_for_week
 
 pio.renderers.default = 'browser'
-
 
 def plot_IGT_projection(
         igt_projection: IGTProjection,
@@ -320,7 +319,7 @@ def plot_IGT_projection(
             ),
             zaxis=dict(
                 title='D3',
-                backgroundcolor="rgba(0, 0, 0,0)",
+                backgroundcolor="rgba(0, 0, 0, 0)",
                 gridcolor="lightgrey",
                 showbackground=True,
                 zerolinecolor="black",

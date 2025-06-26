@@ -30,6 +30,9 @@ from dashi._constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_T
     VALID_INTEGER_TYPE, VALID_FLOAT_TYPE, \
     VALID_DATE_TYPE, TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_YEAR, VALID_CONVERSION_STRING_TYPE, \
     MISSING_VALUE, VALID_TYPES_WITHOUT_DATE, VALID_DIM_REDUCTION_TYPES, PCA, MCA, FAMD
+from dashi.unsupervised_characterization.utils import (_estimate_absolute_frequencies, _create_supports, _get_types,
+                                                       BaseMultiVariateMap, _perform_dimensionality_reduction,
+                                                       _scatter_plot, _normalize_kde, _compute_kde)
 
 
 @dataclass
@@ -122,7 +125,7 @@ class DataTemporalMap:
 
 
 @dataclass
-class MultiVariateDataTemporalMap(DataTemporalMap):
+class MultiVariateDataTemporalMap(BaseMultiVariateMap, DataTemporalMap):
     """
     A subclass of DataTemporalMap representing a multi-variate time series data map.
     In addition to the attributes inherited from the DataTemporalMap class, this
@@ -130,57 +133,25 @@ class MultiVariateDataTemporalMap(DataTemporalMap):
 
     Attributes
     ----------
-    multivariate_probability_map: Optional[List[List[float]]]
+    multivariate_probability_map: Optional[np.ndarray]
         List of matrices representing the multi-variate probability distribution
         temporal map (relative frequency) for each timestamp.
 
-    multivariate_counts_map: Optional[List[List[float]]]
+    multivariate_counts_map: Optional[np.ndarray]
         List of matrices representing the multi-variate counts temporal map (absolute)
         for each timestamp.
 
-    multivariate_support: Optional[List[float]]
+    multivariate_support: Optional[np.ndarray]
         List of matrices representing the support (the value at each bin) of the dimensions
         of multivariate_probability_map and multivariate_counts_map.
     """
-    multivariate_probability_map: Optional[List[List[float]]] = None
-    multivariate_counts_map: Optional[List[List[float]]] = None
-    multivariate_support: Optional[List[str]] = None
-
-    def check(self) -> Union[List[str], bool]:
-        """
-        Validates the consistency of the MultiVariateDataTemporalMap attributes, ensuring
-        that the multivariate probability map, counts map, and support dimensions are consistent,
-        along with inherited checks from the parent class DataTemporalMap.
-
-        Returns
-        -------
-        Union[List[str], bool]:
-            Returns a list of error messages if any validation fails, otherwise returns True indicating
-            the object is valid.
-        """
-        errors = super().check() if isinstance(super(), DataTemporalMap) else []
-
-        # Check if the dimensions of multivariate_probability_map and multivariate_counts_map match
-        if self.multivariate_probability_map is not None and self.multivariate_counts_map is not None:
-            if len(self.multivariate_probability_map) != len(self.multivariate_counts_map) or \
-                    any(len(probability_row) != len(count_row)
-                        for probability_row, count_row in
-                        zip(self.multivariate_probability_map, self.multivariate_counts_map)):
-                errors.append(
-                    "The dimensions of multivariate_probability_map and multivariate_counts_map do not match.")
-
-        # Check if the length of multivariate_support matches the columns of multivariate_probability_map
-        if self.multivariate_support is not None and self.multivariate_probability_map is not None:
-            if len(self.multivariate_support) != len(self.multivariate_probability_map[0]):
-                errors.append(
-                    "The length of multivariate_support must match the columns of multivariate_probability_map.")
-
-        # Check if the length of multivariate_support matches the columns of multivariate_counts_map
-        if self.multivariate_support is not None and self.multivariate_counts_map is not None:
-            if len(self.multivariate_support) != len(self.multivariate_counts_map[0]):
-                errors.append("The length of multivariate_support must match the columns of multivariate_counts_map.")
-
-        # Return the list of errors if any, or True if no errors
+    def check(self):
+        errors = super().check()
+        multi_errors = self.check_multivariate()
+        if multi_errors is not True:
+            if errors is True:
+                errors = []
+            errors.extend(multi_errors)
         return errors if errors else True
 
 
@@ -236,12 +207,12 @@ def estimate_univariate_data_temporal_map(
         period: str = TEMPORAL_PERIOD_MONTH,
         start_date: pd.Timestamp = None,
         end_date: pd.Timestamp = None,
-        supports: Union[Dict, None] = None,  # Dict with: variable_name: variable_type_name
+        supports: Union[Dict, None] = None,
         numeric_variables_bins: int = 100,
         numeric_smoothing: bool = True,
         date_gaps_smoothing: bool = False,
         verbose: bool = False
-) -> DataTemporalMap:
+) -> Union[DataTemporalMap, Dict[str, DataTemporalMap]]:
     """
     Estimates a DataTemporalMap object from a DataFrame containing individuals in rows and the variables
     in columns, being one of these columns the analysis date (typically the acquisition date).
@@ -269,7 +240,7 @@ def estimate_univariate_data_temporal_map(
         A date object indicating the date at which to end the analysis, in case of being
         different from the last chronological date in the date column.
 
-    supports: Union[Dict, None]
+    supports: Union[Dict, None], optional
         A dictionary with structure {variable_name: variable_type_name} containing the support
         of the data distributions for each variable. If not provided, it is automatically
         estimated from the data.
@@ -288,7 +259,7 @@ def estimate_univariate_data_temporal_map(
         batches without data. By default, gaps are filled with NAs.
 
     verbose: bool
-        Whether to display additional information during the process. Defaults to `False`.
+        If True, prints additional information about the estimation process. Default is False.
 
     Returns
     -------
@@ -349,209 +320,28 @@ def estimate_univariate_data_temporal_map(
         # Adjust the dates to the beginning of the year
         dates = dates - pd.to_timedelta(dates.dt.dayofyear - 1, unit='D')
 
-    # Get VARIABLE types, others will not be allowed
-    data_types = data_without_date_column.dtypes
-    float_columns = data_types == VALID_FLOAT_TYPE
-    integer_columns = data_types == VALID_INTEGER_TYPE
-    string_columns = data_types == VALID_STRING_TYPE
-    date_columns = data_types == VALID_DATE_TYPE
-    categorical_columns = data_types == VALID_CATEGORICAL_TYPE
-
-    if verbose:
-        if any(float_columns):
-            print(f'Number of float columns: {sum(float_columns)}')
-        if any(integer_columns):
-            print(f'Number of integer columns: {sum(integer_columns)}')
-        if any(string_columns):
-            print(f'Number of string columns: {sum(string_columns)}')
-        if any(date_columns):
-            print(f'Number of date columns: {sum(date_columns)}')
-        if any(categorical_columns):
-            print(f'Number of categorical columns: {sum(categorical_columns)}')
+    data_types, columns_by_type = _get_types(
+        data=data_without_date_column,
+        verbose=verbose
+    )
 
     # Convert dates to numbers
-    if any(date_columns):
-        data_without_date_column.iloc[:, date_columns] = data_without_date_column.iloc[:, date_columns].apply(
+    if any(columns_by_type['date']):
+        data_without_date_column.iloc[:, columns_by_type['date']] = data_without_date_column.iloc[:, columns_by_type['date']].apply(
             pd.to_numeric,
             errors='coerce'
         )
         if verbose:
             print('Converting date columns to numeric for distribution analysis')
 
-    # Create supports
-    supports_to_fill = {column: None for column in data_without_date_column.columns}
-    supports_to_estimate_columns = data_without_date_column.columns.to_series()
-
-    if supports is not None:
-        for column_index, column in enumerate(supports):
-            if column in supports_to_fill:
-                supports_to_fill[column] = supports[column]
-                supports_to_estimate_columns.drop(column)
-                error_in_support = False
-
-                if supports[column].dtypes == VALID_CATEGORICAL_TYPE:
-                    error_in_support = (
-                            not supports[column].dtype.name == VALID_CATEGORICAL_TYPE
-                            or not supports[column].dtype.name == VALID_STRING_TYPE
-                    )
-                elif supports[column].dtypes == VALID_DATE_TYPE:
-                    error_in_support = not supports[column].dtype.name == VALID_DATE_TYPE
-                elif supports[column].dtypes == VALID_INTEGER_TYPE:
-                    error_in_support = not supports[column].dtype.name == VALID_INTEGER_TYPE
-                elif supports[column].dtypes == VALID_FLOAT_TYPE:
-                    error_in_support = not supports[column].dtype.name == VALID_FLOAT_TYPE
-
-                if error_in_support:
-                    raise ValueError(
-                        f'The provided support for variable {column} does not match with its variable type')
-
-    supports = supports_to_fill
-
-    if any(supports_to_estimate_columns):
-        if verbose:
-            print('Estimating supports from data')
-
-        all_na = data_without_date_column.loc[:, supports_to_estimate_columns].apply(lambda x: x.isnull().all())
-
-        # Exclude from the analysis those variables with no finite values, if any
-        if any(all_na):
-            if verbose:
-                print(
-                    f'Removing variables with no finite values: {", ".join(data_without_date_column.columns[all_na])}')
-            warnings.warn(
-                f'Removing variables with no finite values: {", ".join(data_without_date_column.columns[all_na])}')
-
-            data_without_date_column = data_without_date_column.loc[:, ~all_na]
-            number_of_columns = len(data_without_date_column.columns)
-            supports = {column_name: data_type for column_name, data_type in supports.items() if
-                        not all_na[column_name]}
-
-            data_types = data_without_date_column.dtypes
-            float_columns = data_types == VALID_FLOAT_TYPE
-            integer_columns = data_types == VALID_INTEGER_TYPE
-            string_columns = data_types == VALID_STRING_TYPE
-            date_columns = data_types == VALID_DATE_TYPE
-            categorical_columns = data_types == VALID_CATEGORICAL_TYPE
-
-    if np.any(categorical_columns & supports_to_estimate_columns):
-        data_without_date_column.loc[:,
-        categorical_columns & supports_to_estimate_columns] = data_without_date_column.loc[:,
-                                                              categorical_columns & supports_to_estimate_columns].apply(
-            lambda col: col.cat.add_categories([MISSING_VALUE]) if col.isnull().any() else col)
-        data_without_date_column.loc[:,
-        categorical_columns & supports_to_estimate_columns] = data_without_date_column.loc[:,
-                                                              categorical_columns & supports_to_estimate_columns].apply(
-            lambda col: col.fillna(MISSING_VALUE) if col.isnull().any() else col)
-
-        # Extract levels and assign them to supports
-        selected_columns = data_without_date_column.loc[:, categorical_columns & supports_to_estimate_columns]
-        levels = selected_columns.apply(lambda col: col.cat.categories)
-        supports.update(
-            {
-                column: levels[column]
-                for column
-                in data_without_date_column.columns[categorical_columns & supports_to_estimate_columns]
-            }
-        )
-
-    if np.any(float_columns & supports_to_estimate_columns):
-        minimums = data_without_date_column.loc[:, float_columns & supports_to_estimate_columns].apply(np.nanmin,
-                                                                                                       axis=0)
-        maximums = data_without_date_column.loc[:, float_columns & supports_to_estimate_columns].apply(np.nanmax,
-                                                                                                       axis=0)
-        supports.update(
-            {
-                column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
-                for column, minimum, maximum
-                in zip(data_without_date_column.columns[float_columns & supports_to_estimate_columns], minimums,
-                       maximums)
-            }
-        )
-        if np.any(minimums == maximums):
-            mask = (minimums == maximums) & float_columns & supports_to_estimate_columns
-            supports.update(
-                {
-                    column: [value[0] for value in supports[column]]
-                    for column
-                    in data_without_date_column.columns[mask]
-                }
-            )
-
-    if np.any(integer_columns & supports_to_estimate_columns):
-        minimums = data_without_date_column.loc[:, integer_columns & supports_to_estimate_columns].apply(np.nanmin,
-                                                                                                         axis=0)
-        maximums = data_without_date_column.loc[:, integer_columns & supports_to_estimate_columns].apply(np.nanmax,
-                                                                                                         axis=0)
-        if np.sum(integer_columns & supports_to_estimate_columns) == 1:
-            supports.update(
-                {
-                    column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
-                    for column, minimum, maximum
-                    in
-                    zip(data_without_date_column.columns[integer_columns & supports_to_estimate_columns], minimums,
-                        maximums)
-                }
-            )
-        else:
-            supports.update(
-                {
-                    column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
-                    for column, minimum, maximum
-                    in
-                    zip(data_without_date_column.columns[integer_columns & supports_to_estimate_columns], minimums,
-                        maximums)
-                }
-            )
-
-    if np.any(string_columns & supports_to_estimate_columns):
-        supports.update(
-            {
-                column: data_without_date_column[column].unique().tolist()
-                for column
-                in data_without_date_column.columns[string_columns & supports_to_estimate_columns]
-            }
-        )
-
-    if np.any(date_columns & supports_to_estimate_columns):
-        minimums = data_without_date_column.loc[:, date_columns & supports_to_estimate_columns].apply(np.nanmin,
-                                                                                                      axis=0)
-        maximums = data_without_date_column.loc[:, date_columns & supports_to_estimate_columns].apply(np.nanmax,
-                                                                                                      axis=0)
-        supports.update(
-            {
-                column: pd.date_range(minimum, maximum, periods=numeric_variables_bins).tolist()
-                for column, minimum, maximum
-                in zip(data_without_date_column.columns[date_columns & supports_to_estimate_columns], minimums,
-                       maximums)
-            }
-        )
-
-    # Convert factor variables to characters, as used by the xts Objects
-    if np.any(categorical_columns):
-        converted_columns = data_without_date_column.loc[:, categorical_columns].astype(
-            VALID_CONVERSION_STRING_TYPE)
-        data_without_date_column = data_without_date_column.assign(**converted_columns)
-
-    # Exclude from the analysis those variables with a single value, if any
-    support_lengths = [len(supports[column]) for column in data_without_date_column.columns]
-    support_singles_indexes = np.array(support_lengths) < 2
-    if np.any(support_singles_indexes):
-        if verbose:
-            print(
-                f'Removing variables with less than two distinct values in their supports: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
-        print(
-            f'The following variable/s have less than two distinct values in their supports and were excluded from the analysis: {", ".join(data_without_date_column.columns[support_singles_indexes])}')
-        data_without_date_column = data_without_date_column.loc[:, ~support_singles_indexes]
-        supports = {
-            column: supports[column]
-            for column
-            in data_without_date_column.columns
-        }
-        data_types = data_without_date_column.dtypes
-        number_of_columns = len(data_without_date_column.columns)
-
-    if number_of_columns == 0:
-        raise ValueError('Zero remaining variables to be analyzed.')
+    data_without_date_column, supports = _create_supports(
+        data=data_without_date_column,
+        supports=supports,
+        columns_types=columns_by_type,
+        number_of_columns=number_of_columns,
+        numeric_variables_bins=numeric_variables_bins,
+        verbose=verbose
+    )
 
     # Estimate the Data Temporal Map
     posterior_data_classes = data_without_date_column.dtypes
@@ -560,7 +350,7 @@ def estimate_univariate_data_temporal_map(
     if verbose:
         print('Estimating the data temporal maps')
 
-    for column_index, column in enumerate(data_without_date_column.columns, 1):
+    for column in data_without_date_column.columns:
         if verbose:
             print(f'Estimating the DataTemporalMap of variable \'{column}\'')
 
@@ -639,9 +429,9 @@ def estimate_univariate_data_temporal_map(
             )
         probability_map = np.array(probability_arrays)
 
-        if data_types[column] == VALID_DATE_TYPE:
+        if posterior_data_classes[column] == VALID_DATE_TYPE:
             support = pd.DataFrame(pd.to_datetime(supports[column]))
-        elif data_types[column] in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
+        elif posterior_data_classes[column] in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
             support = pd.DataFrame(supports[column], columns=[column])
         else:
             support = pd.DataFrame(supports[column])
@@ -656,7 +446,7 @@ def estimate_univariate_data_temporal_map(
             dates=dates_map,
             support=support,
             variable_name=column,
-            variable_type=data_types[column],
+            variable_type=posterior_data_classes[column],
             period=period
         )
         results[column] = data_temporal_map
@@ -668,58 +458,7 @@ def estimate_univariate_data_temporal_map(
     else:
         if verbose:
             print('Returning results as an individual DataTemporalMap object')
-        return results[data.columns[0]]
-
-
-def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=False):
-    """
-    Estimates the absolute frequencies of data, which will be the counts_map in the final DataTemporalMap object
-    """
-    data = np.array(data)
-    if varclass == VALID_STRING_TYPE:
-        value_counts = pd.Series(data).value_counts()
-        map_data = value_counts.reindex(support, fill_value=0).values
-
-    elif varclass == VALID_FLOAT_TYPE:
-        if np.all(np.isnan(data)):
-            map_data = np.array([np.nan] * len(support))
-        else:
-            if not numeric_smoothing:
-                hist_support = np.append(support, support[-1] + (support[-1] - support[-2]))
-                data = data[(data >= min(hist_support)) & (data < max(hist_support))]
-                bin_edges = hist_support
-                map_data, _ = np.histogram(data, bins=bin_edges)
-            else:
-                if np.sum(~np.isnan(data)) < 4:
-                    print(
-                        'Estimating a 1-dimensional kernel density smoothing with less than 4 data points can result in an inaccurate estimation.'
-                        ' For more information see "Density Estimation for Statistics and Data Analysis, Bernard.W.Silverman, CRC, 1986", chapter 4.5.2 "Required sample size for given accuracy".'
-                    )
-                if np.sum(~np.isnan(data)) < 2:
-                    data = np.repeat(data[~np.isnan(data)], 2)
-                    ndata = 1
-                else:
-                    data = data[~np.isnan(data)]
-                    ndata = np.sum(~np.isnan(data))
-
-                kde = gaussian_kde(
-                    data)
-                map_data = kde(support) * ndata
-
-    elif varclass == VALID_INTEGER_TYPE:
-        if np.all(np.isnan(data)):
-            map_data = np.array([np.nan] * len(support))
-        else:
-            hist_support = np.append(support, support[-1] + (support[-1] - support[-2]))
-            data = data[(data >= min(hist_support)) & (data < max(hist_support))]
-            bin_edges = hist_support
-            map_data, _ = np.histogram(data, bins=bin_edges)
-
-    else:
-        raise ValueError(f'data class {varclass} not valid for distribution estimation.')
-
-    return map_data
-
+        return results[data_without_date_column.columns[0]]
 
 def estimate_multivariate_data_temporal_map(
         data: pd.DataFrame,
@@ -789,7 +528,7 @@ def estimate_multivariate_data_temporal_map(
     Returns
     -------
     MultiVariateDataTemporalMap
-        The MultivariateDataTemporalMap object of the data
+        A MultiVariateDataTemporalMap object containing the estimated probability and counts maps for each time period.
     """
     # Validation of parameters
     if data is None:
@@ -861,29 +600,14 @@ def estimate_multivariate_data_temporal_map(
         print(f'Total number of columns to analyze: {number_of_columns}')
         print(f'Analysis period: {period}')
 
-    # Get VARIABLE types, others will not be allowed
-    data_types = data_without_date_column.dtypes
-    float_columns = data_types == VALID_FLOAT_TYPE
-    integer_columns = data_types == VALID_INTEGER_TYPE
-    string_columns = data_types == VALID_STRING_TYPE
-    date_columns = data_types == VALID_DATE_TYPE
-    categorical_columns = data_types == VALID_CATEGORICAL_TYPE
-
-    if verbose:
-        if any(float_columns):
-            print(f'Number of float columns: {sum(float_columns)}')
-        if any(integer_columns):
-            print(f'Number of integer columns: {sum(integer_columns)}')
-        if any(string_columns):
-            print(f'Number of string columns: {sum(string_columns)}')
-        if any(date_columns):
-            print(f'Number of date columns: {sum(date_columns)}')
-        if any(categorical_columns):
-            print(f'Number of categorical columns: {sum(categorical_columns)}')
+    data_types, columns_by_type = _get_types(
+        data=data_without_date_column,
+        verbose=verbose
+    )
 
     # Convert dates to numbers
-    if any(date_columns):
-        data_without_date_column.iloc[:, date_columns] = data_without_date_column.iloc[:, date_columns].apply(
+    if any(columns_by_type['date']):
+        data_without_date_column.iloc[:, columns_by_type['date']] = data_without_date_column.iloc[:, columns_by_type['date']].apply(
             pd.to_numeric,
             errors='coerce'
         )
@@ -906,39 +630,7 @@ def estimate_multivariate_data_temporal_map(
     })
 
     if scatter_plot:
-        if verbose:
-            warnings.filterwarnings('ignore', category=FutureWarning)
-            print(f'Plotting {dim_reduction} 2D Scatter Plot')
-        fig = px.scatter(
-            reduced_data.iloc[:, 0:2],
-            x=0,
-            y=1,
-            title=f'{dim_reduction} Scatter Plot',
-            template='plotly_white',
-            opacity=0.7
-        )
-
-        fig.update_layout(
-            title={
-                'text': f'{dim_reduction} Scatter Plot',
-                'y': 0.95,
-                'x': 0.5,
-                'xanchor': 'center',
-                'yanchor': 'top',
-                'font': {'size': 25}
-            },
-            xaxis_title={
-                'text': f'PC1',
-                'font': {'size': 18}
-            },
-            yaxis_title={
-                'text': f'PC2',
-                'font': {'size': 18}
-            }
-
-        )
-        fig.show()
-        warnings.filterwarnings('default', category=FutureWarning)
+        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose)
 
     value_counts = reduced_data[date_column_name].value_counts(sort=False)
     dates_info = {
@@ -968,7 +660,7 @@ def estimate_conditional_data_temporal_map(
         verbose: bool = False
 ) -> Dict[str, MultiVariateDataTemporalMap]:
     """
-    Estimates a MultivariateDataTemporalMap object for the data corresponding to each label of the DataFrame
+    Estimates a MultivariateDataTemporalMap object for the data corresponding to each label of a DataFrame
     containing multiple variables (in columns) over time, using dimensionality reduction techniques (e.g., PCA)
     to handle high dimensional data.
 
@@ -983,7 +675,7 @@ def estimate_conditional_data_temporal_map(
 
     label_column_name: str
         The name of the column that contains the labels or class/category for each observation
-        (used for concept shift analysis).
+        (used for conditional analysis).
 
     kde_resolution: int
         The resolution of the grid used for Kernel Density Estimation (KDE). This determines the granularity
@@ -1103,29 +795,14 @@ def estimate_conditional_data_temporal_map(
         print(f'Total number of columns to analyze: {number_of_columns}')
         print(f'Analysis period: {period}')
 
-    # Get VARIABLE types, others will not be allowed
-    data_types = data_without_date_column.dtypes
-    float_columns = data_types == VALID_FLOAT_TYPE
-    integer_columns = data_types == VALID_INTEGER_TYPE
-    string_columns = data_types == VALID_STRING_TYPE
-    date_columns = data_types == VALID_DATE_TYPE
-    categorical_columns = data_types == VALID_CATEGORICAL_TYPE
-
-    if verbose:
-        if any(float_columns):
-            print(f'Number of float columns: {sum(float_columns)}')
-        if any(integer_columns):
-            print(f'Number of integer columns: {sum(integer_columns)}')
-        if any(string_columns):
-            print(f'Number of string columns: {sum(string_columns)}')
-        if any(date_columns):
-            print(f'Number of date columns: {sum(date_columns)}')
-        if any(categorical_columns):
-            print(f'Number of categorical columns: {sum(categorical_columns)}')
+    data_types, columns_by_type = _get_types(
+        data=data_without_date_column,
+        verbose=verbose
+    )
 
     # Convert dates to numbers
-    if any(date_columns):
-        data_without_date_column.iloc[:, date_columns] = data_without_date_column.iloc[:, date_columns].apply(
+    if any(columns_by_type['date']):
+        data_without_date_column.iloc[:, columns_by_type['date']] = data_without_date_column.iloc[:, columns_by_type['date']].apply(
             pd.to_numeric,
             errors='coerce'
         )
@@ -1149,41 +826,9 @@ def estimate_conditional_data_temporal_map(
         date_column_name: pd.to_datetime(dates_for_batching)
     })
 
-    if scatter_plot and dimensions > 1:
-        warnings.filterwarnings('ignore', category=FutureWarning)
-        if verbose:
-            print(f'Plotting {dim_reduction} 2D Scatter Plot divided by class')
-        fig = px.scatter(
-            reduced_data,
-            x=0,
-            y=1,
-            color=label_column_name,
-            title=f'{dim_reduction} Scatter Plot',
-            template='plotly_white',
-            opacity=0.5
-        )
-
-        fig.update_layout(
-            title={
-                'text': f'{dim_reduction} Scatter Plot',
-                'y': 0.95,
-                'x': 0.5,
-                'xanchor': 'center',
-                'yanchor': 'top',
-                'font': {'size': 25}
-            },
-            xaxis_title={
-                'text': f'PC1',
-                'font': {'size': 18}
-            },
-            yaxis_title={
-                'text': f'PC2',
-                'font': {'size': 18}
-            }
-
-        )
-        fig.show()
-        warnings.filterwarnings('default', category=FutureWarning)
+    if scatter_plot:
+        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose, conditional=True,
+                      label_column_name=label_column_name)
 
     reduced_data_by_label = {
         label: group.drop(columns=[label_column_name]).reset_index(drop=True)
@@ -1191,7 +836,7 @@ def estimate_conditional_data_temporal_map(
     }
 
     # Generate DTMs
-    concept_maps_dict = dict()
+    concept_maps_dict: dict = {}
     for label, concept_data in reduced_data_by_label.items():
         if verbose:
             print(f'Label :{label}')
@@ -1210,30 +855,6 @@ def estimate_conditional_data_temporal_map(
     return concept_maps_dict
 
 
-def _compute_kde(data_subset, xmin, xmax, kde_resolution):
-    """
-    Performs a Gaussian Kernel Density Estimation (KDE) on a subset of the original data to estimate
-    the probability density function over a specified range, using a grid resolution determined by
-    kde_resolution.
-    """
-    kde = gaussian_kde(data_subset.T, bw_method='silverman')  # Transpose for data compatibility
-    grid = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin, xmax)]
-    mesh = np.meshgrid(*grid, indexing='ij')
-    positions = np.vstack([m.ravel() for m in mesh])
-    kde_values = kde(positions).reshape([kde_resolution] * len(xmin))
-    return kde_values
-
-
-def _normalize_kde(kde_values):
-    """
-    Normalizes the results of the Kernel Density Estimation (KDE) values so that the total area under the
-    estimated probability density function equals 1. This ensures that the KDE represents a valid probability
-    distribution.
-    """
-    kde_values = np.maximum(kde_values, 0)  # Set negative values to 0
-    return kde_values / np.sum(kde_values)  # Normalize
-
-
 def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kde_resolution):
     """
     Generates a MultiVariateDataTemporalMap object from the reduced multivariate data by applying Kernel
@@ -1247,164 +868,50 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
     if verbose:
         print('Estimating the data temporal maps')
 
-    if dimensions == 1:
-        kde1 = list()
-        for date in dates_info['unique_dates']:
-            if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
-                kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
-                    columns=[dates_info['date_column_name']]),
-                    xmin[:1], xmax[:1], kde_resolution)
-                kde1.append(kde)
-            else:
-                if verbose:
-                    print(f'Not enough data for calculating {date} probability map.')
-                kde = np.full(kde_resolution, np.nan)
-                kde1.append(kde)
+    kde_list: list = []
+    for date in dates_info['unique_dates']:
+        if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
+            kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
+                columns=[dates_info['date_column_name']]),
+                xmin[:dimensions], xmax[:dimensions], kde_resolution)
+            kde_list.append(kde)
+        else:
+            if verbose:
+                print(f'Not enough data for calculating {date} probability map.')
+            kde_shape = (kde_resolution,) * dimensions
+            kde = np.full(kde_shape, np.nan)
+            kde_list.append(kde)
 
-        probability_map_1d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde1])
-        multivariate_probability_map_1d = [_normalize_kde(kde) for kde in kde1]
-        multivariate_support_1d = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin[:1], xmax[:1])]
-        non_nan_mask = ~np.isnan(probability_map_1d).any(axis=1)
-        non_nan_probability_map_1d = probability_map_1d[non_nan_mask]
-        non_nan_counts_map_1d = np.round(non_nan_probability_map_1d * dates_info['value_counts'].values[:, np.newaxis])
-        counts_map_1d = np.full(probability_map_1d.shape, np.nan)
-        counts_map_1d[non_nan_mask] = non_nan_counts_map_1d
-        multivariate_counts_map_1d = list()
-        index = 0
-        for prob_map in multivariate_probability_map_1d:
-            if np.isnan(prob_map).any():
-                multivariate_counts_map_1d.append(prob_map)
-            else:
-                multivariate_counts_map_1d.append(np.round(prob_map * dates_info['value_counts'].iloc[index]))
-                index += 1
+    probability_map = np.row_stack([_normalize_kde(kde).flatten() for kde in kde_list])
+    multivariate_probability_map = [_normalize_kde(kde) for kde in kde_list]
+    multivariate_support = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin[:dimensions], xmax[:dimensions])]
+    non_nan_mask = ~np.isnan(probability_map).any(axis=1)
+    non_nan_probability_map = probability_map[non_nan_mask]
+    non_nan_counts_map = np.round(non_nan_probability_map * dates_info['value_counts'].values[:, np.newaxis])
+    counts_map = np.full(probability_map.shape, np.nan)
+    counts_map[non_nan_mask] = non_nan_counts_map
+    multivariate_counts_map: list = []
+    index = 0
+    for prob_map in multivariate_probability_map:
+        if np.isnan(prob_map).any():
+            multivariate_counts_map.append(prob_map)
+        else:
+            multivariate_counts_map.append(np.round(prob_map * dates_info['value_counts'].iloc[index]))
+            index += 1
 
-        dtm = MultiVariateDataTemporalMap(
-            probability_map=probability_map_1d,
-            multivariate_probability_map=multivariate_probability_map_1d,
-            counts_map=counts_map_1d,
-            multivariate_counts_map=multivariate_counts_map_1d,
-            dates=dates_info['unique_dates'],
-            support=pd.DataFrame(range(0, kde_resolution ** 2)),
-            multivariate_support=multivariate_support_1d,
-            variable_name='Dim.reduced.1D',
-            variable_type='float64',
-            period=dates_info['period']
-        )
+    dtm = MultiVariateDataTemporalMap(
+        probability_map=probability_map,
+        multivariate_probability_map=multivariate_probability_map,
+        counts_map=counts_map,
+        multivariate_counts_map=multivariate_counts_map,
+        dates=dates_info['unique_dates'],
+        support=pd.DataFrame(range(0, kde_resolution ** dimensions)),
+        multivariate_support=multivariate_support,
+        variable_name='Dim.reduced.{}D'.format(dimensions),
+        variable_type='float64',
+        period=dates_info['period']
+    )
 
-    elif dimensions == 2:
-        kde2 = list()
-        for date in dates_info['unique_dates']:
-            if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
-                kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
-                    columns=[dates_info['date_column_name']]),
-                    xmin[:2], xmax[:2], kde_resolution)
-                kde2.append(kde)
-            else:
-                if verbose:
-                    print(f'Not enough data for calculating {date} probability map.')
-                kde = np.full((kde_resolution, kde_resolution), np.nan)
-                kde2.append(kde)
-
-        probability_map_2d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde2])
-        multivariate_probability_map_2d = [_normalize_kde(kde) for kde in kde2]
-        multivariate_support_2d = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin[:2], xmax[:2])]
-        non_nan_mask = ~np.isnan(probability_map_2d).any(axis=1)
-        non_nan_probability_map_2d = probability_map_2d[non_nan_mask]
-        non_nan_counts_map_2d = np.round(non_nan_probability_map_2d * dates_info['value_counts'].values[:, np.newaxis])
-        counts_map_2d = np.full(probability_map_2d.shape, np.nan)
-        counts_map_2d[non_nan_mask] = non_nan_counts_map_2d
-        multivariate_counts_map_2d = list()
-        index = 0
-        for prob_map in multivariate_probability_map_2d:
-            if np.isnan(prob_map).any():
-                multivariate_counts_map_2d.append(prob_map)
-            else:
-                multivariate_counts_map_2d.append(np.round(prob_map * dates_info['value_counts'].iloc[index]))
-                index += 1
-
-        dtm = MultiVariateDataTemporalMap(
-            probability_map=probability_map_2d,
-            multivariate_probability_map=multivariate_probability_map_2d,
-            counts_map=counts_map_2d,
-            multivariate_counts_map=multivariate_counts_map_2d,
-            dates=dates_info['unique_dates'],
-            support=pd.DataFrame(range(0, kde_resolution ** 2)),
-            multivariate_support=multivariate_support_2d,
-            variable_name='Dim.reduced.2D',
-            variable_type='float64',
-            period=dates_info['period']
-        )
-    elif dimensions == 3:
-        kde3 = list()
-        for date in dates_info['unique_dates']:
-            if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
-                kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
-                    columns=[dates_info['date_column_name']]),
-                    xmin, xmax, kde_resolution)
-                kde3.append(kde)
-            else:
-                kde = np.full((kde_resolution, kde_resolution, kde_resolution), np.nan)
-                kde3.append(kde)
-
-        probability_map_3d = np.row_stack([_normalize_kde(kde).flatten() for kde in kde3])
-        multivariate_probability_map_3d = [_normalize_kde(kde) for kde in kde3]
-        multivariate_support_3d = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin, xmax)]
-        non_nan_mask = ~np.isnan(probability_map_3d).any(axis=1)
-        non_nan_probability_map_3d = probability_map_3d[non_nan_mask]
-        non_nan_counts_map_3d = np.round(non_nan_probability_map_3d * dates_info['value_counts'].values[:, np.newaxis])
-        counts_map_3d = np.full(probability_map_3d.shape, np.nan)
-        counts_map_3d[non_nan_mask] = non_nan_counts_map_3d
-        multivariate_counts_map_3d = list()
-        index = 0
-        for prob_map in multivariate_probability_map_3d:
-            if np.isnan(prob_map).any():
-                multivariate_counts_map_3d.append(prob_map)
-            else:
-                multivariate_counts_map_3d.append(np.round(prob_map * dates_info['value_counts'].iloc[index]))
-                index += 1
-
-        dtm = MultiVariateDataTemporalMap(
-            probability_map=probability_map_3d,
-            multivariate_probability_map=multivariate_probability_map_3d,
-            counts_map=counts_map_3d,
-            multivariate_counts_map=multivariate_counts_map_3d,
-            dates=dates_info['unique_dates'],
-            support=pd.DataFrame(range(0, kde_resolution ** 3)),
-            multivariate_support=multivariate_support_3d,
-            variable_name='Dim.reduced.3D',
-            variable_type='float64',
-            period=dates_info['period']
-        )
     return dtm
 
 
-def _perform_dimensionality_reduction(
-        data: pd.DataFrame,
-        dim_reduction: str,
-        n_components: int,
-        verbose: bool = True,
-        **reduction_kwargs) -> pd.DataFrame:
-
-    reduction_strategies = {
-        'PCA': prince.PCA,
-        'MCA': prince.MCA,
-        'FAMD': prince.FAMD
-    }
-
-    MethodClass = reduction_strategies[dim_reduction]
-
-    if 'scale' in reduction_kwargs:
-        if dim_reduction == 'PCA':
-            scale_value = reduction_kwargs.pop('scale')
-            reduction_kwargs['rescale_with_mean'] = scale_value
-            reduction_kwargs['rescale_with_std'] = scale_value
-        else:
-            reduction_kwargs.pop('scale')
-
-    reduction_method = MethodClass(n_components=n_components, random_state=112, **reduction_kwargs)
-    reduced_data = reduction_method.fit_transform(data)
-
-    if verbose:
-        print(f'Eigenvalues summary:\n{reduction_method.eigenvalues_summary}')
-
-    return reduced_data
