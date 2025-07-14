@@ -29,8 +29,8 @@ This process involves:
 Model-based delineation and characterization of dataset shifts, by relying on automated generation of classification or regression models using Random Forests trained on batched data across the selected scope. This allows for the detailed analysis of how dataset shifts impact model performance, helping to pinpoint temporal or source areas of potential degradation.
 
 
-### Main DASHI's outcomes:
-To aid exploration and interpretation of dataset shifts, `dashi` includes visual analytics features such as:
+### Main `dashi`'s outcomes:
+To aid exploration, interpretation and quantification of dataset shifts, `dashi` includes visual analytics features and metrics such as:
 
 - **Data Temporal Heatmaps (DTHs):** Provide an exploratory visualization for temporal shifts in data distributions.
 - **Information Geometric Temporal (IGT) plots:** Offer a more sophisticated view of temporal data variability by means of embedding temporal batches in their latent statistical manifolds.
@@ -90,9 +90,9 @@ Part of the Python library `dashi` has been inspired by the R [EHRtemporalVariab
 
 ## Authorship
 
-- **Authors:** David Fernández Narro (UPV), Pablo Ferri Borredá (UPV), Ángel Sánchez-García (UPV), Juan M García-Gómez (UPV), Carlos Sáez (UPV)
+- **Authors:** David Fernández Narro, Pablo Ferri Borredá, Ángel Sánchez-García, Juan M García-Gómez, [Carlos Sáez Silvestre](mailto:carsaesi@upv.es) (Principal Investigator)
 
-- **Contact:** dashi@upv.es
+- **Contact and support:** [dashi@upv.es](mailto:dashi@upv.es)
 
 ## Acknowledgements
 
