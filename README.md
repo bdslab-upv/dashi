@@ -5,22 +5,31 @@
 
 Dataset shift analysis and characterization in python
 ## What is `dashi`?
-`dashi` is a Python library designed to **analyze and characterize temporal and multi-source dataset shifts**. It provides 
-robust tools for both **supervised and unsupervised evaluation of dataset shifts,** empowering users to detect, understand, 
-and address changes in data distributions with confidence.
+`dashi` is a Python library for **analyzing and characterizing temporal and multi-source dataset shifts**. It offers **unsupervised and supervised tools** for quantifying and visualizing covariate, concept, and prior shifts, supporting trustworthy artificial intelligence development and evaluation.
 
 ### Key Features:
 
-- **Supervised Characterization:**
-Enables users to create classification or regression models using Random Forests trained on batched data 
-(temporal or multi-source). This allows for the detailed analysis of how dataset shifts impact model performance, 
-helping to pinpoint areas of potential degradation.
-- **Unsupervised Characterization:** 
-Facilitates the identification of temporal dataset shifts by projecting and visualizing data dissimilarities across time. 
+- **Shift scope:**
+  -Temporal: (implies an order)
+  -Source/domain: (does not imply an order)
+
+- **Types of dataset shifts:**
+  -Covariate:
+  -Prior:
+  -Concept:
+
+- **Unsupervised approach:** 
+Facilitates the delineation and characterization of dataset shifts in a model-agnostic manner by analysing the data covariate and outcome-conditional statistical distributions, by projecting and visualizing data dissimilarities across time or sources. 
 This process involves:
   - Estimating data statistical distributions over time.
   - Projecting these distributions onto non-parametric statistical manifolds. These projections reveal patterns of
   latent temporal variability in the data, uncovering hidden trends and shifts.
+
+- **Supervised approach:**
+Enables users to create classification or regression models using Random Forests trained on batched data 
+(temporal or multi-source). This allows for the detailed analysis of how dataset shifts impact model performance, 
+helping to pinpoint areas of potential degradation.
+
 
 ### Visualization Tools:
 To aid exploration and interpretation of dataset shifts, `dashi` includes visual analytics features such as:
