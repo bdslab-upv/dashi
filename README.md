@@ -10,23 +10,26 @@ Dataset shift analysis and characterization in python
 ### Key Features:
 
 - **Shift scope:**
-  -Temporal: (implies an order)
-  -Source/domain: (does not imply an order)
+  - Temporal: (implies an order)
+  - Source/domain: (does not imply an order)
 
 - **Types of dataset shifts:**
-  -Covariate:
-  -Prior:
-  -Concept:
+  - Covariate:
+  - Prior:
+  - Concept:
 
 - **Unsupervised approach:** 
 Distribution-based, model-agnostic delineation and characterization of dataset shifts by analysing the data covariate and outcome-conditional statistical distributions and projecting and visualizing their dissimilarities across the temporal or source scope. 
 This process involves:
-  - Estimating data statistical distributions across the temporal or source scope.
+  - Estimating data statistical distributions across batches along the temporal or source scope.
   - Projecting these distributions onto non-parametric statistical manifolds based on different embedding functions including the Jensen-Shannon distance + Multi Dimensional Scaling, Principal Component Analysis, or Autoencoders.
   - Generating different visual analytics and metrics to reveal patterns of latent variability in the data, uncovering hidden trends and shifts, and measuring the shifting magnitude.
 
 - **Supervised approach:**
-Model-based delineation and characterization of dataset shifts, by relying on automated generation of classification or regression models using Random Forests trained on batched data across the selected scope. This allows for the detailed analysis of how dataset shifts impact model performance, helping to pinpoint temporal or source areas of potential degradation.
+Model-based delineation and characterization of dataset shifts, by relying on automated generation of classification or regression models trained on batched data across the selected scope. This allows for the detailed analysis of how dataset shifts impact model performance, helping to pinpoint temporal or source areas of potential degradation. This process involves:
+  - Training classificaiton or regression models using Random Forests across batches along the temporal or source scope.
+  - Calculating model contigency matrices pairwise across the batched models and evaluating multiple evaluation metrics.
+  - Generating different visual analytics and metrics to reveal patterns of latent variability in the data, uncovering hidden trends and shifts, and measuring the shifting magnitude.
 
 
 ### Main `dashi`'s outcomes:
