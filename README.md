@@ -5,16 +5,16 @@
 
 Dataset shift analysis and characterization in python
 ## What is `dashi`?
-`dashi` is a Python library for **analyzing and characterizing temporal and multi-source dataset shifts**. It offers **unsupervised and supervised tools** for quantifying and visualizing covariate, concept, and prior shifts, supporting trustworthy artificial intelligence development and evaluation.
+`dashi` is a Python library for **analyzing and characterizing temporal and multi-source dataset shifts**. It offers **unsupervised and supervised tools** for quantifying and visualizing covariate, concept, and prior shifts, supporting **trustworthy artificial intelligence development and evaluation**.
 
 ### Key Features:
 
 - **Shift scope:**
-  - Temporal: (implies an order)
-  - Source/domain: (does not imply an order)
+  - Temporal: (TODO describe, implies an order)
+  - Source/domain: (TODO describe, does not imply an order)
 
 - **Types of dataset shifts:**
-  - Covariate:
+  - Covariate: (TODO describe)
   - Prior:
   - Concept:
 
@@ -23,21 +23,21 @@ Distribution-based, model-agnostic delineation and characterization of dataset s
 This process involves:
   - Estimating data statistical distributions across batches along the temporal or source scope.
   - Projecting these distributions onto non-parametric statistical manifolds based on different embedding functions including the Jensen-Shannon distance + Multi Dimensional Scaling, Principal Component Analysis, or Autoencoders.
-  - Generating different visual analytics and metrics to reveal patterns of latent variability in the data, uncovering hidden trends and shifts, and measuring the shifting magnitude.
+
 
 - **Supervised approach:**
 Model-based delineation and characterization of dataset shifts, by relying on automated generation of classification or regression models trained on batched data across the selected scope. This allows for the detailed analysis of how dataset shifts impact model performance, helping to pinpoint temporal or source areas of potential degradation. This process involves:
   - Training classificaiton or regression models using Random Forests across batches along the temporal or source scope.
   - Calculating model contigency matrices pairwise across the batched models and evaluating multiple evaluation metrics.
-  - Generating different visual analytics and metrics to reveal patterns of latent variability in the data, uncovering hidden trends and shifts, and measuring the shifting magnitude.
 
 
 ### Main `dashi`'s outcomes:
-To aid exploration, interpretation and quantification of dataset shifts, `dashi` includes visual analytics features and metrics such as:
+To aid exploration, interpretation and quantification of dataset shifts, `dashi` includes **visual analytics** and **metrics** to reveal patterns of latent variability in the data, uncovering hidden trends and shifts, and measuring the shifting magnitude, such as:
 
 - **Data Temporal Heatmaps (DTHs):** Provide an exploratory visualization for temporal shifts in data distributions.
 - **Information Geometric Temporal (IGT) plots:** Offer a more sophisticated view of temporal data variability by means of embedding temporal batches in their latent statistical manifolds.
 - **Multi-batch contingency matrices:** Compare multiple evaluation metrics (F1-Score, Recall, Precision, AUC, etc.) across training-test combinations between pairwise batches, either temporal or multi-source.
+- **Multi-source variability plots:** ...
 - **Shift metrics:** Including the Global Probabilistic Deviation (GPD), Source Probabilistic Outlyingness.
 
 ## Installation
