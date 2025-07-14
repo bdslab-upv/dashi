@@ -56,13 +56,11 @@ cd dashi
 pip install .
 ```
 
-## Usage & Examples
+## Usage, examples & documentation
 
-You can find the tutorial on ho to use `dashi` in this [link](https://bdslab-upv.github.io/dashi/examples/Usage_tutorial.html) 
-or in the [examples](examples/) directory.
-
-
-## Documentation
+Introductory tutorial on how to use `dashi` in this [link](https://bdslab-upv.github.io/dashi/examples/Usage_tutorial.html).
+Advanced tutorial: and an ad
+The tutorials code is available in the [examples](examples/) directory.
 
 Detailed documentation is available at [documentation](https://bdslab-upv.github.io/dashi/docs/build/html/).
 
