@@ -70,7 +70,7 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 
 
 ```
-Copyright 2024 Biomedical Data Science Lab, ITACA Institute, Universitat Politècnica de València (Spain)
+Copyright 2025 The Authors, Biomedical Data Science Lab, Institute of Information and Communication Technologies (ITACA), Universitat Politècnica de València (Spain)
 
 Licensed to the Apache Software Foundation (ASF) under one or more contributor
 license agreements. See the NOTICE file distributed with this work for
