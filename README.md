@@ -19,24 +19,23 @@ Dataset shift analysis and characterization in python
   -Concept:
 
 - **Unsupervised approach:** 
-Facilitates the delineation and characterization of dataset shifts in a model-agnostic manner by analysing the data covariate and outcome-conditional statistical distributions, by projecting and visualizing data dissimilarities across time or sources. 
+Distribution-based, model-agnostic delineation and characterization of dataset shifts by analysing the data covariate and outcome-conditional statistical distributions and projecting and visualizing their dissimilarities across the temporal or source scope. 
 This process involves:
-  - Estimating data statistical distributions over time.
-  - Projecting these distributions onto non-parametric statistical manifolds. These projections reveal patterns of
-  latent temporal variability in the data, uncovering hidden trends and shifts.
+  - Estimating data statistical distributions across the temporal or source scope.
+  - Projecting these distributions onto non-parametric statistical manifolds based on different embedding functions including the Jensen-Shannon distance + Multi Dimensional Scaling, Principal Component Analysis, or Autoencoders.
+  - Generating different visual analytics and metrics to reveal patterns of latent variability in the data, uncovering hidden trends and shifts, and measuring the shifting magnitude.
 
 - **Supervised approach:**
-Enables users to create classification or regression models using Random Forests trained on batched data 
-(temporal or multi-source). This allows for the detailed analysis of how dataset shifts impact model performance, 
-helping to pinpoint areas of potential degradation.
+Model-based delineation and characterization of dataset shifts, by relying on automated generation of classification or regression models using Random Forests trained on batched data across the selected scope. This allows for the detailed analysis of how dataset shifts impact model performance, helping to pinpoint temporal or source areas of potential degradation.
 
 
-### Visualization Tools:
+### Main DASHI's outcomes:
 To aid exploration and interpretation of dataset shifts, `dashi` includes visual analytics features such as:
 
 - **Data Temporal Heatmaps (DTHs):** Provide an exploratory visualization for temporal shifts in data distributions.
 - **Information Geometric Temporal (IGT) plots:** Offer a more sophisticated view of temporal data variability by means of embedding temporal batches in their latent statistical manifolds.
 - **Multi-batch contingency matrices:** Compare multiple evaluation metrics (F1-Score, Recall, Precision, AUC, etc.) across training-test combinations between pairwise batches, either temporal or multi-source.
+- **Shift metrics:** Including the Global Probabilistic Deviation (GPD), Source Probabilistic Outlyingness.
 
 ## Installation
 
