@@ -5,29 +5,65 @@
 
 Dataset shift analysis and characterization in python
 ## What is `dashi`?
-`dashi` is a Python library designed to **analyze and characterize temporal and multi-source dataset shifts**. It provides 
-robust tools for both **supervised and unsupervised evaluation of dataset shifts,** empowering users to detect, understand, 
-and address changes in data distributions with confidence.
+`dashi` is a Python library for **analyzing and characterizing temporal and multi-source dataset shifts**. It offers 
+**unsupervised and supervised tools** for quantifying and visualizing covariate, concept, and prior shifts, supporting 
+**trustworthy artificial intelligence development and evaluation**.
 
 ### Key Features:
 
-- **Supervised Characterization:**
-Enables users to create classification or regression models using Random Forests trained on batched data 
-(temporal or multi-source). This allows for the detailed analysis of how dataset shifts impact model performance, 
-helping to pinpoint areas of potential degradation.
-- **Unsupervised Characterization:** 
-Facilitates the identification of temporal dataset shifts by projecting and visualizing data dissimilarities across time. 
-This process involves:
-  - Estimating data statistical distributions over time.
-  - Projecting these distributions onto non-parametric statistical manifolds. These projections reveal patterns of
-  latent temporal variability in the data, uncovering hidden trends and shifts.
+- **Shift scope:**
+  - **Temporal**: Outlines changes in data over time, enabling analysis of how statistical distributions evolve across 
+  different periods or batches. This scope implies a chronological order and is useful for detecting trends, 
+  seasonality, and potential instabilities in data quality or behavior.
+  - **Source/domain**: Allows analysis of differences between multiple data sources or domains, without requiring any 
+  specific order. This scope is useful for identifying variability, biases, or inconsistencies among data from 
+  different origins, such as hospitals, laboratories, or geographic regions.
 
-### Visualization Tools:
-To aid exploration and interpretation of dataset shifts, `dashi` includes visual analytics features such as:
+
+- **Types of dataset shifts:**
+  - **Covariate**: Changes in the distribution of input variables (features), while the relationship between inputs and 
+  outputs remain the same.
+  - **Prior**: Happens when the distribution of the target variable (labels or outcomes) changes across datasets, but the 
+  conditional distribution of features given the label remains stable.
+  - **Concept**: Refers to changes in the relationship between input variables and the target variable, i.e., the 
+  conditional distribution of the target given the features changes or vice versa.
+
+
+- **Unsupervised approach:** 
+Distribution-based, model-agnostic delineation and characterization of dataset shifts by analysing the data covariate 
+and outcome-conditional statistical distributions and projecting and visualizing their dissimilarities across the 
+temporal or source scope. 
+This process involves:
+  - Estimating data statistical distributions across batches along the temporal or source scope.
+  - Projecting these distributions onto non-parametric statistical manifolds based on different embedding functions 
+  including the Jensen-Shannon distance + Multi Dimensional Scaling, Principal Component Analysis, or Autoencoders 
+  (future work).
+
+
+- **Supervised approach:**
+Model-based delineation and characterization of dataset shifts, by relying on automated generation of classification or 
+regression models trained on batched data across the selected scope (temporal or multi-source). This allows for the 
+detailed analysis of how dataset shifts impact model performance, helping to pinpoint areas of potential degradation. 
+This process involves:
+  - Training classification or regression models using Random Forests across batches along the selected scope.
+  - Calculating model contingency matrices pairwise across the batched models and evaluating multiple evaluation metrics.
+
+
+### Main `dashi`'s outcomes:
+To aid exploration, interpretation and quantification of dataset shifts, `dashi` includes **visual analytics** and 
+**metrics** to reveal patterns of latent variability in the data, uncovering hidden trends and shifts, and measuring 
+the shifting magnitude, such as:
 
 - **Data Temporal Heatmaps (DTHs):** Provide an exploratory visualization for temporal shifts in data distributions.
-- **Information Geometric Temporal (IGT) plots:** Offer a more sophisticated view of temporal data variability by means of embedding temporal batches in their latent statistical manifolds.
+- **Information Geometric Temporal (IGT) plots:** Offer a more sophisticated view of temporal data variability by means 
+of embedding temporal batches in their latent statistical manifolds.
+- **Data Source Maps (DSMs):** Provide an exploratory visualization for multi-source shifts in data distributions.
+- **Multi-source variability plots:** Offer a more sophisticated view of multi-source data variability by
+means of embedding source batches in their latent statistical manifolds. These plots include the shift metrics:
+  - Global Probabilistic Deviation (GPD).
+  - Source Probabilistic Outlyingness (SPO).
 - **Multi-batch contingency matrices:** Compare multiple evaluation metrics (F1-Score, Recall, Precision, AUC, etc.) across training-test combinations between pairwise batches, either temporal or multi-source.
+
 
 ## Installation
 
@@ -45,13 +81,10 @@ cd dashi
 pip install .
 ```
 
-## Usage & Examples
+## Usage & Examples & documentation
 
 You can find the tutorial on ho to use `dashi` in this [link](https://bdslab-upv.github.io/dashi/examples/Usage_tutorial.html) 
 or in the [examples](examples/) directory.
-
-
-## Documentation
 
 Detailed documentation is available at [documentation](https://bdslab-upv.github.io/dashi/docs/build/html/).
 
@@ -61,7 +94,7 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 
 
 ```
-Copyright 2024 Biomedical Data Science Lab, ITACA Institute, Universitat Politècnica de València (Spain)
+Copyright 2025 The Authors, Biomedical Data Science Lab, Institute of Information and Communication Technologies (ITACA), Universitat Politècnica de València (Spain)
 
 Licensed to the Apache Software Foundation (ASF) under one or more contributor
 license agreements. See the NOTICE file distributed with this work for
@@ -82,9 +115,9 @@ Part of the Python library `dashi` has been inspired by the R [EHRtemporalVariab
 
 ## Authorship
 
-- **Authors:** David Fernández Narro (UPV), Pablo Ferri Borredá (UPV), Ángel Sánchez-García (UPV), Juan M García-Gómez (UPV), Carlos Sáez (UPV)
+- **Authors:** David Fernández Narro, Pablo Ferri Borredá, Ángel Sánchez-García, Juan M García-Gómez, [Carlos Sáez Silvestre](mailto:carsaesi@upv.es) (Principal Investigator)
 
-- **Contact:** dashi@upv.es
+- **Contact and support:** [dashi@upv.es](mailto:dashi@upv.es)
 
 ## Acknowledgements
 
