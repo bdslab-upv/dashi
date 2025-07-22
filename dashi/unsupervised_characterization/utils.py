@@ -283,10 +283,10 @@ def _validate_plot_args(
         start_value,
         sorting_method,
 ) -> None:
-    if mode not in VALID_PLOT_MODES:
+    if mode is not None and mode not in VALID_PLOT_MODES:
         raise ValueError(f'mode must be one of the defined in {VALID_PLOT_MODES}')
 
-    if color_palette not in VALID_COLOR_PALETTES:
+    if color_palette is not None and color_palette not in VALID_COLOR_PALETTES:
         raise ValueError(f'color_palette must be one of the defined in {VALID_COLOR_PALETTES}')
 
     if not isinstance(absolute, bool):
@@ -328,13 +328,15 @@ def _get_counts_array(
         data_map,
         start_value,
         end_value,
-        log_transform
+        log_transform,
+        temporal=False
 ):
     if log_transform:
         data_map = np.log(data_map + 1e-8)
 
     counts_subarray = [row[start_value: end_value] for row in data_map]
-    counts_subarray = list(zip(*counts_subarray))
+    if temporal:
+        counts_subarray = list(zip(*counts_subarray))
 
     return counts_subarray
 
@@ -390,9 +392,9 @@ def _create_heatmap_figure(
                                              }
                                     })
     else:
-        title = 'Probability distribution data source heatmap'
+        title = 'Probability distribution data temporal heatmap'
         if absolute:
-            title = 'Absolute frequencies data source heatmap'
+            title = 'Absolute frequencies data temporal heatmap'
         figure.update_layout(title={'text': title,
                                     'font': {'color': 'black'
                                              }
@@ -408,15 +410,14 @@ def _create_series_figure(
         y,
         name,
         absolute,
-        start_value,
-        end_value,
         x_axis,
         font,
-        title
+        title,
+        _range
 ):
     figure = go.Figure()
 
-    for i in range(start_value, end_value):
+    for i in _range:
         trace = go.Scatter(
             x=x,
             y=y[i],
@@ -439,11 +440,14 @@ def _create_series_figure(
         tickcolor='black'
     )
 
-    figure.update_xaxes(x_axis)
+    figure.update_xaxes(
+        x_axis
+    )
 
     figure.update_layout(
         autosize=True,
         yaxis=y_axis,
+        template='plotly_white',
         paper_bgcolor='white',
         plot_bgcolor='white'
     )
