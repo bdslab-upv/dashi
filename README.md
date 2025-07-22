@@ -12,20 +12,16 @@ Dataset shift analysis and characterization in python
 ### Key Features:
 
 - **Shift scope:**
-  - **Temporal**: Outlines changes in data over time, enabling analysis of how statistical distributions evolve across 
-  different periods or batches. This scope implies a chronological order and is useful for detecting trends, 
-  seasonality, and potential instabilities in data quality or behavior.
-  - **Source/domain**: Allows analysis of differences between multiple data sources or domains, without requiring any 
-  specific order. This scope is useful for identifying variability, biases, or inconsistencies among data from 
-  different origins, such as hospitals, laboratories, or geographic regions.
+  - **Temporal**: Outlines changes in data over time, enabling analysis of trends, seasonality, and abrupt shifts across different periods or temporal batches. This scope requires data to be labelled with a date.
+  - **Source/domain**: Allows analysis of differences between multiple data sources or domains, being useful for identifying variability, biases, or inconsistencies among data from different origins, such as hospitals, laboratories, or geographic regions. This scope requires data to be labelled with the source/domain, without any specific chronological order.
 
 
 - **Types of dataset shifts:**
   - **Covariate**: Changes in the distribution of input variables (features), while the relationship between inputs and 
   outputs remain the same.
-  - **Prior**: Happens when the distribution of the target variable (labels or outcomes) changes across datasets, but the 
+  - **Prior**: Changes in the distribution of the target variable (labels or outcomes), while the 
   conditional distribution of features given the label remains stable.
-  - **Concept**: Refers to changes in the relationship between input variables and the target variable, i.e., the 
+  - **Concept**: Changes in the relationship between input variables and the target variable, i.e., the 
   conditional distribution of the target given the features changes or vice versa.
 
 
@@ -36,8 +32,7 @@ temporal or source scope.
 This process involves:
   - Estimating data statistical distributions across batches along the temporal or source scope.
   - Projecting these distributions onto non-parametric statistical manifolds based on different embedding functions 
-  including the Jensen-Shannon distance + Multi Dimensional Scaling, Principal Component Analysis, or Autoencoders 
-  (future work).
+  including the Jensen-Shannon distance + Multi Dimensional Scaling and Principal Component Analysis.
 
 
 - **Supervised approach:**
@@ -54,14 +49,13 @@ To aid exploration, interpretation and quantification of dataset shifts, `dashi`
 **metrics** to reveal patterns of latent variability in the data, uncovering hidden trends and shifts, and measuring 
 the shifting magnitude, such as:
 
-- **Data Temporal Heatmaps (DTHs):** Provide an exploratory visualization for temporal shifts in data distributions.
-- **Information Geometric Temporal (IGT) plots:** Offer a more sophisticated view of temporal data variability by means 
-of embedding temporal batches in their latent statistical manifolds.
+- **Data Temporal Heatmaps (DTHs):** Provide an interactive exploratory visualization for temporal shifts in data distributions.
+- **Information Geometric Temporal (IGT) plots:** Offer an holistic view of temporal data variability by means of embedding the analysed temporal batches in their latent statistical manifolds. Enables delineating trends, seasonality, and abrupt shifts in a single, interactive 2D or 3D plot.
 - **Data Source Maps (DSMs):** Provide an exploratory visualization for multi-source shifts in data distributions.
-- **Multi-source variability plots:** Offer a more sophisticated view of multi-source data variability by
-means of embedding source batches in their latent statistical manifolds. These plots include the shift metrics:
-  - Global Probabilistic Deviation (GPD).
-  - Source Probabilistic Outlyingness (SPO).
+- **Multi-Source Variability (MSV) plots:** Offer an holistic view of multi-source data variability by means of embedding source/domain batches in their latent statistical manifolds. Enables delineating source differences, clustering behaviour, and the change magnitudes, in a single, interactive 2D or 3D plot.
+- **Multi-Source Variability metrics:** These MSV analysis includes the following shift metrics:
+  - Global Probabilistic Deviation (GPD): Measures the degree of global variability among the distributions of multiple sources. It is based on embedding all sources in a full-dimensional geometric simplex using their pairwise Jensen-Shannon distances, providing a normalized, dimensional-independent metric equivalent to a standard deviation among probability distributions.
+  - Source Probabilistic Outlyingness (SPO): Measures the dissimilarity of the distribution of a single data source to a global latent average. It provides a normalized, dimensional-independent metric of the probabilistic dissimilarity of a source to the central tendency of the simplex projection as described in the GPD.
 - **Multi-batch contingency matrices:** Compare multiple evaluation metrics (F1-Score, Recall, Precision, AUC, etc.) across training-test combinations between pairwise batches, either temporal or multi-source.
 
 
@@ -83,7 +77,7 @@ pip install .
 
 ## Usage & Examples & documentation
 
-You can find the tutorial on ho to use `dashi` in this [link](https://bdslab-upv.github.io/dashi/examples/Usage_tutorial.html) 
+You can find the tutorial on how to use `dashi` in this [link](https://bdslab-upv.github.io/dashi/examples/Usage_tutorial.html) 
 or in the [examples](examples/) directory.
 
 Detailed documentation is available at [documentation](https://bdslab-upv.github.io/dashi/docs/build/html/).
