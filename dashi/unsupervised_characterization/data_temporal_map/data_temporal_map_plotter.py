@@ -138,13 +138,14 @@ def plot_univariate_data_temporal_map(
         data_map=temporal_map,
         start_value=start_value,
         end_value=end_value,
-        log_transform=log_transform
+        log_transform=log_transform,
+        temporal=True
     )
 
     font = dict(size=20, color='#7f7f7f')
     x_axis = dict(title='Date',
                   tickvals=dates[::2] if len(dates) > 2 else dates,
-                  titlefont={'color': 'black'},
+                  titlefont=font,
                   tickfont={'color': 'black'},
                   type='date',
                   ticks='outside',
@@ -171,11 +172,10 @@ def plot_univariate_data_temporal_map(
             y=counts_subarray,
             name=support,
             absolute=absolute,
-            start_value=start_value,
-            end_value=end_value,
             x_axis=x_axis,
             font=font,
-            title=title
+            title=title,
+            _range=range(start_value, end_value)
         )
         return figure
     return None
