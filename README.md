@@ -54,8 +54,8 @@ the shifting magnitude, such as:
 - **Data Source Maps (DSMs):** Provide an exploratory visualization for multi-source shifts in data distributions.
 - **Multi-Source Variability (MSV) plots:** Offer an holistic view of multi-source data variability by means of embedding source/domain batches in their latent statistical manifolds. Enables delineating source differences, clustering behaviour, and the change magnitudes, in a single, interactive 2D or 3D plot.
 - **Multi-Source Variability metrics:** These MSV analysis includes the following shift metrics:
-  - Global Probabilistic Deviation (GPD): 
-  - Source Probabilistic Outlyingness (SPO): 
+  - Global Probabilistic Deviation (GPD): Measures the degree of global variability among the distributions of multiple sources. It is based on embedding all sources in a full-dimensional geometric simplex using their pairwise Jensen-Shannon distances, providing a normalized, dimensional-independent metric equivalent to a standard deviation among probability distributions.
+  - Source Probabilistic Outlyingness (SPO): Measures the dissimilarity of the distribution of a single data source to a global latent average. It provides a normalized, dimensional-independent metric of the probabilistic dissimilarity of a source to the central tendency of the simplex projection as described in the GPD.
 - **Multi-batch contingency matrices:** Compare multiple evaluation metrics (F1-Score, Recall, Precision, AUC, etc.) across training-test combinations between pairwise batches, either temporal or multi-source.
 
 
