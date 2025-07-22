@@ -20,14 +20,14 @@ import pandas as pd
 import plotly.graph_objs as go
 import plotly.subplots as sp
 import plotly.io as pio
+import plotly.colors
 from typing import Optional, Dict
 
 from dashi._constants import VALID_SORTING_METHODS, VALID_COLOR_PALETTES, \
     VALID_PLOT_MODES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
 from dashi.unsupervised_characterization.data_source_map.data_source_map import DataSourceMap, MultiVariateDataSourceMap
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
-                                                       _create_heatmap_figure, _create_series_figure,
-                                                       _marginalize_multivariate_map)
+                                                       _marginalize_multivariate_map, _create_series_figure)
 
 pio.renderers.default = "browser"
 
@@ -38,8 +38,6 @@ def plot_univariate_data_source_map(
         start_value: Optional[int] = 0,
         end_value: Optional[int] = None,
         sorting_method: str = 'alphabetical',
-        color_palette: str = 'Spectral',
-        mode: str = 'heatmap',
         title: Optional[str] = None
 ) -> go.Figure:
     """
@@ -66,13 +64,6 @@ def plot_univariate_data_source_map(
         The method by which the data will be sorted for display (e.g., 'frequency', 'alphabetical').
         Default is 'frequency'.
 
-    color_palette : str, optional
-        The color palette to be used for the plot (e.g., 'Spectral', 'viridis', 'viridis_r', 'magma', 'magma_r).
-        Default is 'Spectral'.
-
-    mode : str, optional
-        The mode of visualization (e.g., 'heatmap', 'series'). Default is 'heatmap'.
-
     title : str, optional
         The title of the plot. If None, a default title is used. Default is None.
 
@@ -84,8 +75,8 @@ def plot_univariate_data_source_map(
     if not type(data_source_map) == DataSourceMap:
         raise TypeError('data_source_map must be an instance of DataSourceMap.')
     _validate_plot_args(
-        mode=mode,
-        color_palette=color_palette,
+        mode=None,
+        color_palette=None,
         absolute=absolute,
         log_transform=log_transform,
         start_value=start_value,
@@ -122,44 +113,27 @@ def plot_univariate_data_source_map(
     )
 
     font = dict(size=20, color='#7f7f7f')
-    x_axis = dict(title='Source',
-                  tickvals=sources[::2] if len(sources) > 2 else sources,
-                  titlefont={'color': 'black'},
+    x_axis = dict(title=data_source_map.variable_name,
+                  titlefont=font,
+                  tickvals=support,
                   tickfont={'color': 'black'},
                   ticks='outside',
-                  tickcolor='black')
+                  tickcolor='black',
+                  tickangle=45
+                  )
 
-
-    if mode == 'heatmap':
-        figure = _create_heatmap_figure(
-            data_map=data_source_map,
-            x=sources,
-            y=support[start_value:end_value],
-            z=counts_subarray,
-            color_palette=color_palette,
-            font=font,
-            x_axis=x_axis,
-            title=title,
-            absolute=absolute,
-        )
-
-        return figure
-
-    elif mode == 'series':
-        figure = _create_series_figure(
-            data_map=data_source_map,
-            x=sources,
-            y=counts_subarray,
-            name=support,
-            absolute=absolute,
-            start_value=start_value,
-            end_value=end_value,
-            x_axis=x_axis,
-            font=font,
-            title=title
-        )
-        return figure
-    return None
+    figure = _create_series_figure(
+        data_map=data_source_map,
+        x=support,
+        y=counts_subarray,
+        name=sources,
+        absolute=absolute,
+        x_axis=x_axis,
+        font=font,
+        title=title,
+        _range=range(len(data_source_map.sources))
+    )
+    return figure
 
 def plot_multivariate_data_source_map(
         data_source_map: MultiVariateDataSourceMap,
@@ -192,6 +166,10 @@ def plot_multivariate_data_source_map(
     supports = data_source_map.multivariate_support
     dimensions = len(supports)
 
+    # Create a color palette for the sources
+    palette = plotly.colors.qualitative.Plotly
+    colors = {source: palette[i % len(palette)] for i, source in enumerate(sources)}
+
     if absolute:
         multivariate_map = data_source_map.multivariate_counts_map
     else:
@@ -205,30 +183,26 @@ def plot_multivariate_data_source_map(
     subplot = sp.make_subplots(
         rows=dimensions,
         cols=1,
-        shared_xaxes=True,
-        vertical_spacing=0.02
+        shared_xaxes=False,
+        vertical_spacing=0.05
     )
     font = dict(size=20, color='#7f7f7f')
-    x_axis_tickvals = sources[::2] if len(sources) > 2 else sources
 
     for i, source_map in enumerate(probability_map_list):
         support = np.array(source_map.columns)
         counts_subarray = [row for row in source_map.values]
-        counts_subarray = list(zip(*counts_subarray))
 
-        figure = go.Heatmap(
-            x=sources,
-            y=support,
-            z=counts_subarray,
-            reversescale=True,
-            coloraxis='coloraxis'
-        )
-
-        subplot.add_trace(
-            figure,
-            row=i + 1,
-            col=1
-        )
+        for j in range(len(sources)):
+            trace = go.Scatter(
+                x=support,
+                y=counts_subarray[j],
+                mode='lines',
+                name=str(sources[j]),
+                showlegend= (i == 0),
+                legendgroup=sources[j],
+                line=dict(color=colors[sources[j]])
+            )
+            subplot.add_trace(trace, row=i + 1, col=1)
 
         subplot.update_yaxes(
             title=f'PC {i + 1}',
@@ -241,26 +215,29 @@ def plot_multivariate_data_source_map(
         )
 
         subplot.update_xaxes(
-            tickvals=x_axis_tickvals,
+            tickvals=support,
+            tickformat='.2f',
+            tickangle=15,
             tickfont={'size': 12},
-            title_text='Source' if i == dimensions - 1 else None,
-            title_font=font if i == dimensions - 1 else None,
+            title_font=font,
+            title_text='Support' if i == dimensions - 1 else None,
+            # title_font=font if i == dimensions - 1 else None,
             row=i + 1,
             col=1,
             ticks='outside',
             tickcolor='black'
         )
 
-        subplot.update_layout(
-            autosize=True,
-            height=min(300 * dimensions, 800),
-            showlegend=False,
-            template='plotly_white',
-            margin=dict(t=60, r=20, b=60, l=60),
-            coloraxis=dict(colorscale='Spectral_r'),
-            title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
-                  f'data source heatmap'
-        )
+    subplot.update_layout(
+        autosize=True,
+        height=min(300 * dimensions, 800),
+        showlegend=True,
+        template='plotly_white',
+        margin=dict(t=60, r=20, b=60, l=60),
+        coloraxis=dict(colorscale='Spectral_r'),
+        title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
+              f'data source map'
+    )
 
     subplot.show()
     return subplot
@@ -329,29 +306,33 @@ def plot_conditional_data_source_map(
         subplot = sp.make_subplots(
             rows=len(labels),
             cols=1,
-            shared_xaxes=True,
-            vertical_spacing=0.04
+            shared_xaxes=False,
+            vertical_spacing=0.06
         )
 
         font = dict(size=20, color='#7f7f7f')
 
-        for label, probability_map_list in probability_map_dict.items():
+        for i, (label, probability_map_list) in enumerate(probability_map_dict.items()):
             sources = sources_dict[label]
-            x_axis_tickvals = sources[::2] if len(sources) > 2 else sources
             source_map = probability_map_list[dim]
             support = np.array(source_map.columns)
             counts_subarray = [row for row in source_map.values]
-            counts_subarray = list(zip(*counts_subarray))
 
-            figure = go.Heatmap(
-                x=sources,
-                y=support,
-                z=counts_subarray,
-                reversescale=True,
-                coloraxis='coloraxis'
-            )
+            # Create a color palette for the sources
+            palette = plotly.colors.qualitative.Plotly
+            colors = {source: palette[i % len(palette)] for i, source in enumerate(sources)}
 
-            subplot.add_trace(figure, row=labels.index(label) + 1, col=1)
+            for j in range(len(sources)):
+                trace = go.Scatter(
+                    x=support,
+                    y=counts_subarray[j],
+                    mode='lines',
+                    name=str(sources[j]),
+                    showlegend= (i == 0),
+                    legendgroup=sources[j],
+                    line=dict(color=colors[sources[j]])
+                )
+                subplot.add_trace(trace, row=labels.index(label) + 1, col=1)
 
             subplot.update_yaxes(
                 title=f'{label}',
@@ -364,9 +345,11 @@ def plot_conditional_data_source_map(
             )
 
             subplot.update_xaxes(
-                tickvals=x_axis_tickvals,
+                tickvals=support,
+                tickformat='.2f',
                 tickfont={'size': 12},
-                title_text='Source' if labels.index(label) == len(labels) - 1 else None,
+                tickangle=45,
+                title_text='Support' if labels.index(label) == len(labels) - 1 else None,
                 title_font=font if labels.index(label) == len(labels) - 1 else None,
                 row=labels.index(label) + 1,
                 col=1,
@@ -377,12 +360,12 @@ def plot_conditional_data_source_map(
         subplot.update_layout(
             autosize=True,
             height=min(300 * len(labels), 800),
-            showlegend=False,
+            showlegend=True,
             template='plotly_white',
             margin=dict(t=60, r=20, b=60, l=60),
             coloraxis=dict(colorscale='Spectral_r'),
             title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
-                  f'conditional data source heatmap of Principal Component {dim + 1}'
+                  f'conditional data source map of Principal Component {dim + 1}'
         )
 
         subplot.show()
