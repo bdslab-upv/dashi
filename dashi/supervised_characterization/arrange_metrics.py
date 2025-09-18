@@ -21,7 +21,7 @@ from typing import Dict, Union, Tuple
 from pandas import Series, DataFrame
 
 
-def arrange_performance_metrics(*, metrics: Dict[str, float], metric_name: str) -> DataFrame:
+def arrange_performance_metrics(*, metrics: Dict[Tuple, Dict[str, float]], metric_name: str) -> DataFrame:
     """
     Organizes and formats a subset of metrics from a dictionary into a pandas DataFrame.
 
@@ -31,8 +31,10 @@ def arrange_performance_metrics(*, metrics: Dict[str, float], metric_name: str) 
 
     Parameters
     ----------
-    metrics : dict of {str: float}
-        A dictionary containing the calculated metrics for each batch and model combination.
+    metrics : dict of {tuple: dict{str: float}}
+        A dictionary where each key is a tuple `(train_batch_ids, test_batch_id, 'test')`
+        representing the training/testing combination. Each corresponding value is another
+        dictionary containing the calculated performance metrics for that specific test.
 
     metric_name : str
         The name of the metric to be selected from the `metrics` dictionary.
