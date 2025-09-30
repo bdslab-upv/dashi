@@ -18,15 +18,14 @@ Main function for estimating models over multiple temporal or multi-source batch
 
 # MODULES IMPORT
 import warnings
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 
 import sklearn.metrics as skmet
-from dateutil.parser import parse as parse_date
 from numpy import ndarray, sqrt
-from pandas import DataFrame, concat, get_dummies
+from pandas import DataFrame, concat, to_datetime
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split, KFold
-from sklearn.preprocessing import LabelEncoder, RobustScaler
+from sklearn.preprocessing import LabelEncoder, RobustScaler, OneHotEncoder
 from tqdm.auto import tqdm
 
 
@@ -37,7 +36,7 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
                                output_classification_column_name: Optional[str] = None,
                                date_column_name: Optional[str] = None,
                                period: Optional[str] = None, source_column_name: Optional[str] = None,
-                               learning_strategy: Optional[str] = 'from_scratch') -> Dict[str, float]:
+                               learning_strategy: Optional[str] = 'from_scratch') -> Dict[Tuple, Dict[str, float]]:
     """
     Estimates models across multiple batches, based on either time (temporal) or source.
     Requires specifying one target variable (regression or classification) and at least one
@@ -86,8 +85,12 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
 
     Returns
     -------
-    Dict[str, float]
-        A dictionary containing the calculated metrics for each batch and model combination.
+    Dict[Tuple, Dict[str, float]]
+        A dictionary where each key is a tuple `(train_batch_ids, test_batch_id, 'test')`
+        representing the training/testing combination. Each corresponding value is another
+        dictionary containing the calculated performance metrics for that specific test.
+
+        The inner dictionary contains metric names (str) and their values (float):
         Regression metrics, if applicable:
             - 'MEAN_ABSOLUTE_ERROR'
             - 'MEAN_SQUARED_ERROR'
@@ -116,7 +119,7 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     _check_inputs(data=data, inputs_numerical_column_names=inputs_numerical_column_names,
                   inputs_categorical_column_names=inputs_categorical_column_names,
                   output_regression_column_name=output_regression_column_name,
-                  output_classification_column_names=output_classification_column_name,
+                  output_classification_column_name=output_classification_column_name,
                   date_column_name=date_column_name, period=period, source_column_name=source_column_name,
                   learning_strategy=learning_strategy)
 
@@ -128,12 +131,18 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     maximum_depth = 9
     random_seed = 42
 
+    # Make a copy to avoid modifying the original DataFrame
+    data = data.copy()
+
     # Label encoding (for classification tasks)
     if output_classification_column_name is not None:
         # label encoder initialization
         label_encoder = LabelEncoder()
         # label encoding
-        data.loc[:, output_classification_column_name] = label_encoder.fit_transform(data.loc[:, output_classification_column_name])
+        encoded = label_encoder.fit_transform(data[output_classification_column_name])
+
+        # Replace column with integer dtype
+        data[output_classification_column_name] = encoded.astype("int64")
         # index to class map derivation
         index2class_map = dict(enumerate(label_encoder.classes_))
 
@@ -143,32 +152,23 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
         batching_column_name = source_column_name
     # temporal analysis
     elif date_column_name is not None and source_column_name is None:
-        # date parsing
-        data.loc[:, date_column_name] = data.loc[:, date_column_name].apply(lambda date_string: parse_date(date_string))
+        # convert column to datetime format if not already, handling both strings and datetimes
+        data[date_column_name] = to_datetime(data[date_column_name])
         # sorting by date
         data = data.sort_values(by=date_column_name)
         # batching period adjusting
         if period == 'month':
-            data[date_column_name] = data[date_column_name].apply(lambda date_: date_.strftime("%B %Y"))
+            data[date_column_name] = data[date_column_name].dt.strftime("%B %Y")
         elif period == 'year':
-            data[date_column_name] = data[date_column_name].apply(lambda date_: date_.strftime("%Y"))
+            data[date_column_name] = data[date_column_name].dt.strftime("%Y")
         else:
             raise ValueError("Current supported batching periods are 'month' and 'year'.")
         # batching column assignation
         batching_column_name = date_column_name
     else:
-        raise ValueError('This casuistry has not been implemented yet.')
-
-    # One-hot encoding for categorical features
-    if inputs_categorical_column_names is not None:
-        inputs_categorical_columns_ = inputs_categorical_column_names.copy()
-        for cat_col in inputs_categorical_columns_:
-            data_encoded = get_dummies(data[cat_col], prefix=cat_col, prefix_sep='-', drop_first=False)
-            data = concat([data, data_encoded], axis=1)
-            data = data.drop(columns=[cat_col])
-
-            inputs_categorical_column_names.remove(cat_col)
-            inputs_categorical_column_names.extend(list(data_encoded.columns))
+        raise ValueError("Invalid configuration: Please provide exactly one of 'date_column_name' for "
+                         "temporal batching or 'source_column_name' for source-based batching. "
+                         "You have either provided both or neither.")
 
     # Generate split indexes based on batching
     split_indexes = _generate_split_indexes(data=data, batching_column_name=batching_column_name)
@@ -176,15 +176,20 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     # Extract batch identifiers
     batch_identifiers = tuple(split_indexes.keys())
 
+    # Memory allocation
+    trained_scalers = {}
+    trained_encoders = {}
+    trained_models = {}
+
     # Generate combinations for training and testing batches
     # memory allocation
     combinations = []
     # filling
     if learning_strategy == 'from_scratch':
         for batch_idf_train in batch_identifiers:
-            combinations.append((batch_idf_train, batch_idf_train, 'train',))
+            combinations.append(((batch_idf_train,), batch_idf_train, 'train',))
             for batch_idf_test in batch_identifiers:
-                combinations.append((batch_idf_train, batch_idf_test, 'test'))
+                combinations.append(((batch_idf_train,), batch_idf_test, 'test'))
     elif learning_strategy == 'cumulative':
         for idx, batch_idf_train in enumerate(batch_identifiers):
             batch_cumulative_identifiers = tuple([batch_identifiers[i] for i in range(0, idx + 1)])
@@ -197,130 +202,125 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     # Preprocessing, training and evaluation
     for combination in tqdm(combinations, total=len(combinations), colour='#32CD32',
                             desc='Learning and testing over experiences', position=0, leave=True):
-        # Identifiers extraction
-        # data set
-        data_set = combination[2]
-        # batch identifier
-        if learning_strategy == 'from_scratch' or data_set == 'test':
-            batch_idf = combination[1]
 
-        # Metrics dictionary checking
-        if combination in metrics.keys():
-            raise ValueError('Batch already visited.')
+        train_batch_identifiers, current_batch_idf, data_set = combination
 
-        # Extraction of the train and test data
-        if learning_strategy == 'from_scratch' or data_set == 'test':
-            data_batch = data.loc[split_indexes[batch_idf]['train_test'][f'{data_set}_indexes']]
-        elif learning_strategy == 'cumulative' and data_set == 'train':
-            # batch identifiers extraction
-            batch_identifiers = combination[0]
-            # data extraction
-            if len(batch_identifiers) == 1:
-                batch_idf_ = batch_identifiers[0]
-                data_batch = data.loc[split_indexes[batch_idf_]['train_test'][f'{data_set}_indexes']]
-            else:
-                for idx_, batch_identifier_ in enumerate(batch_identifiers):
-                    if idx_ == 0:
-                        data_batch = data.loc[split_indexes[batch_identifier_]['train_test'][f'{data_set}_indexes']]
-                    else:
-                        data_batch_i = data.loc[split_indexes[batch_identifier_]['train_test'][f'{data_set}_indexes']]
-                        data_batch = concat([data_batch, data_batch_i])
-        else:
-            raise ValueError('Unconsidered casuistry.')
+        # --- Training Pipeline ---
+        if data_set == 'train':
+            # For 'from_scratch', train_batch_identifiers will have one ID.
+            # For 'cumulative', it will have one or more IDs.
+            train_data_list = [data.loc[split_indexes[idf]['train_test']['train_indexes']] for idf in
+                               train_batch_identifiers]
+            data_batch_train = concat(train_data_list)
 
-        # Continuous features preprocessing, required
-        if inputs_numerical_column_names is not None:
-            #   data selection
-            data_batch_cont = data_batch[inputs_numerical_column_names]
-            #   scaler initialization and training (if required)
-            if data_set == 'train':
-                # scaler initialization
+            # Initialize lists for final feature names for this training run
+            final_input_features = []
+
+            # --- Categorical Feature Processing (Fit and Transform Train Data) ---
+            if inputs_categorical_column_names is not None:
+                encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+                encoder.fit(data_batch_train[inputs_categorical_column_names])
+                encoded_cols = encoder.get_feature_names_out(inputs_categorical_column_names)
+
+                train_encoded_df = DataFrame(
+                    encoder.transform(data_batch_train[inputs_categorical_column_names]),
+                    columns=encoded_cols,
+                    index=data_batch_train.index
+                )
+                data_batch_train.drop(columns=inputs_categorical_column_names, inplace=True)
+                data_batch_train = concat([data_batch_train, train_encoded_df], axis=1)
+                final_input_features.extend(encoded_cols)
+
+                # Store the fitted encoder
+                trained_encoders[train_batch_identifiers] = encoder
+
+            # --- Numerical Feature Processing (Fit and Transform Train Data) ---
+            if inputs_numerical_column_names is not None:
                 robust_scaler = RobustScaler()
-                # scaler training
-                robust_scaler.fit(data_batch_cont)
-            #   scaling
-            data_batch[inputs_numerical_column_names] = robust_scaler.transform(data_batch_cont)
+                data_batch_train[inputs_numerical_column_names] = robust_scaler.fit_transform(
+                    data_batch_train[inputs_numerical_column_names])
+                final_input_features.extend(inputs_numerical_column_names)
 
-        # Inputs extraction
-        if inputs_numerical_column_names is not None and inputs_categorical_column_names is not None:
-            inputs_batch = concat(
-                [data_batch[inputs_numerical_column_names], data_batch[inputs_categorical_column_names]], axis=1
-            )
-        elif inputs_numerical_column_names is not None and inputs_categorical_column_names is None:
-            inputs_batch = data_batch[inputs_numerical_column_names]
-        elif inputs_numerical_column_names is None and inputs_categorical_column_names is not None:
-            inputs_batch = data_batch[inputs_categorical_column_names]
-        else:
-            raise ValueError('At least one feature needs to be specified.')
+                # Store the fitted scaler
+                trained_scalers[train_batch_identifiers] = robust_scaler
 
-        # Regression pipeline
-        if output_regression_column_name is not None:
-            # Outputs extraction
-            outputs_batch = data_batch[output_regression_column_name]
+            # Extract final training inputs and outputs
+            inputs_batch_train = data_batch_train[final_input_features]
 
-            # Model initialization and training
-            if data_set == 'train':
-                # initialization
-                model = RandomForestRegressor(
-                    n_estimators=number_trees, max_depth=maximum_depth, random_state=random_seed
+            # --- Model Training ---
+            if output_regression_column_name is not None:
+                outputs_batch_train = data_batch_train[output_regression_column_name]
+                model = RandomForestRegressor(n_estimators=number_trees, max_depth=maximum_depth,
+                                              random_state=random_seed)
+                model.fit(inputs_batch_train, outputs_batch_train)
+                trained_models[train_batch_identifiers] = model
+
+            elif output_classification_column_name is not None:
+                outputs_batch_train = data_batch_train[output_classification_column_name]
+                model = RandomForestClassifier(n_estimators=number_trees, max_depth=maximum_depth,
+                                               random_state=random_seed, class_weight='balanced')
+                model.fit(inputs_batch_train, outputs_batch_train)
+                trained_models[train_batch_identifiers] = model
+
+        # --- Testing (Inference) Pipeline ---
+        elif data_set == 'test':
+            data_batch_test = data.loc[split_indexes[current_batch_idf]['train_test']['test_indexes']].copy()
+
+            # Retrieve the correct fitted objects
+            encoder = trained_encoders.get(train_batch_identifiers)
+            scaler = trained_scalers.get(train_batch_identifiers)
+            model = trained_models.get(train_batch_identifiers)
+
+            if model is None:
+                raise ValueError(f"Model for training batch {train_batch_identifiers} not found.")
+
+            # Initialize list for final feature names
+            final_input_features = []
+
+            # --- Categorical Feature Processing (Transform Test Data) ---
+            if encoder is not None:
+                encoded_cols = encoder.get_feature_names_out(inputs_categorical_column_names)
+                test_encoded_df = DataFrame(
+                    encoder.transform(data_batch_test[inputs_categorical_column_names]),
+                    columns=encoded_cols,
+                    index=data_batch_test.index
                 )
-                # training
-                model.fit(inputs_batch, outputs_batch)
+                data_batch_test.drop(columns=inputs_categorical_column_names, inplace=True)
+                data_batch_test = concat([data_batch_test, test_encoded_df], axis=1)
+                final_input_features.extend(encoded_cols)
 
-            # Inference
-            y_pred = model.predict(inputs_batch)
+            # --- Numerical Feature Processing (Transform Test Data) ---
+            if scaler is not None:
+                data_batch_test[inputs_numerical_column_names] = scaler.transform(
+                    data_batch_test[inputs_numerical_column_names])
+                final_input_features.extend(inputs_numerical_column_names)
 
-            # Regression metrics calculation
-            metrics_regression = _get_regression_metrics(y_true=outputs_batch, y_pred=y_pred)
+            # Extract final test inputs and outputs
+            inputs_batch_test = data_batch_test[final_input_features]
 
-            # Regression metrics arrangement
-            metrics[combination] = metrics_regression
+            # --- Model Inference ---
+            if output_regression_column_name is not None:
+                outputs_batch_test = data_batch_test[output_regression_column_name]
+                y_pred = model.predict(inputs_batch_test)
+                metrics[combination] = _get_regression_metrics(y_true=outputs_batch_test, y_pred=y_pred)
 
-        # Classification pipeline
-        elif output_classification_column_name is not None:
-            # Outputs extraction
-            outputs_batch = data_batch[output_classification_column_name]
+            elif output_classification_column_name is not None:
+                outputs_batch_test = data_batch_test[output_classification_column_name]
+                probs_hat = model.predict_proba(inputs_batch_test)
+                labels_hat = model.predict(inputs_batch_test)
 
-            # Model initialization and training
-            if data_set == 'train':
-                # initialization
-                model = RandomForestClassifier(
-                    n_estimators=number_trees, max_depth=maximum_depth, random_state=random_seed,
-                    class_weight='balanced'
-                )
-                # training
-                model.fit(inputs_batch, outputs_batch)
+                index2index_map = dict(enumerate(model.classes_))
+                index2class_map_batch = {idx: index2class_map[index2index_map[idx]] for idx in index2index_map.keys()}
 
-            # Inference
-            # index correspondance extraction
-            index2index_map = dict(enumerate(model.classes_))
-            index2class_map_batch = {idx: index2class_map[index2index_map[idx]] for idx in index2index_map.keys()}
-            # raw probabilities extraction
-            probs_hat = model.predict_proba(inputs_batch)
-            # saturated values extraction
-            labels_hat = model.predict(inputs_batch)
+                metrics_presatur = _get_presaturation_classification_metrics(label_true=outputs_batch_test,
+                                                                             label_scores=probs_hat,
+                                                                             index2class_map=index2class_map_batch)
+                metrics_postsatur = _get_postsaturation_classification_metrics(label_true=outputs_batch_test,
+                                                                               label_predicted=labels_hat,
+                                                                               index2class_map=index2class_map_batch)
+                metrics[combination] = {**metrics_presatur, **metrics_postsatur}
 
-            # Metrics calculation
-            # pre-saturation metrics calculation
-            metrics_presatur = _get_presaturation_classification_metrics(
-                label_true=outputs_batch, label_scores=probs_hat, index2class_map=index2class_map_batch
-            )
-            # post-saturation metrics calculation
-            metrics_postsatur = _get_postsaturation_classification_metrics(
-                label_true=outputs_batch, label_predicted=labels_hat, index2class_map=index2class_map_batch
-            )
-
-            # Arrangement
-            # metrics combination
-            metrics_combined = {**metrics_presatur, **metrics_postsatur}
-            # metrics arrangement
-            metrics[combination] = metrics_combined
-
-        # Unconsidered casuistry
-        else:
-            raise ValueError('This casuistry is not allowed.')
-
-    # Output
+        # Output
     return metrics
 
 
@@ -328,7 +328,7 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
 def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: Optional[str] = None,
                   inputs_categorical_column_names: Optional[str] = None,
                   output_regression_column_name: Optional[str] = None,
-                  output_classification_column_names: Optional[str] = None, date_column_name: Optional[str] = None,
+                  output_classification_column_name: Optional[str] = None, date_column_name: Optional[str] = None,
                   period: Optional[str] = None, source_column_name: Optional[str] = None,
                   learning_strategy: Optional[str] = 'from_scratch') -> None:
     """
@@ -348,7 +348,7 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: Optional[st
     output_regression_column_name : Optional[str], default=None
         Column name for the regression target variable, if applicable.
 
-    output_classification_column_names : Optional[str], default=None
+    output_classification_column_name : Optional[str], default=None
         Column name for the classification target variable, if applicable.
 
     date_column_name : Optional[str], default=None
@@ -445,16 +445,16 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: Optional[st
             raise ValueError('Regression column not found in the current data frame.')
 
     # Output classification column
-    if output_classification_column_names is not None:
-        if type(output_classification_column_names) is not str:
+    if output_classification_column_name is not None:
+        if type(output_classification_column_name) is not str:
             raise TypeError('Classification output column must be specified as a string.')
-        if output_classification_column_names not in data.columns:
+        if output_classification_column_name not in data.columns:
             raise ValueError('Classification column not found in the current data frame.')
 
     # Output regression and output classification columns
-    if output_regression_column_name is None and output_classification_column_names is None:
+    if output_regression_column_name is None and output_classification_column_name is None:
         raise ValueError('Either the regression output or the classification output need to the provided.')
-    if output_regression_column_name is not None and output_classification_column_names is not None:
+    if output_regression_column_name is not None and output_classification_column_name is not None:
         raise ValueError('Just one task can be completed per function call. Leave output_regression or '
                          'output_classification as None.')
 
@@ -673,8 +673,8 @@ def _get_postsaturation_classification_metrics(*, label_true: ndarray, label_pre
         metrics['RECALL_WEIGHTED'] = skmet.recall_score(label_true, label_predicted, average='weighted')
         # precision
         metrics['PRECISION_MACRO'] = skmet.precision_score(label_true, label_predicted, average='macro')
-        metrics['PRECISION_MICRO'] = skmet.recall_score(label_true, label_predicted, average='micro')
-        metrics['PRECISION_WEIGHTED'] = skmet.recall_score(label_true, label_predicted, average='weighted')
+        metrics['PRECISION_MICRO'] = skmet.precision_score(label_true, label_predicted, average='micro')
+        metrics['PRECISION_WEIGHTED'] = skmet.precision_score(label_true, label_predicted, average='weighted')
         # f1-score
         metrics['F1-SCORE_MACRO'] = skmet.f1_score(label_true, label_predicted, average='macro')
         metrics['F1-SCORE_MICRO'] = skmet.f1_score(label_true, label_predicted, average='micro')

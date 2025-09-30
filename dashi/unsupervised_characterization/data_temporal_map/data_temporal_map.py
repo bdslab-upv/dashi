@@ -630,7 +630,8 @@ def estimate_multivariate_data_temporal_map(
     })
 
     if scatter_plot:
-        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose)
+        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose,
+                      color_column=date_column_name)
 
     value_counts = reduced_data[date_column_name].value_counts(sort=False)
     dates_info = {
@@ -761,6 +762,9 @@ def estimate_conditional_data_temporal_map(
         raise ValueError(
             f'The number of supported dimensions are 1, 2 or 3')
 
+    if dimensions == 1 and scatter_plot:
+        raise ValueError('Scatter plot cannot be generated when dimensions is set to 1')
+
     # Separate analysis data from analysis dates
     labels_columns = data[label_column_name]
     dates = data[date_column_name]
@@ -827,8 +831,8 @@ def estimate_conditional_data_temporal_map(
     })
 
     if scatter_plot:
-        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose, conditional=True,
-                      label_column_name=label_column_name)
+        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose,
+                      color_column=label_column_name)
 
     reduced_data_by_label = {
         label: group.drop(columns=[label_column_name]).reset_index(drop=True)

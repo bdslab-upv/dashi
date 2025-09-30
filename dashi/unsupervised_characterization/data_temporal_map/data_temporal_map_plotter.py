@@ -36,7 +36,7 @@ from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sor
                                                        _marginalize_multivariate_map)
 
 # SETTINGS
-pio.renderers.default = 'browser'
+# pio.renderers.default = 'browser'
 
 
 def plot_univariate_data_temporal_map(
@@ -175,7 +175,8 @@ def plot_univariate_data_temporal_map(
             x_axis=x_axis,
             font=font,
             title=title,
-            _range=range(start_value, end_value)
+            _range=range(start_value, end_value),
+            temporal=True
         )
         return figure
     return None
@@ -184,6 +185,7 @@ def plot_univariate_data_temporal_map(
 def plot_multivariate_data_temporal_map(
         data_temporal_map: MultiVariateDataTemporalMap,
         absolute: bool = False,
+        log_transform: bool = False
 ) -> go.Figure:
     """
     Plots a Data Temporal heatmap from a MultiVariateDataTemporalMap object.
@@ -195,6 +197,10 @@ def plot_multivariate_data_temporal_map(
 
     absolute : bool, optional
         If True, plot absolute values; otherwise, the relative probabilities are plotted. Default is False.
+
+    log_transform : bool
+        If True, applies a log transformation to the data for better visibility of small values. Default is False.
+
 
     Returns
     -------
@@ -234,6 +240,8 @@ def plot_multivariate_data_temporal_map(
 
     for i, temporal_map in enumerate(probability_map_list):
         support = np.array(temporal_map.columns)
+        if log_transform:
+            temporal_map = np.log(temporal_map + 1e-8)
         counts_subarray = [row for row in temporal_map.values]
         counts_subarray = list(zip(*counts_subarray))
 
@@ -287,6 +295,7 @@ def plot_multivariate_data_temporal_map(
 def plot_conditional_data_temporal_map(
         data_temporal_map_dict: Dict[str, MultiVariateDataTemporalMap],
         absolute: bool = False,
+        log_transform: bool = False
 ):
     """
     Plots a Figure for each dimension selected in the data_temporal_map_dict. Each Figure represents the
@@ -300,6 +309,9 @@ def plot_conditional_data_temporal_map(
 
     absolute : bool, optional
         If True, plot absolute values; otherwise, relative probabilities are plotted. Default is False.
+
+    log_transform : bool
+        If True, applies a log transformation to the data for better visibility of small values. Default is False.
 
     Returns
     -------
@@ -352,6 +364,8 @@ def plot_conditional_data_temporal_map(
             x_axis_tickvals = dates[::2] if len(dates) > 2 else dates
             temporal_map = probability_map_list[dim]
             support = np.array(temporal_map.columns)
+            if log_transform:
+                temporal_map = np.log(temporal_map + 1e-8)
             counts_subarray = [row for row in temporal_map.values]
             counts_subarray = list(zip(*counts_subarray))
 
