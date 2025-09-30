@@ -14,8 +14,9 @@ import warnings
 import prince
 import plotly.express as px
 import plotly.io as pio
+from plotly.colors import sample_colorscale
 
-pio.renderers.default = "browser"
+# pio.renderers.default = "browser"
 
 
 def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=False):
@@ -413,7 +414,8 @@ def _create_series_figure(
         x_axis,
         font,
         title,
-        _range
+        _range,
+        **kwargs
 ):
     figure = go.Figure()
 
@@ -449,7 +451,8 @@ def _create_series_figure(
         yaxis=y_axis,
         template='plotly_white',
         paper_bgcolor='white',
-        plot_bgcolor='white'
+        plot_bgcolor='white',
+        legend_title_text=data_map.variable_name if 'temporal' in kwargs else 'Source'
     )
 
     if title is not None:
@@ -631,7 +634,6 @@ def _perform_dimensionality_reduction(
 
     reduction_method = MethodClass(n_components=n_components, random_state=112, **reduction_kwargs)
     reduced_data = reduction_method.fit_transform(data)
-
     if verbose:
         print(f'Eigenvalues summary:\n{reduction_method.eigenvalues_summary}')
 
@@ -641,6 +643,14 @@ def _scatter_plot(reduced_data: pd.DataFrame, dim_reduction: str, verbose: bool,
     if verbose:
         warnings.filterwarnings('ignore', category=FutureWarning)
         print(f'Plotting {dim_reduction} 2D Scatter Plot')
+
+    color_col = kwargs.get('color_column', None)
+    if color_col is not None and not pd.api.types.is_numeric_dtype(reduced_data[color_col]):
+        categories = sorted(reduced_data[color_col].dropna().unique().tolist())
+        stops = [i / (len(categories) - 1) if len(categories) > 1 else 0.5 for i in range(len(categories))]
+        palette = sample_colorscale('Viridis', stops)
+        color_map = {cat: col for cat, col in zip(categories, palette)}
+
     fig = px.scatter(
         reduced_data,
         x=0,
@@ -648,7 +658,9 @@ def _scatter_plot(reduced_data: pd.DataFrame, dim_reduction: str, verbose: bool,
         title=f'{dim_reduction} Scatter Plot',
         template='plotly_white',
         opacity=0.7,
-        color=kwargs['label_column_name'] if 'conditional' in kwargs and kwargs['conditional'] else None,
+        color=color_col,
+        category_orders={color_col: categories},
+        color_discrete_map=color_map
     )
 
     fig.update_layout(
@@ -705,16 +717,16 @@ def _marginalize_multivariate_map(multivariate_map, supports, dimensions) -> lis
         probability_map_list.append(probability_map_dim1)
 
     elif dimensions == 2:
-        probability_map_dim1 = pd.DataFrame([np.sum(dim1, axis=0) for dim1 in multivariate_map],
+        probability_map_dim1 = pd.DataFrame([np.sum(dim1, axis=1) for dim1 in multivariate_map],
                                             columns=supports[0])
-        probability_map_dim2 = pd.DataFrame([np.sum(dim2, axis=1) for dim2 in multivariate_map],
+        probability_map_dim2 = pd.DataFrame([np.sum(dim2, axis=0) for dim2 in multivariate_map],
                                             columns=supports[1])
         probability_map_list.extend([probability_map_dim1, probability_map_dim2])
 
     elif dimensions == 3:
-        probability_map_dim1 = pd.DataFrame([np.sum(dim1, axis=(2, 0)) for dim1 in multivariate_map],
+        probability_map_dim1 = pd.DataFrame([np.sum(dim1, axis=(2, 1)) for dim1 in multivariate_map],
                                             columns=supports[0])
-        probability_map_dim2 = pd.DataFrame([np.sum(dim2, axis=(2, 1)) for dim2 in multivariate_map],
+        probability_map_dim2 = pd.DataFrame([np.sum(dim2, axis=(2, 0)) for dim2 in multivariate_map],
                                             columns=supports[1])
         probability_map_dim3 = pd.DataFrame([np.sum(dim3, axis=(0, 1)) for dim3 in multivariate_map],
                                             columns=supports[2])
