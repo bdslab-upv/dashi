@@ -410,7 +410,8 @@ def estimate_multivariate_data_source_map(
     })
 
     if scatter_plot:
-        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose)
+        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose,
+                      color_column=source_column_name)
 
     value_counts = sources.value_counts(sort=False)
 
@@ -548,8 +549,8 @@ def estimate_conditional_data_source_map(
     })
 
     if scatter_plot:
-        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose, conditional=True,
-                      label_column_name=label_column_name)
+        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose,
+                      color_column=label_column_name)
 
     reduced_data_by_label = {
         label: group.drop(columns=[label_column_name]).reset_index(drop=True)

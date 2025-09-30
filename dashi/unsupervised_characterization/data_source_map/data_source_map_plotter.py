@@ -29,7 +29,7 @@ from dashi.unsupervised_characterization.data_source_map.data_source_map import 
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
                                                        _marginalize_multivariate_map, _create_series_figure)
 
-pio.renderers.default = "browser"
+# pio.renderers.default = "browser"
 
 def plot_univariate_data_source_map(
         data_source_map: DataSourceMap,
@@ -232,6 +232,7 @@ def plot_multivariate_data_source_map(
         autosize=True,
         height=min(300 * dimensions, 800),
         showlegend=True,
+        legend_title_text='Source',
         template='plotly_white',
         margin=dict(t=60, r=20, b=60, l=60),
         coloraxis=dict(colorscale='Spectral_r'),
@@ -361,6 +362,7 @@ def plot_conditional_data_source_map(
             autosize=True,
             height=min(300 * len(labels), 800),
             showlegend=True,
+            legend_title_text='Source',
             template='plotly_white',
             margin=dict(t=60, r=20, b=60, l=60),
             coloraxis=dict(colorscale='Spectral_r'),
