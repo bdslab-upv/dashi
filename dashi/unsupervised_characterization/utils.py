@@ -4,7 +4,7 @@ from scipy.stats import gaussian_kde
 from scipy.linalg import eigh
 from dashi._constants import (VALID_FLOAT_TYPE, VALID_CATEGORICAL_TYPE, VALID_INTEGER_TYPE, VALID_STRING_TYPE,
                               VALID_DATE_TYPE, VALID_CONVERSION_STRING_TYPE, VALID_PLOT_MODES, VALID_COLOR_PALETTES,
-                              VALID_SORTING_METHODS)
+                              VALID_SORTING_METHODS, MISSING_VALUE)
 import plotly.graph_objects as go
 import plotly.subplots as sp
 import plotly.io as pio
@@ -124,15 +124,15 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
 
             data_types, columns_types = _get_types(data, verbose=False)
 
-    if np.any(columns_types['categorical'] & supports_to_estimate_columns):
-        data.loc[:,
-        columns_types['categorical'] & supports_to_estimate_columns] = data.loc[:,
-                                                              columns_types['categorical'] & supports_to_estimate_columns].apply(
-            lambda col: col.cat.add_categories([MISSING_VALUE]) if col.isnull().any() else col)
-        data.loc[:,
-        columns_types['categorical'] & supports_to_estimate_columns] = data.loc[:,
-                                                              columns_types['categorical'] & supports_to_estimate_columns].apply(
-            lambda col: col.fillna(MISSING_VALUE) if col.isnull().any() else col)
+    mask = columns_types['categorical'] & supports_to_estimate_columns
+    if mask.any():
+        for name, col in data.loc[:, mask].items():
+            if col.isna().any():
+                # Add the category only if it's not already there
+                if MISSING_VALUE not in col.cat.categories:
+                    col = col.cat.add_categories([MISSING_VALUE])
+                # Fill NaNs with the new category
+                data[name] = col.fillna(MISSING_VALUE)
 
         # Extract levels and assign them to supports
         selected_columns = data.loc[:, columns_types['categorical'] & supports_to_estimate_columns]
