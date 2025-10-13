@@ -186,3 +186,5 @@ fabric.properties
 
 # Unignore the build directory in docs
 !docs/build/
+
+.DS_Store
