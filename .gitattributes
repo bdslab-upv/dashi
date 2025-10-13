@@ -1,6 +1,6 @@
-*.html filter=lfs diff=lfs merge=lfs -text
-*.ipynb filter=lfs diff=lfs merge=lfs -text
-*.zip filter=lfs diff=lfs merge=lfs -text
+:!docs/*.html filter=lfs diff=lfs merge=lfs -text
+:!docs/*.ipynb filter=lfs diff=lfs merge=lfs -text
+:!docs/*.zip filter=lfs diff=lfs merge=lfs -text
 docs/* !text !filter !merge !diff
 examples/Usage_tutorial.html filter=lfs diff=lfs merge=lfs -text
 examples/*.ipynb filter=lfs diff=lfs merge=lfs -text
