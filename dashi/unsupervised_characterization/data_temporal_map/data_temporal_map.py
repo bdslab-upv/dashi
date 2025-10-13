@@ -831,7 +831,7 @@ def estimate_conditional_data_temporal_map(
     })
 
     if scatter_plot:
-        _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose,
+            _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose,
                       color_column=label_column_name)
 
     reduced_data_by_label = {

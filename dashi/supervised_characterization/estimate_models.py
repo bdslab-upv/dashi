@@ -251,14 +251,14 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
             if output_regression_column_name is not None:
                 outputs_batch_train = data_batch_train[output_regression_column_name]
                 model = RandomForestRegressor(n_estimators=number_trees, max_depth=maximum_depth,
-                                              random_state=random_seed)
+                                              random_state=random_seed, n_jobs=-1)
                 model.fit(inputs_batch_train, outputs_batch_train)
                 trained_models[train_batch_identifiers] = model
 
             elif output_classification_column_name is not None:
                 outputs_batch_train = data_batch_train[output_classification_column_name]
                 model = RandomForestClassifier(n_estimators=number_trees, max_depth=maximum_depth,
-                                               random_state=random_seed, class_weight='balanced')
+                                               random_state=random_seed, class_weight='balanced', n_jobs=-1)
                 model.fit(inputs_batch_train, outputs_batch_train)
                 trained_models[train_batch_identifiers] = model
 
