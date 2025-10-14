@@ -94,7 +94,7 @@
 
 <div class="viewcode-block" id="arrange_performance_metrics">
 <a class="viewcode-back" href="../../../dashi.supervised_characterization.html#dashi.supervised_characterization.arrange_metrics.arrange_performance_metrics">[docs]</a>
-<span class="k">def</span> <span class="nf">arrange_performance_metrics</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataFrame</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">arrange_performance_metrics</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Organizes and formats a subset of metrics from a dictionary into a pandas DataFrame.</span>
 
@@ -104,8 +104,10 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    metrics : dict of {str: float}</span>
-<span class="sd">        A dictionary containing the calculated metrics for each batch and model combination.</span>
+<span class="sd">    metrics : dict of {tuple: dict{str: float}}</span>
+<span class="sd">        A dictionary where each key is a tuple `(train_batch_ids, test_batch_id, &#39;test&#39;)`</span>
+<span class="sd">        representing the training/testing combination. Each corresponding value is another</span>
+<span class="sd">        dictionary containing the calculated performance metrics for that specific test.</span>
 
 <span class="sd">    metric_name : str</span>
 <span class="sd">        The name of the metric to be selected from the `metrics` dictionary.</span>

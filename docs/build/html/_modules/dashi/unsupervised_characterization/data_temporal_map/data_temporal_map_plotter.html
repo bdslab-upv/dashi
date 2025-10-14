@@ -102,9 +102,12 @@
 <span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.data_temporal_map.data_temporal_map</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DataTemporalMap</span><span class="p">,</span>
                                                                                      <span class="n">MultiVariateDataTemporalMap</span><span class="p">,</span>
                                                                                      <span class="n">trim_data_temporal_map</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">_validate_plot_args</span><span class="p">,</span> <span class="n">_sort_support_and_map</span><span class="p">,</span> <span class="n">_get_counts_array</span><span class="p">,</span>
+                                                       <span class="n">_create_heatmap_figure</span><span class="p">,</span> <span class="n">_create_series_figure</span><span class="p">,</span>
+                                                       <span class="n">_marginalize_multivariate_map</span><span class="p">)</span>
 
 <span class="c1"># SETTINGS</span>
-<span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s1">&#39;browser&#39;</span>
+<span class="c1"># pio.renderers.default = &#39;browser&#39;</span>
 
 
 <div class="viewcode-block" id="plot_univariate_data_temporal_map">
@@ -120,7 +123,7 @@
         <span class="n">sorting_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;frequency&#39;</span><span class="p">,</span>
         <span class="n">color_palette</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Spectral&#39;</span><span class="p">,</span>
         <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;heatmap&#39;</span><span class="p">,</span>
-        <span class="n">plot_title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plots a Data Temporal heatmap or series from a DataTemporalMap object.</span>
@@ -159,7 +162,7 @@
 <span class="sd">    mode : str, optional</span>
 <span class="sd">        The mode of visualization (e.g., &#39;heatmap&#39;, &#39;series&#39;). Default is &#39;heatmap&#39;.</span>
 
-<span class="sd">    plot_title : str, optional</span>
+<span class="sd">    title : str, optional</span>
 <span class="sd">        The title of the plot. If None, a default title is used. Default is None.</span>
 
 <span class="sd">    Returns</span>
@@ -170,26 +173,14 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="p">)</span> <span class="o">==</span> <span class="n">DataTemporalMap</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;data_temporal_map must be of type DataTemporalMap. For multivariate plot&#39;</span>
                         <span class="s1">&#39; use plot_multivariate_data_temporal_map function&#39;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_PLOT_MODES</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;mode must be one of the defined in </span><span class="si">{</span><span class="n">VALID_PLOT_MODES</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">color_palette</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_COLOR_PALETTES</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;color_palette must be one of the defined in </span><span class="si">{</span><span class="n">VALID_COLOR_PALETTES</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;absolute must be a logical value&#39;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">log_transform</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;log_transform must be a logical value&#39;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start_value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">start_value</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;start_value must be greater or equal than 1&#39;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">sorting_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_SORTING_METHODS</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;sorting_method must be one of the defined in </span><span class="si">{</span><span class="n">VALID_SORTING_METHODS</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
-    <span class="n">color_scale</span> <span class="o">=</span> <span class="n">color_palette</span>
+    <span class="n">_validate_plot_args</span><span class="p">(</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">color_palette</span><span class="o">=</span><span class="n">color_palette</span><span class="p">,</span>
+        <span class="n">absolute</span><span class="o">=</span><span class="n">absolute</span><span class="p">,</span>
+        <span class="n">log_transform</span><span class="o">=</span><span class="n">log_transform</span><span class="p">,</span>
+        <span class="n">start_value</span><span class="o">=</span><span class="n">start_value</span><span class="p">,</span>
+        <span class="n">sorting_method</span><span class="o">=</span><span class="n">sorting_method</span>
+    <span class="p">)</span>
 
     <span class="n">data_temporal_map</span> <span class="o">=</span> <span class="n">trim_data_temporal_map</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">)</span>
 
@@ -203,21 +194,12 @@
     <span class="n">support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="o">.</span><span class="n">support</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
     <span class="n">variable_type</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">variable_type</span>
 
-    <span class="k">if</span> <span class="n">variable_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">sorting_method</span> <span class="o">==</span> <span class="s1">&#39;frequency&#39;</span><span class="p">:</span>
-            <span class="n">support_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">temporal_map</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">support_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">support</span><span class="p">)</span>
-
-        <span class="n">support</span> <span class="o">=</span> <span class="n">support</span><span class="p">[</span><span class="n">support_order</span><span class="p">]</span>
-
-        <span class="c1"># Resort temporal map by support_order</span>
-        <span class="n">temporal_map</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="n">support_order</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">temporal_map</span><span class="p">]</span>
-        <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">temporal_map</span><span class="p">)</span>
-
-        <span class="n">any_supp_na</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">support</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">any_supp_na</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-            <span class="n">support</span><span class="p">[</span><span class="n">any_supp_na</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&lt;NA&gt;&#39;</span>
+    <span class="n">support</span><span class="p">,</span> <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">_sort_support_and_map</span><span class="p">(</span>
+        <span class="n">support</span><span class="o">=</span><span class="n">support</span><span class="p">,</span>
+        <span class="n">data_map</span><span class="o">=</span><span class="n">temporal_map</span><span class="p">,</span>
+        <span class="n">variable_type</span><span class="o">=</span><span class="n">variable_type</span><span class="p">,</span>
+        <span class="n">sorting_method</span><span class="o">=</span><span class="n">sorting_method</span>
+    <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">end_value</span> <span class="ow">or</span> <span class="n">end_value</span> <span class="o">&gt;</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
         <span class="n">end_value</span> <span class="o">=</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -225,117 +207,52 @@
     <span class="k">if</span> <span class="n">start_value</span> <span class="o">&gt;</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
         <span class="n">start_value</span> <span class="o">=</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
+    <span class="n">counts_subarray</span> <span class="o">=</span> <span class="n">_get_counts_array</span><span class="p">(</span>
+        <span class="n">data_map</span><span class="o">=</span><span class="n">temporal_map</span><span class="p">,</span>
+        <span class="n">start_value</span><span class="o">=</span><span class="n">start_value</span><span class="p">,</span>
+        <span class="n">end_value</span><span class="o">=</span><span class="n">end_value</span><span class="p">,</span>
+        <span class="n">log_transform</span><span class="o">=</span><span class="n">log_transform</span><span class="p">,</span>
+        <span class="n">temporal</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
     <span class="n">font</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#7f7f7f&#39;</span><span class="p">)</span>
     <span class="n">x_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span>
-                  <span class="n">tickvals</span><span class="o">=</span><span class="n">dates</span><span class="p">[::</span><span class="mi">2</span><span class="p">],</span>
-                  <span class="n">titlefont</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">},</span>
+                  <span class="n">tickvals</span><span class="o">=</span><span class="n">dates</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">dates</span><span class="p">,</span>
+                  <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
                   <span class="n">tickfont</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">},</span>
                   <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">,</span>
                   <span class="n">ticks</span><span class="o">=</span><span class="s1">&#39;outside&#39;</span><span class="p">,</span>
                   <span class="n">tickcolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">log_transform</span><span class="p">:</span>
-        <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">temporal_map</span><span class="p">)</span>
-
-    <span class="n">counts_subarray</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="n">start_value</span><span class="p">:</span><span class="n">end_value</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">temporal_map</span><span class="p">]</span>
-    <span class="n">counts_subarray</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">counts_subarray</span><span class="p">))</span>  <span class="c1"># Transpose the matrix</span>
-
     <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;heatmap&#39;</span><span class="p">:</span>
-        <span class="n">figure</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span>
-            <span class="n">data</span><span class="o">=</span><span class="n">go</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">(</span>
-                <span class="n">x</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span>
-                <span class="n">y</span><span class="o">=</span><span class="n">support</span><span class="p">[</span><span class="n">start_value</span><span class="p">:</span><span class="n">end_value</span><span class="p">],</span>
-                <span class="n">z</span><span class="o">=</span><span class="n">counts_subarray</span><span class="p">,</span>
-                <span class="n">colorscale</span><span class="o">=</span><span class="n">color_scale</span><span class="p">,</span>
-                <span class="n">reversescale</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)</span>
+        <span class="n">figure</span> <span class="o">=</span> <span class="n">_create_heatmap_figure</span><span class="p">(</span>
+            <span class="n">data_map</span><span class="o">=</span><span class="n">data_temporal_map</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">support</span><span class="p">[</span><span class="n">start_value</span><span class="p">:</span><span class="n">end_value</span><span class="p">],</span>
+            <span class="n">z</span><span class="o">=</span><span class="n">counts_subarray</span><span class="p">,</span>
+            <span class="n">color_palette</span><span class="o">=</span><span class="n">color_palette</span><span class="p">,</span>
+            <span class="n">font</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+            <span class="n">x_axis</span><span class="o">=</span><span class="n">x_axis</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">absolute</span><span class="o">=</span><span class="n">absolute</span><span class="p">,</span>
         <span class="p">)</span>
-
-        <span class="n">y_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-            <span class="n">title</span><span class="o">=</span><span class="n">data_temporal_map</span><span class="o">.</span><span class="n">variable_name</span><span class="p">,</span>
-            <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
-            <span class="n">automargin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">tickfont</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">},</span>
-            <span class="n">ticks</span><span class="o">=</span><span class="s1">&#39;outside&#39;</span><span class="p">,</span>
-            <span class="n">tickcolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span>
-        <span class="p">)</span>
-
-        <span class="n">figure</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">x_axis</span><span class="p">)</span>
-
-        <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">yaxis</span><span class="o">=</span><span class="n">y_axis</span><span class="p">,</span>
-                             <span class="n">autosize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                             <span class="n">paper_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span>
-                             <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span>
-                             <span class="p">)</span>
-
-        <span class="c1"># Avoid type casting in plotly</span>
-        <span class="k">if</span> <span class="n">variable_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">]:</span>
-            <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">yaxis_type</span><span class="o">=</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">plot_title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">plot_title</span><span class="p">,</span>
-                                        <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span>
-                                                 <span class="p">}</span>
-                                        <span class="p">})</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">plot_title</span> <span class="o">=</span> <span class="s1">&#39;Probability distribution data temporal heatmap&#39;</span>
-            <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
-                <span class="n">plot_title</span> <span class="o">=</span> <span class="s1">&#39;Absolute frequencies data temporal heatmap&#39;</span>
-            <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">plot_title</span><span class="p">,</span>
-                                        <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span>
-                                                 <span class="p">}</span>
-                                        <span class="p">})</span>
+        <span class="k">return</span> <span class="n">figure</span>
 
     <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;series&#39;</span><span class="p">:</span>
-        <span class="n">figure</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
-
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_value</span><span class="p">,</span> <span class="n">end_value</span><span class="p">):</span>
-            <span class="n">trace</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
-                <span class="n">x</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span>
-                <span class="n">y</span><span class="o">=</span><span class="n">counts_subarray</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">support</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-            <span class="p">)</span>
-            <span class="n">figure</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">trace</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
-            <span class="n">y_axis_title</span> <span class="o">=</span> <span class="s1">&#39;Absolute frequency&#39;</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">y_axis_title</span> <span class="o">=</span> <span class="s1">&#39;Relative frequency&#39;</span>
-
-        <span class="n">y_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-            <span class="n">title</span><span class="o">=</span><span class="n">y_axis_title</span><span class="p">,</span>
-            <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
-            <span class="n">automargin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">tickfont</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">},</span>
-            <span class="n">ticks</span><span class="o">=</span><span class="s1">&#39;outside&#39;</span><span class="p">,</span>
-            <span class="n">tickcolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span>
+        <span class="n">figure</span> <span class="o">=</span> <span class="n">_create_series_figure</span><span class="p">(</span>
+            <span class="n">data_map</span><span class="o">=</span><span class="n">data_temporal_map</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">dates</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">counts_subarray</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">support</span><span class="p">,</span>
+            <span class="n">absolute</span><span class="o">=</span><span class="n">absolute</span><span class="p">,</span>
+            <span class="n">x_axis</span><span class="o">=</span><span class="n">x_axis</span><span class="p">,</span>
+            <span class="n">font</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">_range</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">start_value</span><span class="p">,</span> <span class="n">end_value</span><span class="p">),</span>
+            <span class="n">temporal</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
-
-        <span class="n">figure</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">x_axis</span><span class="p">)</span>
-
-        <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
-            <span class="n">autosize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">yaxis</span><span class="o">=</span><span class="n">y_axis</span><span class="p">,</span>
-            <span class="n">paper_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span>
-            <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">plot_title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">plot_title</span><span class="p">,</span>
-                                        <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span>
-                                                 <span class="p">}</span>
-                                        <span class="p">}</span>
-                                 <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="s1">&#39;Evolution of &#39;</span> <span class="o">+</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">variable_name</span><span class="p">,</span>
-                                        <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span>
-                                                 <span class="p">}</span>
-                                        <span class="p">}</span>
-                                 <span class="p">)</span>
-
-    <span class="n">figure</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">figure</span></div>
+        <span class="k">return</span> <span class="n">figure</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
 
 
 
@@ -344,7 +261,7 @@
 <span class="k">def</span> <span class="nf">plot_multivariate_data_temporal_map</span><span class="p">(</span>
         <span class="n">data_temporal_map</span><span class="p">:</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">,</span>
         <span class="n">absolute</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">plot_title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">log_transform</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plots a Data Temporal heatmap from a MultiVariateDataTemporalMap object.</span>
@@ -357,8 +274,9 @@
 <span class="sd">    absolute : bool, optional</span>
 <span class="sd">        If True, plot absolute values; otherwise, the relative probabilities are plotted. Default is False.</span>
 
-<span class="sd">    plot_title : str, optional</span>
-<span class="sd">        The title of the plot. If None, a default title is used. Default is None.</span>
+<span class="sd">    log_transform : bool</span>
+<span class="sd">        If True, applies a log transformation to the data for better visibility of small values. Default is False.</span>
+
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -366,11 +284,11 @@
 <span class="sd">        The Plotly figure object representing the plot.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="p">)</span> <span class="o">==</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;data_temporal_map must be of type MultiVariateDataTemporalMap. For univariate plot use&#39;</span>
-                        <span class="s1">&#39; plot_data_temporal_map function&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;data_temporal_map must be of type MultiVariateDataTemporalMap, obtained from the &#39;</span>
+                        <span class="s1">&#39;estimate_multivariate_data_temporal_map function.&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;absolute must be a logical value&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.&#39;</span><span class="p">)</span>
 
     <span class="n">dates</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">dates</span>
 
@@ -382,23 +300,10 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">multivariate_map</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">multivariate_probability_map</span>
 
-    <span class="n">probability_map_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-
-    <span class="k">if</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
-                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">probability_map_dim2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
-                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">probability_map_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">probability_map_dim1</span><span class="p">,</span> <span class="n">probability_map_dim2</span><span class="p">])</span>
-
-    <span class="k">elif</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
-                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">probability_map_dim2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
-                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">probability_map_dim3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim3</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
-                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-        <span class="n">probability_map_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">probability_map_dim1</span><span class="p">,</span> <span class="n">probability_map_dim2</span><span class="p">,</span> <span class="n">probability_map_dim3</span><span class="p">])</span>
+    <span class="n">probability_map_list</span> <span class="o">=</span> <span class="n">_marginalize_multivariate_map</span><span class="p">(</span>
+        <span class="n">multivariate_map</span><span class="o">=</span><span class="n">multivariate_map</span><span class="p">,</span>
+        <span class="n">supports</span><span class="o">=</span><span class="n">supports</span><span class="p">,</span>
+        <span class="n">dimensions</span><span class="o">=</span><span class="n">dimensions</span><span class="p">)</span>
 
     <span class="n">subplot</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span>
                                <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -407,10 +312,12 @@
                                <span class="p">)</span>
 
     <span class="n">font</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#7f7f7f&#39;</span><span class="p">)</span>
-    <span class="n">x_axis_tickvals</span> <span class="o">=</span> <span class="n">dates</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">x_axis_tickvals</span> <span class="o">=</span> <span class="n">dates</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">dates</span>
 
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">temporal_map</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">probability_map_list</span><span class="p">):</span>
         <span class="n">support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">temporal_map</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">log_transform</span><span class="p">:</span>
+            <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">temporal_map</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
         <span class="n">counts_subarray</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>
         <span class="n">counts_subarray</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">counts_subarray</span><span class="p">))</span>
 
@@ -467,6 +374,7 @@
 <span class="k">def</span> <span class="nf">plot_conditional_data_temporal_map</span><span class="p">(</span>
         <span class="n">data_temporal_map_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">],</span>
         <span class="n">absolute</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">log_transform</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plots a Figure for each dimension selected in the data_temporal_map_dict. Each Figure represents the</span>
@@ -481,16 +389,19 @@
 <span class="sd">    absolute : bool, optional</span>
 <span class="sd">        If True, plot absolute values; otherwise, relative probabilities are plotted. Default is False.</span>
 
+<span class="sd">    log_transform : bool</span>
+<span class="sd">        If True, applies a log transformation to the data for better visibility of small values. Default is False.</span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_temporal_map_dict</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;data_temporal_map must be a dictionary of objects MultiVariateDataTemporalMap, resultant of &#39;</span>
-                        <span class="s1">&#39;the estimate_multidim_concept_shift function&#39;</span><span class="p">)</span>
+                        <span class="s1">&#39;the estimate_conditional_data_temporal_map function&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;absolute must be a logical value&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.&#39;</span><span class="p">)</span>
 
     <span class="n">labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_temporal_map_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="n">probability_map_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -511,27 +422,10 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">multivariate_map</span> <span class="o">=</span> <span class="n">data_temporal_map</span><span class="o">.</span><span class="n">multivariate_probability_map</span>
 
-        <span class="n">probability_map_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">multivariate_map</span><span class="p">)</span>
-            <span class="n">probability_map_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">probability_map_dim1</span><span class="p">)</span>
-
-        <span class="k">elif</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
-                                                <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">probability_map_dim2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
-                                                <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">probability_map_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">probability_map_dim1</span><span class="p">,</span> <span class="n">probability_map_dim2</span><span class="p">])</span>
-
-        <span class="k">elif</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
-                                                <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">probability_map_dim2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
-                                                <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">probability_map_dim3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim3</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
-                                                <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-            <span class="n">probability_map_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">probability_map_dim1</span><span class="p">,</span> <span class="n">probability_map_dim2</span><span class="p">,</span> <span class="n">probability_map_dim3</span><span class="p">])</span>
+        <span class="n">probability_map_list</span> <span class="o">=</span> <span class="n">_marginalize_multivariate_map</span><span class="p">(</span>
+            <span class="n">multivariate_map</span><span class="o">=</span><span class="n">multivariate_map</span><span class="p">,</span>
+            <span class="n">supports</span><span class="o">=</span><span class="n">supports</span><span class="p">,</span>
+            <span class="n">dimensions</span><span class="o">=</span><span class="n">dimensions</span><span class="p">)</span>
 
         <span class="n">probability_map_dict</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">probability_map_list</span>
 
@@ -546,9 +440,11 @@
 
         <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">probability_map_list</span> <span class="ow">in</span> <span class="n">probability_map_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">dates</span> <span class="o">=</span> <span class="n">dates_dict</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
-            <span class="n">x_axis_tickvals</span> <span class="o">=</span> <span class="n">dates</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">x_axis_tickvals</span> <span class="o">=</span> <span class="n">dates</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">dates</span>
             <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">probability_map_list</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
             <span class="n">support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">temporal_map</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">log_transform</span><span class="p">:</span>
+                <span class="n">temporal_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">temporal_map</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
             <span class="n">counts_subarray</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">temporal_map</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>
             <span class="n">counts_subarray</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">counts_subarray</span><span class="p">))</span>
 
@@ -563,7 +459,7 @@
             <span class="n">subplot</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="n">subplot</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span>
-                <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Label: </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
                 <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
                 <span class="n">automargin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">row</span><span class="o">=</span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
@@ -592,10 +488,11 @@
             <span class="n">margin</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="mi">60</span><span class="p">),</span>
             <span class="n">coloraxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">colorscale</span><span class="o">=</span><span class="s1">&#39;Spectral_r&#39;</span><span class="p">),</span>
             <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="s2">&quot;Absolute frequencies&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">absolute</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;Probability distribution&quot;</span><span class="si">}</span><span class="s1"> &#39;</span>
-                  <span class="sa">f</span><span class="s1">&#39;data temporal heatmap of Principal Component </span><span class="si">{</span><span class="n">dim</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;conditional data temporal heatmap of Principal Component </span><span class="si">{</span><span class="n">dim</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span>
         <span class="p">)</span>
 
-        <span class="n">subplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+        <span class="n">subplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
 
 </pre></div>
 

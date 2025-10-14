@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashi.unsupervised_characterization.variability_metrics package &mdash; dashi  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            dashi
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dashi.html">dashi package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">dashi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">dashi.unsupervised_characterization.variability_metrics package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/dashi.unsupervised_characterization.variability_metrics.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dashi-unsupervised-characterization-variability-metrics-package">
+<h1>dashi.unsupervised_characterization.variability_metrics package<a class="headerlink" href="#dashi-unsupervised-characterization-variability-metrics-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics">
+<span id="dashi-unsupervised-characterization-variability-metrics-estimate-msv-metrics-module"></span><h2>dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics module<a class="headerlink" href="#module-dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics" title="Link to this heading"></a></h2>
+<p>Multi Source Variability (MSV) metrics estimation module</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MSVMetrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">GPD</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">SPO</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nBySource</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/variability_metrics/estimate_msv_metrics.html#MSVMetrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics.GPD">
+<span class="sig-name descname"><span class="pre">GPD</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics.GPD" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics.SPO">
+<span class="sig-name descname"><span class="pre">SPO</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">array</span></code></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics.SPO" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics.nBySource">
+<span class="sig-name descname"><span class="pre">nBySource</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">array</span></code></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics.nBySource" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics.sources">
+<span class="sig-name descname"><span class="pre">sources</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">array</span></code></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics.sources" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics.vertices">
+<span class="sig-name descname"><span class="pre">vertices</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">array</span></code></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics.vertices" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.estimate_MSV_metrics">
+<span class="sig-name descname"><span class="pre">estimate_MSV_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_source_map</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/variability_metrics/estimate_msv_metrics.html#estimate_MSV_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.estimate_MSV_metrics" title="Link to this definition"></a></dt>
+<dd><p>Estimate Multi Source Variability (MSV) metrics from a data source map. It can be either a single <cite>DataSourceMap</cite>,
+a <cite>MultiVariateDataSourceMap</cite>, or a dictionary with the following structure <cite>{label: MultiVariateDataSourceMap}</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_source_map</strong> (<em>Union</em><em>[</em><a class="reference internal" href="dashi.unsupervised_characterization.data_source_map.html#dashi.unsupervised_characterization.data_source_map.data_source_map.DataSourceMap" title="dashi.unsupervised_characterization.data_source_map.data_source_map.DataSourceMap"><em>DataSourceMap</em></a><em>, </em><a class="reference internal" href="dashi.unsupervised_characterization.data_source_map.html#dashi.unsupervised_characterization.data_source_map.data_source_map.MultiVariateDataSourceMap" title="dashi.unsupervised_characterization.data_source_map.data_source_map.MultiVariateDataSourceMap"><em>MultiVariateDataSourceMap</em></a><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="dashi.unsupervised_characterization.data_source_map.html#dashi.unsupervised_characterization.data_source_map.data_source_map.MultiVariateDataSourceMap" title="dashi.unsupervised_characterization.data_source_map.data_source_map.MultiVariateDataSourceMap"><em>MultiVariateDataSourceMap</em></a><em>]</em><em>]</em>) – The data source map to project. This can either be a <cite>DataSourceMap</cite> object
+(result of estimate_univariate_data_source_map), a <cite>MultiVariateDataSourceMap</cite> object
+(result of estimate_multivariate_data_source_map), or a dictionary of <cite>MultiVariateDataSourceMap</cite> objects
+where the keys are the selected labels (result of estimate_conditional_data_source_map).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of MSVMetrics containing the GPD, SPO, vertices, sources, and counts by source.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics" title="dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics">MSVMetrics</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-dashi.unsupervised_characterization.variability_metrics.igt_plotting">
+<span id="dashi-unsupervised-characterization-variability-metrics-igt-plotting-module"></span><h2>dashi.unsupervised_characterization.variability_metrics.igt_plotting module<a class="headerlink" href="#module-dashi.unsupervised_characterization.variability_metrics.igt_plotting" title="Link to this heading"></a></h2>
+<p>Information Geometric Temporal (IGT) plotting main functions and classes</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.igt_plotting.plot_IGT_projection">
+<span class="sig-name descname"><span class="pre">plot_IGT_projection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">igt_projection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_palette</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Spectral'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/variability_metrics/igt_plotting.html#plot_IGT_projection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.igt_plotting.plot_IGT_projection" title="Link to this definition"></a></dt>
+<dd><p>Plots an interactive Information Geometric Temporal (IGT) plot from an code{IGTProjection} object.
+An IGT plot visualizes the variability among time batches in a data repository in a 2D or 3D plot.
+Time batches are positioned as points where the distance between them represents the probabilistic
+distance between their distributions (currently Jensen-Shannon distance).
+To track the temporal evolution, temporal batches are labeled to show their date and
+colored according to their season or period, according to the analysis period, as follows.
+If period==”year” the label is “yy” (2 digit year) and the color is according to year.
+If period==”month” the label is “yym” (yy + abbreviated month*) and the color is according
+to the season (yearly).
+If period==”week” the label is “yymmw” (yym + ISO week number in 1-2 digit) and the color is
+according to the season (yearly). An estimated smoothed trajectory of the information evolution
+over time can be shown using the optional “trajectory” parameter.</p>
+<p>Note that since the projection is based on multidimensional scaling, a 2 dimensional
+projection entails a loss of information compared to a 3 dimensional projection. E.g., periodic
+variability components such as seasonal effect can be hindered by an abrupt change or a general trend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>igt_projection</strong> (<a class="reference internal" href="#dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection" title="dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection"><em>IGTProjection</em></a>) – The <cite>IGTProjection</cite> object containing the data for the temporal plot.</p></li>
+<li><p><strong>dimensions</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of dimensions to be used for plotting the IGT projection (2D or 3D). Default is 2.</p></li>
+<li><p><strong>start_date</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em><em>, </em><em>optional</em>) – The starting date for the temporal plot. If None, it is not constrained. Default is None.</p></li>
+<li><p><strong>end_date</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em><em>, </em><em>optional</em>) – The ending date for the temporal plot. If None, it is not constrained. Default is None.</p></li>
+<li><p><strong>color_palette</strong> (<em>PlotColorPalette</em><em>, </em><em>optional</em>) – The color palette to be used for coloring the points. Default is Spectral.</p></li>
+<li><p><strong>trajectory</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, a smoothed trajectory showing the evolution of the information across time is plotted.
+Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Plotly figure object containing the IGT projection plot.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-dashi.unsupervised_characterization.variability_metrics.igt_projection">
+<span id="dashi-unsupervised-characterization-variability-metrics-igt-projection-module"></span><h2>dashi.unsupervised_characterization.variability_metrics.igt_projection module<a class="headerlink" href="#module-dashi.unsupervised_characterization.variability_metrics.igt_projection" title="Link to this heading"></a></h2>
+<p>Information Geometric Temporal class creation</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IGTProjection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_temporal_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/variability_metrics/igt_projection.html#IGTProjection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class IGTProjection object contains the estimated Information Geometric Temporal projection
+of a DataTemporalMap or MultiVariateDataTemporalMap objects</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection.data_temporal_map">
+<span class="sig-name descname"><span class="pre">data_temporal_map</span></span><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection.data_temporal_map" title="Link to this definition"></a></dt>
+<dd><p>A <cite>DataTemporalMap</cite> or ‘MultiVariateDataTemporalMap’ object containing the temporal data map
+that was used for generating the projection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[<a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap">DataTemporalMap</a>, <a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap">MultiVariateDataTemporalMap</a>, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection.projection">
+<span class="sig-name descname"><span class="pre">projection</span></span><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection.projection" title="Link to this definition"></a></dt>
+<dd><p>A 2D matrix matrix of floats representing the lower-dimensional projection of the temporal data.
+Each row corresponds to a data timestamp, with each column representing a dimension of the projection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[List[List[float]], None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection.embedding_type">
+<span class="sig-name descname"><span class="pre">embedding_type</span></span><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection.embedding_type" title="Link to this definition"></a></dt>
+<dd><p>A string representing the type of embedding used for the projection (e.g., “classicalmds”, “nonmetricmds”,
+“pca”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[str, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection.stress">
+<span class="sig-name descname"><span class="pre">stress</span></span><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection.stress" title="Link to this definition"></a></dt>
+<dd><p>A float value representing the stress (or error) of the projection if it is available (used in MDS
+or similar techniques). The lower the stress value, the better the projection reflects the original data.
+This attribute is <cite>None</cite> if stress is not computed or available.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[float, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">data_temporal_map</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code><span class="pre">[</span><a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataTemporalMap</span></code></a><span class="pre">,</span> <a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiVariateDataTemporalMap</span></code></a><span class="pre">,</span> <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">embedding_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">projection</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code><span class="pre">]]]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">stress</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-dashi.unsupervised_characterization.variability_metrics.igt_projection_estimator">
+<span id="dashi-unsupervised-characterization-variability-metrics-igt-projection-estimator-module"></span><h2>dashi.unsupervised_characterization.variability_metrics.igt_projection_estimator module<a class="headerlink" href="#module-dashi.unsupervised_characterization.variability_metrics.igt_projection_estimator" title="Link to this heading"></a></h2>
+<p>Functions for Information Geometric Temporal creation</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.igt_projection_estimator.estimate_igt_projection">
+<span class="sig-name descname"><span class="pre">estimate_igt_projection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_temporal_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'classicalmds'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/variability_metrics/igt_projection_estimator.html#estimate_igt_projection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.igt_projection_estimator.estimate_igt_projection" title="Link to this definition"></a></dt>
+<dd><p>Estimates the Information Geometric Temporal (IGT) projection of a temporal data map, either a
+<cite>DataTemporalMap</cite>, <cite>MultiVariateDataTemporalMap</cite>, or a dictionary containing
+<cite>{label: MultiVariateDataTemporalMap}</cite>.</p>
+<p>The IGT projection is a technique to visualize the temporal relationships between data batches
+by projecting the data into a lower-dimensional space (e.g., 2D or 3D), with time batches represented
+as points. The distance between points reflects the probabilistic distance between the data distributions
+of those time batches.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_temporal_map</strong> (<em>Union</em><em>[</em><a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap"><em>DataTemporalMap</em></a><em>, </em><a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap"><em>MultiVariateDataTemporalMap</em></a><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap" title="dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap"><em>MultiVariateDataTemporalMap</em></a><em>]</em><em>]</em>) – The data temporal map to project. This can either be a <cite>DataTemporalMap</cite> object
+(result of estimate_univariate_data_temporal_map), a <cite>MultiVariateDataTemporalMap</cite> object
+(result of estimate_multivariate_data_temporal_map), or a dictionary of <cite>MultiVariateDataTemporalMap</cite> objects
+where the keys are the selected labels (result of estimate_conditional_data_temporal_map).</p></li>
+<li><p><strong>dimensions</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of dimensions to use for the projection (2 or 3). Defaults to 2.</p></li>
+<li><p><strong>start_date</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em><em>, </em><em>optional</em>) – The starting date for the temporal plot. If None, it is not constrained. Default is None.</p></li>
+<li><p><strong>end_date</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em><em>, </em><em>optional</em>) – The ending date for the temporal plot. If None, it is not constrained. Default is None.</p></li>
+<li><p><strong>embedding_type</strong> (<em>str</em><em>, </em><em>optional</em>) – The type of embedding technique to use for dimensionality reduction. Choices are
+‘classicalmds’ (Classical Multidimensional Scaling), ‘pca’ (Principal Component Analysis)
+and ‘nonmetricmds’ (Non Metric Multidimensional Scaling). Defaults to ‘classicalmds’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The estimated IGT projection.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection" title="dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection">IGTProjection</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-dashi.unsupervised_characterization.variability_metrics.igt_trajectory_estimator">
+<span id="dashi-unsupervised-characterization-variability-metrics-igt-trajectory-estimator-module"></span><h2>dashi.unsupervised_characterization.variability_metrics.igt_trajectory_estimator module<a class="headerlink" href="#module-dashi.unsupervised_characterization.variability_metrics.igt_trajectory_estimator" title="Link to this heading"></a></h2>
+</section>
+<section id="module-dashi.unsupervised_characterization.variability_metrics.plot_msv">
+<span id="dashi-unsupervised-characterization-variability-metrics-plot-msv-module"></span><h2>dashi.unsupervised_characterization.variability_metrics.plot_msv module<a class="headerlink" href="#module-dashi.unsupervised_characterization.variability_metrics.plot_msv" title="Link to this heading"></a></h2>
+<p>Main module for plotting Multi Source Variability (MSV) metrics.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.unsupervised_characterization.variability_metrics.plot_msv.plot_MSV">
+<span class="sig-name descname"><span class="pre">plot_MSV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msv_metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_palette</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Spectral'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/unsupervised_characterization/variability_metrics/plot_msv.html#plot_MSV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.unsupervised_characterization.variability_metrics.plot_msv.plot_MSV" title="Link to this definition"></a></dt>
+<dd><p>Plots a Multi Source Variability (MSV) metrics visualization from a code{MSVMetrics} object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>msv_metrics</strong> (<a class="reference internal" href="#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics" title="dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics"><em>MSVMetrics</em></a>) – An instance of the <cite>MSVMetrics</cite> class containing the metrics to be plotted.</p></li>
+<li><p><strong>dimensions</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of dimensions for the plot. Must be 1, 2, or 3. Default is 1.</p></li>
+<li><p><strong>color_palette</strong> (<em>str</em><em>, </em><em>optional</em>) – The color palette to use for the plot. Must be one of the valid color palettes defined in <cite>VALID_COLOR_PALETTES</cite>.
+Default is ‘Spectral’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Plotly figure object containing the MSV metrics visualization.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>go.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-dashi.unsupervised_characterization.variability_metrics">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-dashi.unsupervised_characterization.variability_metrics" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Carlos Sáez Silvestre, David Fernández Narro, Pablo Ferri Borredá, Ángel Sánchez García.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

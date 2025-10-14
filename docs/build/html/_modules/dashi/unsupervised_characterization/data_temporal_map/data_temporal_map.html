@@ -101,6 +101,9 @@
     <span class="n">VALID_INTEGER_TYPE</span><span class="p">,</span> <span class="n">VALID_FLOAT_TYPE</span><span class="p">,</span> \
     <span class="n">VALID_DATE_TYPE</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_WEEK</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_MONTH</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_YEAR</span><span class="p">,</span> <span class="n">VALID_CONVERSION_STRING_TYPE</span><span class="p">,</span> \
     <span class="n">MISSING_VALUE</span><span class="p">,</span> <span class="n">VALID_TYPES_WITHOUT_DATE</span><span class="p">,</span> <span class="n">VALID_DIM_REDUCTION_TYPES</span><span class="p">,</span> <span class="n">PCA</span><span class="p">,</span> <span class="n">MCA</span><span class="p">,</span> <span class="n">FAMD</span>
+<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">_estimate_absolute_frequencies</span><span class="p">,</span> <span class="n">_create_supports</span><span class="p">,</span> <span class="n">_get_types</span><span class="p">,</span>
+                                                       <span class="n">BaseMultiVariateMap</span><span class="p">,</span> <span class="n">_perform_dimensionality_reduction</span><span class="p">,</span>
+                                                       <span class="n">_scatter_plot</span><span class="p">,</span> <span class="n">_normalize_kde</span><span class="p">,</span> <span class="n">_compute_kde</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="DataTemporalMap">
@@ -201,7 +204,7 @@
 <div class="viewcode-block" id="MultiVariateDataTemporalMap">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">MultiVariateDataTemporalMap</span><span class="p">(</span><span class="n">DataTemporalMap</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">MultiVariateDataTemporalMap</span><span class="p">(</span><span class="n">BaseMultiVariateMap</span><span class="p">,</span> <span class="n">DataTemporalMap</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A subclass of DataTemporalMap representing a multi-variate time series data map.</span>
 <span class="sd">    In addition to the attributes inherited from the DataTemporalMap class, this</span>
@@ -209,59 +212,27 @@
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
-<span class="sd">    multivariate_probability_map: Optional[List[List[float]]]</span>
+<span class="sd">    multivariate_probability_map: Optional[np.ndarray]</span>
 <span class="sd">        List of matrices representing the multi-variate probability distribution</span>
 <span class="sd">        temporal map (relative frequency) for each timestamp.</span>
 
-<span class="sd">    multivariate_counts_map: Optional[List[List[float]]]</span>
+<span class="sd">    multivariate_counts_map: Optional[np.ndarray]</span>
 <span class="sd">        List of matrices representing the multi-variate counts temporal map (absolute)</span>
 <span class="sd">        for each timestamp.</span>
 
-<span class="sd">    multivariate_support: Optional[List[float]]</span>
+<span class="sd">    multivariate_support: Optional[np.ndarray]</span>
 <span class="sd">        List of matrices representing the support (the value at each bin) of the dimensions</span>
 <span class="sd">        of multivariate_probability_map and multivariate_counts_map.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">multivariate_probability_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">multivariate_counts_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">multivariate_support</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-
 <div class="viewcode-block" id="MultiVariateDataTemporalMap.check">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap.check">[docs]</a>
-    <span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validates the consistency of the MultiVariateDataTemporalMap attributes, ensuring</span>
-<span class="sd">        that the multivariate probability map, counts map, and support dimensions are consistent,</span>
-<span class="sd">        along with inherited checks from the parent class DataTemporalMap.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Union[List[str], bool]:</span>
-<span class="sd">            Returns a list of error messages if any validation fails, otherwise returns True indicating</span>
-<span class="sd">            the object is valid.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">errors</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">check</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">super</span><span class="p">(),</span> <span class="n">DataTemporalMap</span><span class="p">)</span> <span class="k">else</span> <span class="p">[]</span>
-
-        <span class="c1"># Check if the dimensions of multivariate_probability_map and multivariate_counts_map match</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_probability_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_counts_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_probability_map</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_counts_map</span><span class="p">)</span> <span class="ow">or</span> \
-                    <span class="nb">any</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">probability_row</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">count_row</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">probability_row</span><span class="p">,</span> <span class="n">count_row</span> <span class="ow">in</span>
-                        <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_probability_map</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_counts_map</span><span class="p">)):</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="s2">&quot;The dimensions of multivariate_probability_map and multivariate_counts_map do not match.&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Check if the length of multivariate_support matches the columns of multivariate_probability_map</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_support</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_probability_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_support</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_probability_map</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="s2">&quot;The length of multivariate_support must match the columns of multivariate_probability_map.&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Check if the length of multivariate_support matches the columns of multivariate_counts_map</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_support</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_counts_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_support</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_counts_map</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;The length of multivariate_support must match the columns of multivariate_counts_map.&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Return the list of errors if any, or True if no errors</span>
+    <span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
+        <span class="n">multi_errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_multivariate</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">multi_errors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">errors</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">multi_errors</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">errors</span> <span class="k">if</span> <span class="n">errors</span> <span class="k">else</span> <span class="kc">True</span></div>
 </div>
 
@@ -324,12 +295,12 @@
         <span class="n">period</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">TEMPORAL_PERIOD_MONTH</span><span class="p">,</span>
         <span class="n">start_date</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">end_date</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">supports</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># Dict with: variable_name: variable_type_name</span>
+        <span class="n">supports</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">numeric_variables_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">numeric_smoothing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">date_gaps_smoothing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataTemporalMap</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">DataTemporalMap</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DataTemporalMap</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Estimates a DataTemporalMap object from a DataFrame containing individuals in rows and the variables</span>
 <span class="sd">    in columns, being one of these columns the analysis date (typically the acquisition date).</span>
@@ -357,7 +328,7 @@
 <span class="sd">        A date object indicating the date at which to end the analysis, in case of being</span>
 <span class="sd">        different from the last chronological date in the date column.</span>
 
-<span class="sd">    supports: Union[Dict, None]</span>
+<span class="sd">    supports: Union[Dict, None], optional</span>
 <span class="sd">        A dictionary with structure {variable_name: variable_type_name} containing the support</span>
 <span class="sd">        of the data distributions for each variable. If not provided, it is automatically</span>
 <span class="sd">        estimated from the data.</span>
@@ -376,7 +347,7 @@
 <span class="sd">        batches without data. By default, gaps are filled with NAs.</span>
 
 <span class="sd">    verbose: bool</span>
-<span class="sd">        Whether to display additional information during the process. Defaults to `False`.</span>
+<span class="sd">        If True, prints additional information about the estimation process. Default is False.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -437,209 +408,28 @@
         <span class="c1"># Adjust the dates to the beginning of the year</span>
         <span class="n">dates</span> <span class="o">=</span> <span class="n">dates</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span><span class="n">dates</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">dayofyear</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">)</span>
 
-    <span class="c1"># Get VARIABLE types, others will not be allowed</span>
-    <span class="n">data_types</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">dtypes</span>
-    <span class="n">float_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_FLOAT_TYPE</span>
-    <span class="n">integer_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_INTEGER_TYPE</span>
-    <span class="n">string_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_STRING_TYPE</span>
-    <span class="n">date_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_DATE_TYPE</span>
-    <span class="n">categorical_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_CATEGORICAL_TYPE</span>
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">float_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of float columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">float_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">integer_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of integer columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">integer_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">string_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of string columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">string_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">date_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of date columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">date_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">categorical_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of categorical columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">categorical_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">data_types</span><span class="p">,</span> <span class="n">columns_by_type</span> <span class="o">=</span> <span class="n">_get_types</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">data_without_date_column</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span>
+    <span class="p">)</span>
 
     <span class="c1"># Convert dates to numbers</span>
-    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">date_columns</span><span class="p">):</span>
-        <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">date_columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">date_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]):</span>
+        <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
             <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">,</span>
             <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;coerce&#39;</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Converting date columns to numeric for distribution analysis&#39;</span><span class="p">)</span>
 
-    <span class="c1"># Create supports</span>
-    <span class="n">supports_to_fill</span> <span class="o">=</span> <span class="p">{</span><span class="n">column</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span>
-    <span class="n">supports_to_estimate_columns</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_series</span><span class="p">()</span>
-
-    <span class="k">if</span> <span class="n">supports</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">column_index</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">supports</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">supports_to_fill</span><span class="p">:</span>
-                <span class="n">supports_to_fill</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
-                <span class="n">supports_to_estimate_columns</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
-                <span class="n">error_in_support</span> <span class="o">=</span> <span class="kc">False</span>
-
-                <span class="k">if</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">:</span>
-                    <span class="n">error_in_support</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="ow">not</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">VALID_CATEGORICAL_TYPE</span>
-                            <span class="ow">or</span> <span class="ow">not</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">VALID_STRING_TYPE</span>
-                    <span class="p">)</span>
-                <span class="k">elif</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="n">VALID_DATE_TYPE</span><span class="p">:</span>
-                    <span class="n">error_in_support</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">VALID_DATE_TYPE</span>
-                <span class="k">elif</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="n">VALID_INTEGER_TYPE</span><span class="p">:</span>
-                    <span class="n">error_in_support</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">VALID_INTEGER_TYPE</span>
-                <span class="k">elif</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="n">VALID_FLOAT_TYPE</span><span class="p">:</span>
-                    <span class="n">error_in_support</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">VALID_FLOAT_TYPE</span>
-
-                <span class="k">if</span> <span class="n">error_in_support</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s1">&#39;The provided support for variable </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s1"> does not match with its variable type&#39;</span><span class="p">)</span>
-
-    <span class="n">supports</span> <span class="o">=</span> <span class="n">supports_to_fill</span>
-
-    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">supports_to_estimate_columns</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Estimating supports from data&#39;</span><span class="p">)</span>
-
-        <span class="n">all_na</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
-
-        <span class="c1"># Exclude from the analysis those variables with no finite values, if any</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">all_na</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s1">&#39;Removing variables with no finite values: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">all_na</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">&#39;Removing variables with no finite values: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">all_na</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
-            <span class="n">data_without_date_column</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="o">~</span><span class="n">all_na</span><span class="p">]</span>
-            <span class="n">number_of_columns</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-            <span class="n">supports</span> <span class="o">=</span> <span class="p">{</span><span class="n">column_name</span><span class="p">:</span> <span class="n">data_type</span> <span class="k">for</span> <span class="n">column_name</span><span class="p">,</span> <span class="n">data_type</span> <span class="ow">in</span> <span class="n">supports</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span>
-                        <span class="ow">not</span> <span class="n">all_na</span><span class="p">[</span><span class="n">column_name</span><span class="p">]}</span>
-
-            <span class="n">data_types</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">dtypes</span>
-            <span class="n">float_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_FLOAT_TYPE</span>
-            <span class="n">integer_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_INTEGER_TYPE</span>
-            <span class="n">string_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_STRING_TYPE</span>
-            <span class="n">date_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_DATE_TYPE</span>
-            <span class="n">categorical_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_CATEGORICAL_TYPE</span>
-
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">categorical_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">):</span>
-        <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span>
-        <span class="n">categorical_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span>
-                                                              <span class="n">categorical_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">col</span><span class="p">:</span> <span class="n">col</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">add_categories</span><span class="p">([</span><span class="n">MISSING_VALUE</span><span class="p">])</span> <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="k">else</span> <span class="n">col</span><span class="p">)</span>
-        <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span>
-        <span class="n">categorical_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span>
-                                                              <span class="n">categorical_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">col</span><span class="p">:</span> <span class="n">col</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">MISSING_VALUE</span><span class="p">)</span> <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="k">else</span> <span class="n">col</span><span class="p">)</span>
-
-        <span class="c1"># Extract levels and assign them to supports</span>
-        <span class="n">selected_columns</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">categorical_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span>
-        <span class="n">levels</span> <span class="o">=</span> <span class="n">selected_columns</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">col</span><span class="p">:</span> <span class="n">col</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">)</span>
-        <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-            <span class="p">{</span>
-                <span class="n">column</span><span class="p">:</span> <span class="n">levels</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
-                <span class="k">for</span> <span class="n">column</span>
-                <span class="ow">in</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">categorical_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span>
-            <span class="p">}</span>
-        <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">float_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">):</span>
-        <span class="n">minimums</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">float_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">,</span>
-                                                                                                       <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">maximums</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">float_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">,</span>
-                                                                                                       <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-            <span class="p">{</span>
-                <span class="n">column</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span><span class="p">,</span> <span class="n">numeric_variables_bins</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span>
-                <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">float_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">],</span> <span class="n">minimums</span><span class="p">,</span>
-                       <span class="n">maximums</span><span class="p">)</span>
-            <span class="p">}</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">minimums</span> <span class="o">==</span> <span class="n">maximums</span><span class="p">):</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">minimums</span> <span class="o">==</span> <span class="n">maximums</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">float_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span>
-            <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                <span class="p">{</span>
-                    <span class="n">column</span><span class="p">:</span> <span class="p">[</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]]</span>
-                    <span class="k">for</span> <span class="n">column</span>
-                    <span class="ow">in</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
-                <span class="p">}</span>
-            <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">integer_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">):</span>
-        <span class="n">minimums</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">integer_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">,</span>
-                                                                                                         <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">maximums</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">integer_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">,</span>
-                                                                                                         <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">integer_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                <span class="p">{</span>
-                    <span class="n">column</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span><span class="p">,</span> <span class="n">numeric_variables_bins</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                    <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span>
-                    <span class="ow">in</span>
-                    <span class="nb">zip</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">integer_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">],</span> <span class="n">minimums</span><span class="p">,</span>
-                        <span class="n">maximums</span><span class="p">)</span>
-                <span class="p">}</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                <span class="p">{</span>
-                    <span class="n">column</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span><span class="p">,</span> <span class="n">numeric_variables_bins</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                    <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span>
-                    <span class="ow">in</span>
-                    <span class="nb">zip</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">integer_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">],</span> <span class="n">minimums</span><span class="p">,</span>
-                        <span class="n">maximums</span><span class="p">)</span>
-                <span class="p">}</span>
-            <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">string_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">):</span>
-        <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-            <span class="p">{</span>
-                <span class="n">column</span><span class="p">:</span> <span class="n">data_without_date_column</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                <span class="k">for</span> <span class="n">column</span>
-                <span class="ow">in</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">string_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span>
-            <span class="p">}</span>
-        <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">date_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">):</span>
-        <span class="n">minimums</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">date_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">,</span>
-                                                                                                      <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">maximums</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">date_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">,</span>
-                                                                                                      <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-            <span class="p">{</span>
-                <span class="n">column</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="n">numeric_variables_bins</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span>
-                <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">date_columns</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="p">],</span> <span class="n">minimums</span><span class="p">,</span>
-                       <span class="n">maximums</span><span class="p">)</span>
-            <span class="p">}</span>
-        <span class="p">)</span>
-
-    <span class="c1"># Convert factor variables to characters, as used by the xts Objects</span>
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">categorical_columns</span><span class="p">):</span>
-        <span class="n">converted_columns</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">categorical_columns</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
-            <span class="n">VALID_CONVERSION_STRING_TYPE</span><span class="p">)</span>
-        <span class="n">data_without_date_column</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="n">converted_columns</span><span class="p">)</span>
-
-    <span class="c1"># Exclude from the analysis those variables with a single value, if any</span>
-    <span class="n">support_lengths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">])</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
-    <span class="n">support_singles_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">support_lengths</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span>
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">support_singles_indexes</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">&#39;Removing variables with less than two distinct values in their supports: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">support_singles_indexes</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;The following variable/s have less than two distinct values in their supports and were excluded from the analysis: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">support_singles_indexes</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">data_without_date_column</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="o">~</span><span class="n">support_singles_indexes</span><span class="p">]</span>
-        <span class="n">supports</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">column</span><span class="p">:</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">column</span>
-            <span class="ow">in</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span>
-        <span class="p">}</span>
-        <span class="n">data_types</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">dtypes</span>
-        <span class="n">number_of_columns</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">number_of_columns</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Zero remaining variables to be analyzed.&#39;</span><span class="p">)</span>
+    <span class="n">data_without_date_column</span><span class="p">,</span> <span class="n">supports</span> <span class="o">=</span> <span class="n">_create_supports</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">data_without_date_column</span><span class="p">,</span>
+        <span class="n">supports</span><span class="o">=</span><span class="n">supports</span><span class="p">,</span>
+        <span class="n">columns_types</span><span class="o">=</span><span class="n">columns_by_type</span><span class="p">,</span>
+        <span class="n">number_of_columns</span><span class="o">=</span><span class="n">number_of_columns</span><span class="p">,</span>
+        <span class="n">numeric_variables_bins</span><span class="o">=</span><span class="n">numeric_variables_bins</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span>
+    <span class="p">)</span>
 
     <span class="c1"># Estimate the Data Temporal Map</span>
     <span class="n">posterior_data_classes</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">dtypes</span>
@@ -648,7 +438,7 @@
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Estimating the data temporal maps&#39;</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">column_index</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Estimating the DataTemporalMap of variable </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span>
 
@@ -727,9 +517,9 @@
             <span class="p">)</span>
         <span class="n">probability_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">probability_arrays</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">data_types</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">==</span> <span class="n">VALID_DATE_TYPE</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">posterior_data_classes</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">==</span> <span class="n">VALID_DATE_TYPE</span><span class="p">:</span>
             <span class="n">support</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]))</span>
-        <span class="k">elif</span> <span class="n">data_types</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="n">posterior_data_classes</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">]:</span>
             <span class="n">support</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">column</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">support</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">])</span>
@@ -744,7 +534,7 @@
             <span class="n">dates</span><span class="o">=</span><span class="n">dates_map</span><span class="p">,</span>
             <span class="n">support</span><span class="o">=</span><span class="n">support</span><span class="p">,</span>
             <span class="n">variable_name</span><span class="o">=</span><span class="n">column</span><span class="p">,</span>
-            <span class="n">variable_type</span><span class="o">=</span><span class="n">data_types</span><span class="p">[</span><span class="n">column</span><span class="p">],</span>
+            <span class="n">variable_type</span><span class="o">=</span><span class="n">posterior_data_classes</span><span class="p">[</span><span class="n">column</span><span class="p">],</span>
             <span class="n">period</span><span class="o">=</span><span class="n">period</span>
         <span class="p">)</span>
         <span class="n">results</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_temporal_map</span>
@@ -756,58 +546,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Returning results as an individual DataTemporalMap object&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span></div>
-
-
-
-<span class="k">def</span> <span class="nf">_estimate_absolute_frequencies</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">varclass</span><span class="p">,</span> <span class="n">support</span><span class="p">,</span> <span class="n">numeric_smoothing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Estimates the absolute frequencies of data, which will be the counts_map in the final DataTemporalMap object</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">varclass</span> <span class="o">==</span> <span class="n">VALID_STRING_TYPE</span><span class="p">:</span>
-        <span class="n">value_counts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
-        <span class="n">map_data</span> <span class="o">=</span> <span class="n">value_counts</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">support</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
-
-    <span class="k">elif</span> <span class="n">varclass</span> <span class="o">==</span> <span class="n">VALID_FLOAT_TYPE</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
-            <span class="n">map_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">support</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">numeric_smoothing</span><span class="p">:</span>
-                <span class="n">hist_support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">support</span><span class="p">,</span> <span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span> <span class="o">&gt;=</span> <span class="nb">min</span><span class="p">(</span><span class="n">hist_support</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">hist_support</span><span class="p">))]</span>
-                <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">hist_support</span>
-                <span class="n">map_data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span>
-                        <span class="s1">&#39;Estimating a 1-dimensional kernel density smoothing with less than 4 data points can result in an inaccurate estimation.&#39;</span>
-                        <span class="s1">&#39; For more information see &quot;Density Estimation for Statistics and Data Analysis, Bernard.W.Silverman, CRC, 1986&quot;, chapter 4.5.2 &quot;Required sample size for given accuracy&quot;.&#39;</span>
-                    <span class="p">)</span>
-                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-                    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">)],</span> <span class="mi">2</span><span class="p">)</span>
-                    <span class="n">ndata</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">)]</span>
-                    <span class="n">ndata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-
-                <span class="n">kde</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span>
-                    <span class="n">data</span><span class="p">)</span>
-                <span class="n">map_data</span> <span class="o">=</span> <span class="n">kde</span><span class="p">(</span><span class="n">support</span><span class="p">)</span> <span class="o">*</span> <span class="n">ndata</span>
-
-    <span class="k">elif</span> <span class="n">varclass</span> <span class="o">==</span> <span class="n">VALID_INTEGER_TYPE</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
-            <span class="n">map_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">support</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">hist_support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">support</span><span class="p">,</span> <span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span> <span class="o">&gt;=</span> <span class="nb">min</span><span class="p">(</span><span class="n">hist_support</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">hist_support</span><span class="p">))]</span>
-            <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">hist_support</span>
-            <span class="n">map_data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
-
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;data class </span><span class="si">{</span><span class="n">varclass</span><span class="si">}</span><span class="s1"> not valid for distribution estimation.&#39;</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">map_data</span>
+        <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="n">data_without_date_column</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span></div>
 
 
 <div class="viewcode-block" id="estimate_multivariate_data_temporal_map">
@@ -867,7 +606,7 @@
 <span class="sd">        &#39;FAMD&#39; (Factor Analysis of Mixed Data) for mixed data. Note: in case of using &#39;FAMD&#39;, numerical variables must be</span>
 <span class="sd">        in float type. Otherwise they will be treated as categorical.</span>
 
-<span class="sd">    scale: str</span>
+<span class="sd">    scale: bool</span>
 <span class="sd">        Applicable just when using PCA dimensionality reduction. If true scales the input data using z-score</span>
 <span class="sd">        normalization. Defaults to `True`.</span>
 
@@ -880,7 +619,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    MultiVariateDataTemporalMap</span>
-<span class="sd">        The MultivariateDataTemporalMap object of the data</span>
+<span class="sd">        A MultiVariateDataTemporalMap object containing the estimated probability and counts maps for each time period.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Validation of parameters</span>
     <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -952,29 +691,14 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Total number of columns to analyze: </span><span class="si">{</span><span class="n">number_of_columns</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Analysis period: </span><span class="si">{</span><span class="n">period</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="c1"># Get VARIABLE types, others will not be allowed</span>
-    <span class="n">data_types</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">dtypes</span>
-    <span class="n">float_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_FLOAT_TYPE</span>
-    <span class="n">integer_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_INTEGER_TYPE</span>
-    <span class="n">string_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_STRING_TYPE</span>
-    <span class="n">date_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_DATE_TYPE</span>
-    <span class="n">categorical_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_CATEGORICAL_TYPE</span>
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">float_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of float columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">float_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">integer_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of integer columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">integer_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">string_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of string columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">string_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">date_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of date columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">date_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">categorical_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of categorical columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">categorical_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">data_types</span><span class="p">,</span> <span class="n">columns_by_type</span> <span class="o">=</span> <span class="n">_get_types</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">data_without_date_column</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span>
+    <span class="p">)</span>
 
     <span class="c1"># Convert dates to numbers</span>
-    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">date_columns</span><span class="p">):</span>
-        <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">date_columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">date_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]):</span>
+        <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
             <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">,</span>
             <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;coerce&#39;</span>
         <span class="p">)</span>
@@ -997,39 +721,8 @@
     <span class="p">})</span>
 
     <span class="k">if</span> <span class="n">scatter_plot</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Plotting </span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> 2D Scatter Plot&#39;</span><span class="p">)</span>
-        <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-            <span class="n">reduced_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">],</span>
-            <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> Scatter Plot&#39;</span><span class="p">,</span>
-            <span class="n">template</span><span class="o">=</span><span class="s1">&#39;plotly_white&#39;</span><span class="p">,</span>
-            <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span>
-        <span class="p">)</span>
-
-        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
-            <span class="n">title</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> Scatter Plot&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span>
-                <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-                <span class="s1">&#39;xanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;yanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;top&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">}</span>
-            <span class="p">},</span>
-            <span class="n">xaxis_title</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC1&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">}</span>
-            <span class="p">},</span>
-            <span class="n">yaxis_title</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC2&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">}</span>
-            <span class="p">}</span>
-
-        <span class="p">)</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
+        <span class="n">_scatter_plot</span><span class="p">(</span><span class="n">reduced_data</span><span class="o">=</span><span class="n">reduced_data</span><span class="p">,</span> <span class="n">dim_reduction</span><span class="o">=</span><span class="n">dim_reduction</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                      <span class="n">color_column</span><span class="o">=</span><span class="n">date_column_name</span><span class="p">)</span>
 
     <span class="n">value_counts</span> <span class="o">=</span> <span class="n">reduced_data</span><span class="p">[</span><span class="n">date_column_name</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">dates_info</span> <span class="o">=</span> <span class="p">{</span>
@@ -1062,7 +755,7 @@
         <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Estimates a MultivariateDataTemporalMap object for the data corresponding to each label of the DataFrame</span>
+<span class="sd">    Estimates a MultivariateDataTemporalMap object for the data corresponding to each label of a DataFrame</span>
 <span class="sd">    containing multiple variables (in columns) over time, using dimensionality reduction techniques (e.g., PCA)</span>
 <span class="sd">    to handle high dimensional data.</span>
 
@@ -1077,7 +770,7 @@
 
 <span class="sd">    label_column_name: str</span>
 <span class="sd">        The name of the column that contains the labels or class/category for each observation</span>
-<span class="sd">        (used for concept shift analysis).</span>
+<span class="sd">        (used for conditional analysis).</span>
 
 <span class="sd">    kde_resolution: int</span>
 <span class="sd">        The resolution of the grid used for Kernel Density Estimation (KDE). This determines the granularity</span>
@@ -1163,6 +856,9 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s1">&#39;The number of supported dimensions are 1, 2 or 3&#39;</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">scatter_plot</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Scatter plot cannot be generated when dimensions is set to 1&#39;</span><span class="p">)</span>
+
     <span class="c1"># Separate analysis data from analysis dates</span>
     <span class="n">labels_columns</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">label_column_name</span><span class="p">]</span>
     <span class="n">dates</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">date_column_name</span><span class="p">]</span>
@@ -1197,29 +893,14 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Total number of columns to analyze: </span><span class="si">{</span><span class="n">number_of_columns</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Analysis period: </span><span class="si">{</span><span class="n">period</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="c1"># Get VARIABLE types, others will not be allowed</span>
-    <span class="n">data_types</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">dtypes</span>
-    <span class="n">float_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_FLOAT_TYPE</span>
-    <span class="n">integer_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_INTEGER_TYPE</span>
-    <span class="n">string_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_STRING_TYPE</span>
-    <span class="n">date_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_DATE_TYPE</span>
-    <span class="n">categorical_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_CATEGORICAL_TYPE</span>
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">float_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of float columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">float_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">integer_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of integer columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">integer_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">string_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of string columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">string_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">date_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of date columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">date_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">categorical_columns</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of categorical columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">categorical_columns</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">data_types</span><span class="p">,</span> <span class="n">columns_by_type</span> <span class="o">=</span> <span class="n">_get_types</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">data_without_date_column</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span>
+    <span class="p">)</span>
 
     <span class="c1"># Convert dates to numbers</span>
-    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">date_columns</span><span class="p">):</span>
-        <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">date_columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">date_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]):</span>
+        <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">data_without_date_column</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
             <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">,</span>
             <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;coerce&#39;</span>
         <span class="p">)</span>
@@ -1243,41 +924,9 @@
         <span class="n">date_column_name</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">dates_for_batching</span><span class="p">)</span>
     <span class="p">})</span>
 
-    <span class="k">if</span> <span class="n">scatter_plot</span> <span class="ow">and</span> <span class="n">dimensions</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Plotting </span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> 2D Scatter Plot divided by class&#39;</span><span class="p">)</span>
-        <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-            <span class="n">reduced_data</span><span class="p">,</span>
-            <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">color</span><span class="o">=</span><span class="n">label_column_name</span><span class="p">,</span>
-            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> Scatter Plot&#39;</span><span class="p">,</span>
-            <span class="n">template</span><span class="o">=</span><span class="s1">&#39;plotly_white&#39;</span><span class="p">,</span>
-            <span class="n">opacity</span><span class="o">=</span><span class="mf">0.5</span>
-        <span class="p">)</span>
-
-        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
-            <span class="n">title</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> Scatter Plot&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span>
-                <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-                <span class="s1">&#39;xanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;yanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;top&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">}</span>
-            <span class="p">},</span>
-            <span class="n">xaxis_title</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC1&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">}</span>
-            <span class="p">},</span>
-            <span class="n">yaxis_title</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC2&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">}</span>
-            <span class="p">}</span>
-
-        <span class="p">)</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">scatter_plot</span><span class="p">:</span>
+            <span class="n">_scatter_plot</span><span class="p">(</span><span class="n">reduced_data</span><span class="o">=</span><span class="n">reduced_data</span><span class="p">,</span> <span class="n">dim_reduction</span><span class="o">=</span><span class="n">dim_reduction</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                      <span class="n">color_column</span><span class="o">=</span><span class="n">label_column_name</span><span class="p">)</span>
 
     <span class="n">reduced_data_by_label</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">label</span><span class="p">:</span> <span class="n">group</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">label_column_name</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1285,7 +934,7 @@
     <span class="p">}</span>
 
     <span class="c1"># Generate DTMs</span>
-    <span class="n">concept_maps_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">concept_maps_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">concept_data</span> <span class="ow">in</span> <span class="n">reduced_data_by_label</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Label :</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -1305,30 +954,6 @@
 
 
 
-<span class="k">def</span> <span class="nf">_compute_kde</span><span class="p">(</span><span class="n">data_subset</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Performs a Gaussian Kernel Density Estimation (KDE) on a subset of the original data to estimate</span>
-<span class="sd">    the probability density function over a specified range, using a grid resolution determined by</span>
-<span class="sd">    kde_resolution.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">kde</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">data_subset</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">bw_method</span><span class="o">=</span><span class="s1">&#39;silverman&#39;</span><span class="p">)</span>  <span class="c1"># Transpose for data compatibility</span>
-    <span class="n">grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">)</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">)]</span>
-    <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="o">*</span><span class="n">grid</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s1">&#39;ij&#39;</span><span class="p">)</span>
-    <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mesh</span><span class="p">])</span>
-    <span class="n">kde_values</span> <span class="o">=</span> <span class="n">kde</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="n">kde_resolution</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">xmin</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">kde_values</span>
-
-
-<span class="k">def</span> <span class="nf">_normalize_kde</span><span class="p">(</span><span class="n">kde_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Normalizes the results of the Kernel Density Estimation (KDE) values so that the total area under the</span>
-<span class="sd">    estimated probability density function equals 1. This ensures that the KDE represents a valid probability</span>
-<span class="sd">    distribution.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">kde_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">kde_values</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># Set negative values to 0</span>
-    <span class="k">return</span> <span class="n">kde_values</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">kde_values</span><span class="p">)</span>  <span class="c1"># Normalize</span>
-
-
 <span class="k">def</span> <span class="nf">_generate_multivariate_dtm</span><span class="p">(</span><span class="n">reduced_data</span><span class="p">,</span> <span class="n">dates_info</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates a MultiVariateDataTemporalMap object from the reduced multivariate data by applying Kernel</span>
@@ -1342,167 +967,53 @@
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Estimating the data temporal maps&#39;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">kde1</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;unique_dates&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span> <span class="ow">and</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">][</span><span class="n">date</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">dimensions</span><span class="p">:</span>
-                <span class="n">kde</span> <span class="o">=</span> <span class="n">_compute_kde</span><span class="p">(</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;date_column_name&#39;</span><span class="p">]]</span> <span class="o">==</span> <span class="n">date</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
-                    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;date_column_name&#39;</span><span class="p">]]),</span>
-                    <span class="n">xmin</span><span class="p">[:</span><span class="mi">1</span><span class="p">],</span> <span class="n">xmax</span><span class="p">[:</span><span class="mi">1</span><span class="p">],</span> <span class="n">kde_resolution</span><span class="p">)</span>
-                <span class="n">kde1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Not enough data for calculating </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s1"> probability map.&#39;</span><span class="p">)</span>
-                <span class="n">kde</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">kde_resolution</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-                <span class="n">kde1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span>
+    <span class="n">kde_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;unique_dates&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span> <span class="ow">and</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">][</span><span class="n">date</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">dimensions</span><span class="p">:</span>
+            <span class="n">kde</span> <span class="o">=</span> <span class="n">_compute_kde</span><span class="p">(</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;date_column_name&#39;</span><span class="p">]]</span> <span class="o">==</span> <span class="n">date</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
+                <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;date_column_name&#39;</span><span class="p">]]),</span>
+                <span class="n">xmin</span><span class="p">[:</span><span class="n">dimensions</span><span class="p">],</span> <span class="n">xmax</span><span class="p">[:</span><span class="n">dimensions</span><span class="p">],</span> <span class="n">kde_resolution</span><span class="p">)</span>
+            <span class="n">kde_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Not enough data for calculating </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s1"> probability map.&#39;</span><span class="p">)</span>
+            <span class="n">kde_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">kde_resolution</span><span class="p">,)</span> <span class="o">*</span> <span class="n">dimensions</span>
+            <span class="n">kde</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">kde_shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="n">kde_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span>
 
-        <span class="n">probability_map_1d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">row_stack</span><span class="p">([</span><span class="n">_normalize_kde</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">kde</span> <span class="ow">in</span> <span class="n">kde1</span><span class="p">])</span>
-        <span class="n">multivariate_probability_map_1d</span> <span class="o">=</span> <span class="p">[</span><span class="n">_normalize_kde</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span> <span class="k">for</span> <span class="n">kde</span> <span class="ow">in</span> <span class="n">kde1</span><span class="p">]</span>
-        <span class="n">multivariate_support_1d</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">)</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xmin</span><span class="p">[:</span><span class="mi">1</span><span class="p">],</span> <span class="n">xmax</span><span class="p">[:</span><span class="mi">1</span><span class="p">])]</span>
-        <span class="n">non_nan_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">probability_map_1d</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">non_nan_probability_map_1d</span> <span class="o">=</span> <span class="n">probability_map_1d</span><span class="p">[</span><span class="n">non_nan_mask</span><span class="p">]</span>
-        <span class="n">non_nan_counts_map_1d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">non_nan_probability_map_1d</span> <span class="o">*</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span>
-        <span class="n">counts_map_1d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">probability_map_1d</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-        <span class="n">counts_map_1d</span><span class="p">[</span><span class="n">non_nan_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">non_nan_counts_map_1d</span>
-        <span class="n">multivariate_counts_map_1d</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">prob_map</span> <span class="ow">in</span> <span class="n">multivariate_probability_map_1d</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">prob_map</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-                <span class="n">multivariate_counts_map_1d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prob_map</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">multivariate_counts_map_1d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">prob_map</span> <span class="o">*</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">]))</span>
-                <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">probability_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">row_stack</span><span class="p">([</span><span class="n">_normalize_kde</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">kde</span> <span class="ow">in</span> <span class="n">kde_list</span><span class="p">])</span>
+    <span class="n">multivariate_probability_map</span> <span class="o">=</span> <span class="p">[</span><span class="n">_normalize_kde</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span> <span class="k">for</span> <span class="n">kde</span> <span class="ow">in</span> <span class="n">kde_list</span><span class="p">]</span>
+    <span class="n">multivariate_support</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">)</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xmin</span><span class="p">[:</span><span class="n">dimensions</span><span class="p">],</span> <span class="n">xmax</span><span class="p">[:</span><span class="n">dimensions</span><span class="p">])]</span>
+    <span class="n">non_nan_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">probability_map</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">non_nan_probability_map</span> <span class="o">=</span> <span class="n">probability_map</span><span class="p">[</span><span class="n">non_nan_mask</span><span class="p">]</span>
+    <span class="n">non_nan_counts_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">non_nan_probability_map</span> <span class="o">*</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span>
+    <span class="n">counts_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">probability_map</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">counts_map</span><span class="p">[</span><span class="n">non_nan_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">non_nan_counts_map</span>
+    <span class="n">multivariate_counts_map</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">prob_map</span> <span class="ow">in</span> <span class="n">multivariate_probability_map</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">prob_map</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">multivariate_counts_map</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prob_map</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">multivariate_counts_map</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">prob_map</span> <span class="o">*</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">]))</span>
+            <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
 
-        <span class="n">dtm</span> <span class="o">=</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">(</span>
-            <span class="n">probability_map</span><span class="o">=</span><span class="n">probability_map_1d</span><span class="p">,</span>
-            <span class="n">multivariate_probability_map</span><span class="o">=</span><span class="n">multivariate_probability_map_1d</span><span class="p">,</span>
-            <span class="n">counts_map</span><span class="o">=</span><span class="n">counts_map_1d</span><span class="p">,</span>
-            <span class="n">multivariate_counts_map</span><span class="o">=</span><span class="n">multivariate_counts_map_1d</span><span class="p">,</span>
-            <span class="n">dates</span><span class="o">=</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;unique_dates&#39;</span><span class="p">],</span>
-            <span class="n">support</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">kde_resolution</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)),</span>
-            <span class="n">multivariate_support</span><span class="o">=</span><span class="n">multivariate_support_1d</span><span class="p">,</span>
-            <span class="n">variable_name</span><span class="o">=</span><span class="s1">&#39;Dim.reduced.1D&#39;</span><span class="p">,</span>
-            <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span>
-            <span class="n">period</span><span class="o">=</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;period&#39;</span><span class="p">]</span>
-        <span class="p">)</span>
+    <span class="n">dtm</span> <span class="o">=</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">(</span>
+        <span class="n">probability_map</span><span class="o">=</span><span class="n">probability_map</span><span class="p">,</span>
+        <span class="n">multivariate_probability_map</span><span class="o">=</span><span class="n">multivariate_probability_map</span><span class="p">,</span>
+        <span class="n">counts_map</span><span class="o">=</span><span class="n">counts_map</span><span class="p">,</span>
+        <span class="n">multivariate_counts_map</span><span class="o">=</span><span class="n">multivariate_counts_map</span><span class="p">,</span>
+        <span class="n">dates</span><span class="o">=</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;unique_dates&#39;</span><span class="p">],</span>
+        <span class="n">support</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">kde_resolution</span> <span class="o">**</span> <span class="n">dimensions</span><span class="p">)),</span>
+        <span class="n">multivariate_support</span><span class="o">=</span><span class="n">multivariate_support</span><span class="p">,</span>
+        <span class="n">variable_name</span><span class="o">=</span><span class="s1">&#39;Dim.reduced.</span><span class="si">{}</span><span class="s1">D&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dimensions</span><span class="p">),</span>
+        <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span>
+        <span class="n">period</span><span class="o">=</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;period&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="n">kde2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;unique_dates&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span> <span class="ow">and</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">][</span><span class="n">date</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">dimensions</span><span class="p">:</span>
-                <span class="n">kde</span> <span class="o">=</span> <span class="n">_compute_kde</span><span class="p">(</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;date_column_name&#39;</span><span class="p">]]</span> <span class="o">==</span> <span class="n">date</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
-                    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;date_column_name&#39;</span><span class="p">]]),</span>
-                    <span class="n">xmin</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">xmax</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">kde_resolution</span><span class="p">)</span>
-                <span class="n">kde2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Not enough data for calculating </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s1"> probability map.&#39;</span><span class="p">)</span>
-                <span class="n">kde</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">kde_resolution</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-                <span class="n">kde2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span>
-
-        <span class="n">probability_map_2d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">row_stack</span><span class="p">([</span><span class="n">_normalize_kde</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">kde</span> <span class="ow">in</span> <span class="n">kde2</span><span class="p">])</span>
-        <span class="n">multivariate_probability_map_2d</span> <span class="o">=</span> <span class="p">[</span><span class="n">_normalize_kde</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span> <span class="k">for</span> <span class="n">kde</span> <span class="ow">in</span> <span class="n">kde2</span><span class="p">]</span>
-        <span class="n">multivariate_support_2d</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">)</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xmin</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">xmax</span><span class="p">[:</span><span class="mi">2</span><span class="p">])]</span>
-        <span class="n">non_nan_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">probability_map_2d</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">non_nan_probability_map_2d</span> <span class="o">=</span> <span class="n">probability_map_2d</span><span class="p">[</span><span class="n">non_nan_mask</span><span class="p">]</span>
-        <span class="n">non_nan_counts_map_2d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">non_nan_probability_map_2d</span> <span class="o">*</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span>
-        <span class="n">counts_map_2d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">probability_map_2d</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-        <span class="n">counts_map_2d</span><span class="p">[</span><span class="n">non_nan_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">non_nan_counts_map_2d</span>
-        <span class="n">multivariate_counts_map_2d</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">prob_map</span> <span class="ow">in</span> <span class="n">multivariate_probability_map_2d</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">prob_map</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-                <span class="n">multivariate_counts_map_2d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prob_map</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">multivariate_counts_map_2d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">prob_map</span> <span class="o">*</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">]))</span>
-                <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
-
-        <span class="n">dtm</span> <span class="o">=</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">(</span>
-            <span class="n">probability_map</span><span class="o">=</span><span class="n">probability_map_2d</span><span class="p">,</span>
-            <span class="n">multivariate_probability_map</span><span class="o">=</span><span class="n">multivariate_probability_map_2d</span><span class="p">,</span>
-            <span class="n">counts_map</span><span class="o">=</span><span class="n">counts_map_2d</span><span class="p">,</span>
-            <span class="n">multivariate_counts_map</span><span class="o">=</span><span class="n">multivariate_counts_map_2d</span><span class="p">,</span>
-            <span class="n">dates</span><span class="o">=</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;unique_dates&#39;</span><span class="p">],</span>
-            <span class="n">support</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">kde_resolution</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)),</span>
-            <span class="n">multivariate_support</span><span class="o">=</span><span class="n">multivariate_support_2d</span><span class="p">,</span>
-            <span class="n">variable_name</span><span class="o">=</span><span class="s1">&#39;Dim.reduced.2D&#39;</span><span class="p">,</span>
-            <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span>
-            <span class="n">period</span><span class="o">=</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;period&#39;</span><span class="p">]</span>
-        <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="n">kde3</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;unique_dates&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span> <span class="ow">and</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">][</span><span class="n">date</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">dimensions</span><span class="p">:</span>
-                <span class="n">kde</span> <span class="o">=</span> <span class="n">_compute_kde</span><span class="p">(</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;date_column_name&#39;</span><span class="p">]]</span> <span class="o">==</span> <span class="n">date</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
-                    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;date_column_name&#39;</span><span class="p">]]),</span>
-                    <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">)</span>
-                <span class="n">kde3</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">kde</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">kde_resolution</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-                <span class="n">kde3</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span>
-
-        <span class="n">probability_map_3d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">row_stack</span><span class="p">([</span><span class="n">_normalize_kde</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">kde</span> <span class="ow">in</span> <span class="n">kde3</span><span class="p">])</span>
-        <span class="n">multivariate_probability_map_3d</span> <span class="o">=</span> <span class="p">[</span><span class="n">_normalize_kde</span><span class="p">(</span><span class="n">kde</span><span class="p">)</span> <span class="k">for</span> <span class="n">kde</span> <span class="ow">in</span> <span class="n">kde3</span><span class="p">]</span>
-        <span class="n">multivariate_support_3d</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">)</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">)]</span>
-        <span class="n">non_nan_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">probability_map_3d</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">non_nan_probability_map_3d</span> <span class="o">=</span> <span class="n">probability_map_3d</span><span class="p">[</span><span class="n">non_nan_mask</span><span class="p">]</span>
-        <span class="n">non_nan_counts_map_3d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">non_nan_probability_map_3d</span> <span class="o">*</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span>
-        <span class="n">counts_map_3d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">probability_map_3d</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-        <span class="n">counts_map_3d</span><span class="p">[</span><span class="n">non_nan_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">non_nan_counts_map_3d</span>
-        <span class="n">multivariate_counts_map_3d</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">prob_map</span> <span class="ow">in</span> <span class="n">multivariate_probability_map_3d</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">prob_map</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-                <span class="n">multivariate_counts_map_3d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prob_map</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">multivariate_counts_map_3d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">prob_map</span> <span class="o">*</span> <span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;value_counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">]))</span>
-                <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
-
-        <span class="n">dtm</span> <span class="o">=</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">(</span>
-            <span class="n">probability_map</span><span class="o">=</span><span class="n">probability_map_3d</span><span class="p">,</span>
-            <span class="n">multivariate_probability_map</span><span class="o">=</span><span class="n">multivariate_probability_map_3d</span><span class="p">,</span>
-            <span class="n">counts_map</span><span class="o">=</span><span class="n">counts_map_3d</span><span class="p">,</span>
-            <span class="n">multivariate_counts_map</span><span class="o">=</span><span class="n">multivariate_counts_map_3d</span><span class="p">,</span>
-            <span class="n">dates</span><span class="o">=</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;unique_dates&#39;</span><span class="p">],</span>
-            <span class="n">support</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">kde_resolution</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)),</span>
-            <span class="n">multivariate_support</span><span class="o">=</span><span class="n">multivariate_support_3d</span><span class="p">,</span>
-            <span class="n">variable_name</span><span class="o">=</span><span class="s1">&#39;Dim.reduced.3D&#39;</span><span class="p">,</span>
-            <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span>
-            <span class="n">period</span><span class="o">=</span><span class="n">dates_info</span><span class="p">[</span><span class="s1">&#39;period&#39;</span><span class="p">]</span>
-        <span class="p">)</span>
     <span class="k">return</span> <span class="n">dtm</span>
 
 
-<span class="k">def</span> <span class="nf">_perform_dimensionality_reduction</span><span class="p">(</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-        <span class="n">dim_reduction</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">n_components</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">reduction_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-
-    <span class="n">reduction_strategies</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;PCA&#39;</span><span class="p">:</span> <span class="n">prince</span><span class="o">.</span><span class="n">PCA</span><span class="p">,</span>
-        <span class="s1">&#39;MCA&#39;</span><span class="p">:</span> <span class="n">prince</span><span class="o">.</span><span class="n">MCA</span><span class="p">,</span>
-        <span class="s1">&#39;FAMD&#39;</span><span class="p">:</span> <span class="n">prince</span><span class="o">.</span><span class="n">FAMD</span>
-    <span class="p">}</span>
-
-    <span class="n">MethodClass</span> <span class="o">=</span> <span class="n">reduction_strategies</span><span class="p">[</span><span class="n">dim_reduction</span><span class="p">]</span>
-
-    <span class="k">if</span> <span class="s1">&#39;scale&#39;</span> <span class="ow">in</span> <span class="n">reduction_kwargs</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">dim_reduction</span> <span class="o">==</span> <span class="s1">&#39;PCA&#39;</span><span class="p">:</span>
-            <span class="n">scale_value</span> <span class="o">=</span> <span class="n">reduction_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;scale&#39;</span><span class="p">)</span>
-            <span class="n">reduction_kwargs</span><span class="p">[</span><span class="s1">&#39;rescale_with_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_value</span>
-            <span class="n">reduction_kwargs</span><span class="p">[</span><span class="s1">&#39;rescale_with_std&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_value</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">reduction_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;scale&#39;</span><span class="p">)</span>
-
-    <span class="n">reduction_method</span> <span class="o">=</span> <span class="n">MethodClass</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">112</span><span class="p">,</span> <span class="o">**</span><span class="n">reduction_kwargs</span><span class="p">)</span>
-    <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">reduction_method</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Eigenvalues summary:</span><span class="se">\n</span><span class="si">{</span><span class="n">reduction_method</span><span class="o">.</span><span class="n">eigenvalues_summary</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">reduced_data</span>
 </pre></div>
 
            </div>

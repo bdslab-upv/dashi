@@ -108,7 +108,9 @@ index.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>metrics</strong> (<em>dict</em><em> of </em><em>{str: float}</em>) – A dictionary containing the calculated metrics for each batch and model combination.</p></li>
+<li><p><strong>metrics</strong> (<em>dict</em><em> of </em><em>{tuple: dict{str: float}}</em>) – A dictionary where each key is a tuple <cite>(train_batch_ids, test_batch_id, ‘test’)</cite>
+representing the training/testing combination. Each corresponding value is another
+dictionary containing the calculated performance metrics for that specific test.</p></li>
 <li><p><strong>metric_name</strong> (<em>str</em>) – <p>The name of the metric to be selected from the <cite>metrics</cite> dictionary.
 Regression metric names, when applicable:</p>
 <blockquote>
@@ -196,7 +198,10 @@ can only be applied to temporal analyses, not multi-source analyses.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><p>A dictionary containing the calculated metrics for each batch and model combination.
+<dd class="field-even"><p><p>A dictionary where each key is a tuple <cite>(train_batch_ids, test_batch_id, ‘test’)</cite>
+representing the training/testing combination. Each corresponding value is another
+dictionary containing the calculated performance metrics for that specific test.</p>
+<p>The inner dictionary contains metric names (str) and their values (float):
 Regression metrics, if applicable:</p>
 <blockquote>
 <div><ul class="simple">
@@ -230,7 +235,7 @@ Regression metrics, if applicable:</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dict[str, float]</p>
+<dd class="field-odd"><p>Dict[Tuple, Dict[str, float]]</p>
 </dd>
 </dl>
 </dd></dl>
