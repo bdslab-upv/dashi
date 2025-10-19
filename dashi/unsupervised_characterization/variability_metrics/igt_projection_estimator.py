@@ -49,6 +49,10 @@ def _igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='c
             dissimilarity_matrix[i, j] = np.sqrt(_js_divergence(temporal_map[i, :], temporal_map[j, :]))
             dissimilarity_matrix[j, i] = dissimilarity_matrix[i, j]
 
+    # Check if the dissimilarity matrix is all zeros
+    if np.all(dissimilarity_matrix == 0):
+        raise ValueError("The dissimilarity matrix is all zeros. Cannot compute IGT projection.")
+
     embedding_results = None
     stress_value = None
     if embedding_type == 'classicalmds':
