@@ -19,17 +19,14 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.subplots as sp
-import plotly.io as pio
 import plotly.colors
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from dashi._constants import VALID_SORTING_METHODS, VALID_COLOR_PALETTES, \
     VALID_PLOT_MODES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
 from dashi.unsupervised_characterization.data_source_map.data_source_map import DataSourceMap, MultiVariateDataSourceMap
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
                                                        _marginalize_multivariate_map, _create_series_figure)
-
-# pio.renderers.default = "browser"
 
 def plot_univariate_data_source_map(
         data_source_map: DataSourceMap,
@@ -239,14 +236,12 @@ def plot_multivariate_data_source_map(
         title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
               f'data source map'
     )
-
-    subplot.show()
     return subplot
 
 def plot_conditional_data_source_map(
         data_source_map_dict: Dict[str, MultiVariateDataSourceMap],
         absolute: bool = False
-) -> None:
+) -> List[go.Figure]:
     """
     Plots a Figure for each dimension selected in the data_temporal_map_dict. Each Figure represents the
     Data Temporal heatmap of each label in that dimension
@@ -262,7 +257,8 @@ def plot_conditional_data_source_map(
 
     Returns
     -------
-    None
+    conditional_plots_list : List[Figure]
+        A list of Plotly figure objects representing the conditional data source maps for each dimension.
     """
 
     if not isinstance(data_source_map_dict, dict) and not all(
@@ -313,6 +309,7 @@ def plot_conditional_data_source_map(
 
         font = dict(size=20, color='#7f7f7f')
 
+        conditional_plots_list = list()
         for i, (label, probability_map_list) in enumerate(probability_map_dict.items()):
             sources = sources_dict[label]
             source_map = probability_map_list[dim]
@@ -370,8 +367,8 @@ def plot_conditional_data_source_map(
                   f'conditional data source map of Principal Component {dim + 1}'
         )
 
-        subplot.show()
-    return None
+        conditional_plots_list.append(subplot)
+    return conditional_plots_list
 
 
 

@@ -30,8 +30,6 @@ from dashi.unsupervised_characterization.variability_metrics.igt_projection impo
 from dashi.unsupervised_characterization.variability_metrics.igt_trajectory_estimator import _estimate_igt_trajectory
 from dashi.utils import _format_date_for_year, _format_date_for_month, _format_date_for_week
 
-pio.renderers.default = 'browser'
-
 def plot_IGT_projection(
         igt_projection: IGTProjection,
         dimensions: int = 2,
@@ -88,6 +86,9 @@ def plot_IGT_projection(
         raise ValueError(
             'Currently IGT plot can only be made on 2 or 3 dimensions, please set dimensions parameter accordingly')
 
+    if dimensions > igt_projection.projection.shape[1]:
+        raise ValueError('The plotting dimensions cannot be higher than the IGT projection dimensions.')
+
     if color_palette not in VALID_COLOR_PALETTES:
         raise ValueError(f'color_palette must be one of the defined in {VALID_COLOR_PALETTES}')
 
@@ -132,6 +133,7 @@ def plot_IGT_projection(
 
     # Plotting
     if dimensions == 2:
+        projection = projection[:, :2]
         if period == TEMPORAL_PERIOD_YEAR:
             # Add scatter for each point
             for i, (x, y) in enumerate(projection):
@@ -196,15 +198,6 @@ def plot_IGT_projection(
                     hovertext=[f"Approx. date: {date}" for date in trajectory_dates]
                 )
             )
-
-        title = {
-            'text': 'Information Geometric Temporal (IGT) projection',
-            'x': 0.5,
-            'y': 0.95,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font': {'color': 'black'}
-        }
 
     elif dimensions == 3:
         if period == TEMPORAL_PERIOD_YEAR:
@@ -278,14 +271,14 @@ def plot_IGT_projection(
                 )
             )
 
-        title = {
-            'text': 'Information Geometric Temporal (IGT) projection',
-            'x': 0.5,
-            'y': 0.9,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font': {'color': 'black'}
-        }
+    title = {
+        'text': 'Information Geometric Temporal (IGT) projection',
+        'x': 0.5,
+        'y': 0.93,
+        'xanchor': 'center',
+        'yanchor': 'top',
+        'font': {'color': 'black'}
+    }
 
     fig.update_layout(
         plot_bgcolor='white',
@@ -348,5 +341,4 @@ def plot_IGT_projection(
         titlefont=dict(color='black'),
         tickfont=dict(color='black')
     )
-    fig.show()
     return fig

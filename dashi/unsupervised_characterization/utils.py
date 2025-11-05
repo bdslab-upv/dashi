@@ -7,16 +7,12 @@ from dashi._constants import (VALID_FLOAT_TYPE, VALID_CATEGORICAL_TYPE, VALID_IN
                               VALID_SORTING_METHODS, MISSING_VALUE)
 import plotly.graph_objects as go
 import plotly.subplots as sp
-import plotly.io as pio
 from dataclasses import dataclass
 from typing import Optional, List, Union
 import warnings
 import prince
 import plotly.express as px
-import plotly.io as pio
 from plotly.colors import sample_colorscale
-
-# pio.renderers.default = "browser"
 
 
 def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=False):
@@ -30,29 +26,51 @@ def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fa
 
     elif varclass == VALID_FLOAT_TYPE:
         if np.all(np.isnan(data)):
-            map_data = np.array([np.nan] * len(support))
+            map_data =  np.full(len(support), np.nan, dtype=float)
         else:
             if not numeric_smoothing:
-                hist_support = np.append(support, support[-1] + (support[-1] - support[-2]))
-                data = data[(data >= min(hist_support)) & (data < max(hist_support))]
-                bin_edges = hist_support
-                map_data, _ = np.histogram(data, bins=bin_edges)
-            else:
-                if np.sum(~np.isnan(data)) < 4:
-                    print(
-                        'Estimating a 1-dimensional kernel density smoothing with less than 4 data points can result in an inaccurate estimation.'
-                        ' For more information see "Density Estimation for Statistics and Data Analysis, Bernard.W.Silverman, CRC, 1986", chapter 4.5.2 "Required sample size for given accuracy".'
-                    )
-                if np.sum(~np.isnan(data)) < 2:
-                    data = np.repeat(data[~np.isnan(data)], 2)
-                    ndata = 1
+                if len(support) == 1:
+                    dx_last = 1.0
                 else:
-                    data = data[~np.isnan(data)]
-                    ndata = np.sum(~np.isnan(data))
+                    dx_last = support[-1] - support[-2]
+                hist_support = np.append(support, support[-1] + dx_last)
+                data = data[(data >= min(hist_support)) & (data < max(hist_support))]
+                map_data, _ = np.histogram(data, bins=hist_support)
+            else:
+                x = data[~np.isnan(data)]
+                n_non_nan = x.size
 
-                kde = gaussian_kde(
-                    data)
-                map_data = kde(support) * ndata
+                if n_non_nan < 4:
+                    warnings.warn(
+                        "Estimating a 1D KDE with < 4 data points can be inaccurate "
+                        "(see Silverman, 1986, ch. 4.5.2). You may consider disabling numeric_smoothing to obtain "
+                        "the histogram without KDE.")
+
+                if n_non_nan == 0:
+                    map_data = np.full(len(support), np.nan, dtype=float)
+
+                else:
+                    # Handle the case where all data points are identical
+                    if np.ptp(x) == 0:
+                        ndata = 1 if n_non_nan < 2 else n_non_nan
+                        idx = int(np.argmin(np.abs(support - x[0])))
+                        out = np.zeros_like(support, dtype=float)
+                        out[idx] = float(ndata)
+                        map_data = out
+
+                    else:
+                        ndata = 1 if n_non_nan < 2 else n_non_nan
+                        if n_non_nan < 2:
+                            x = np.repeat(x, 2)
+
+                        kde = gaussian_kde(x)
+                        y = kde(support)
+                        denom = y.sum()
+
+                        if np.isfinite(denom) and denom > 0:
+                            map_data = (y / denom) * ndata
+                        else:
+                            map_data = np.zeros_like(y, dtype=float)
 
     elif varclass == VALID_INTEGER_TYPE:
         if np.all(np.isnan(data)):
@@ -401,8 +419,6 @@ def _create_heatmap_figure(
                                              }
                                     }
                              )
-    figure.show()
-
     return figure
 
 def _create_series_figure(
@@ -467,8 +483,6 @@ def _create_series_figure(
                                              }
                                     }
                              )
-    figure.show()
-
     return figure
 
 def _js_divergence(p, q, epsilon=1e-10):

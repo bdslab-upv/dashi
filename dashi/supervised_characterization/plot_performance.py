@@ -27,7 +27,7 @@ from .arrange_metrics import arrange_performance_metrics
 _FONTSIZE = 14
 
 
-def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) -> None:
+def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) -> go.Figure:
     """
     Plots a heatmap visualizing the specified metric for multiple batches of training and test models.
 
@@ -73,10 +73,8 @@ def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) 
 
     Returns
     -------
-    None
-        This function generates and displays an interactive heatmap using Plotly,
-        and does not return any value. The heatmap is displayed directly in the output
-        environment (e.g., Jupyter notebook, web browser).
+    fig
+        A Plotly figure object containing the heatmap visualization of the specified metric.
 
     Raises
     ------
@@ -119,4 +117,5 @@ def plot_multibatch_performance(*, metrics: Dict[str, float], metric_name: str) 
 
     # Create the figure and plot
     fig = go.Figure(data=[heatmap_data], layout=layout)
-    fig.show()
+
+    return fig

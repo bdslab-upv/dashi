@@ -305,6 +305,13 @@ def estimate_univariate_data_temporal_map(
     data_without_date_column = data.drop(columns=[date_column_name])
     number_of_columns = len(data_without_date_column.columns)
 
+    freq_by_period = {
+        TEMPORAL_PERIOD_WEEK: 'W',
+        TEMPORAL_PERIOD_MONTH: 'MS',
+        TEMPORAL_PERIOD_YEAR: 'YS'
+    }
+    freq = freq_by_period[period]
+
     if verbose:
         print(f'Total number of columns to analyze: {number_of_columns}')
         print(f'Analysis period: {period}')
@@ -365,39 +372,17 @@ def estimate_univariate_data_temporal_map(
 
             data_xts = data_xts[start_date:end_date]
 
-        period_function = {
-            TEMPORAL_PERIOD_WEEK: data_xts.resample('W').apply(
+        period_function = data_xts.resample(freq).apply(
                 _estimate_absolute_frequencies,
                 varclass=posterior_data_classes[column],
                 support=supports[column],
                 numeric_smoothing=numeric_smoothing
-            ),
-            TEMPORAL_PERIOD_MONTH: data_xts.resample('MS').apply(
-                _estimate_absolute_frequencies,
-                varclass=posterior_data_classes[column],
-                support=supports[column],
-                numeric_smoothing=numeric_smoothing
-            ),
-            TEMPORAL_PERIOD_YEAR: data_xts.resample('YS').apply(
-                _estimate_absolute_frequencies,
-                varclass=posterior_data_classes[column],
-                support=supports[column],
-                numeric_smoothing=numeric_smoothing
-            )
-        }
-        mapped_data = pd.DataFrame(period_function[period].tolist(), period_function[period].index)
+        )
+
+        mapped_data = pd.DataFrame(period_function.tolist(), period_function.index)
         dates_map = pd.to_datetime(mapped_data.index)
 
-        sequence_date_period = None
-
-        if period == TEMPORAL_PERIOD_WEEK:
-            sequence_date_period = 'W'
-        elif period == TEMPORAL_PERIOD_MONTH:
-            sequence_date_period = 'MS'
-        elif period == TEMPORAL_PERIOD_YEAR:
-            sequence_date_period = 'YS'
-
-        full_date_sequence = pd.date_range(min(dates_map), max(dates_map), freq=sequence_date_period)
+        full_date_sequence = pd.date_range(min(dates_map), max(dates_map), freq=freq)
         date_gaps_smoothing_done = False
 
         if len(dates_map) != len(full_date_sequence):

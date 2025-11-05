@@ -22,8 +22,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.subplots as sp
-import plotly.io as pio
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from dashi._constants import VALID_SORTING_METHODS, VALID_COLOR_PALETTES, \
     VALID_PLOT_MODES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
@@ -34,10 +33,6 @@ from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map imp
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
                                                        _create_heatmap_figure, _create_series_figure,
                                                        _marginalize_multivariate_map)
-
-# SETTINGS
-# pio.renderers.default = 'browser'
-
 
 def plot_univariate_data_temporal_map(
         data_temporal_map: DataTemporalMap,
@@ -287,8 +282,6 @@ def plot_multivariate_data_temporal_map(
         title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
               f'data temporal heatmap'
     )
-
-    subplot.show()
     return subplot
 
 
@@ -296,7 +289,7 @@ def plot_conditional_data_temporal_map(
         data_temporal_map_dict: Dict[str, MultiVariateDataTemporalMap],
         absolute: bool = False,
         log_transform: bool = False
-):
+) -> List[go.Figure]:
     """
     Plots a Figure for each dimension selected in the data_temporal_map_dict. Each Figure represents the
     Data Temporal heatmap of each label in that dimension
@@ -315,7 +308,8 @@ def plot_conditional_data_temporal_map(
 
     Returns
     -------
-    None
+    conditional_plots_list : List[Figure]
+        A list of Plotly figure objects representing the conditional data temporal heatmaps for each dimension.
     """
     if not type(data_temporal_map_dict) == dict:
         raise TypeError('data_temporal_map must be a dictionary of objects MultiVariateDataTemporalMap, resultant of '
@@ -350,6 +344,7 @@ def plot_conditional_data_temporal_map(
 
         probability_map_dict[label] = probability_map_list
 
+    conditional_plots_list = list()
     for dim in range(dimensions):
         subplot = sp.make_subplots(rows=len(labels),
                                    cols=1,
@@ -412,5 +407,5 @@ def plot_conditional_data_temporal_map(
                   f'conditional data temporal heatmap of Principal Component {dim + 1}'
         )
 
-        subplot.show()
-    return None
+        conditional_plots_list.append(subplot)
+    return conditional_plots_list

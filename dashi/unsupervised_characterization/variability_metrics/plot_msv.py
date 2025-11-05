@@ -21,8 +21,6 @@ import plotly.express as px
 import plotly.io as pio
 from dashi._constants import VALID_COLOR_PALETTES
 
-pio.renderers.default = "browser"
-
 def plot_MSV(msv_metrics: MSVMetrics,
              dimensions: int=1,
              color_palette: str='Spectral'
@@ -68,6 +66,15 @@ def plot_MSV(msv_metrics: MSVMetrics,
 
     sizes = [int(x) * scale_factor for x in n_by_source]
 
+    title = {
+        'text': 'Multi Source Variability (MSV) Metrics',
+        'x': 0.5,
+        'y': 0.95,
+        'xanchor': 'center',
+        'yanchor': 'top',
+        'font': {'color': 'black'}
+    }
+
     if dimensions == 1:
         fig = go.Figure(
             data=go.Scatter(
@@ -90,14 +97,12 @@ def plot_MSV(msv_metrics: MSVMetrics,
             )
         )
         fig.update_layout(
-            title='Multi Source Variability (MSV) Metrics',
+            title=title,
             xaxis_title='D1',
             yaxis_title='D2',
             margin=dict(l=0, r=0, b=0, t=30),
             template='plotly_white',
         ),
-        fig.show()
-        return fig
 
     elif dimensions == 2:
         fig = go.Figure(
@@ -121,14 +126,12 @@ def plot_MSV(msv_metrics: MSVMetrics,
             )
         )
         fig.update_layout(
-            title='Multi Source Variability (MSV) Metrics',
+            title=title,
             xaxis_title='D1',
             yaxis_title='D2',
             margin=dict(l=0, r=0, b=0, t=30),
             template='plotly_white',
         ),
-        fig.show()
-        return fig
 
     elif dimensions == 3:
         fig = go.Figure(
@@ -153,7 +156,7 @@ def plot_MSV(msv_metrics: MSVMetrics,
             )
         )
         fig.update_layout(
-            title="Multi-Source Variability plot",
+            title=title,
             plot_bgcolor='white',
             paper_bgcolor='white',
             scene=dict(
@@ -187,5 +190,4 @@ def plot_MSV(msv_metrics: MSVMetrics,
             ),
             margin=dict(l=0, r=0, b=0, t=30)
         ),
-        fig.show()
-        return fig
+    return fig
