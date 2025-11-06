@@ -1,6 +1,6 @@
 [project]
 name = "dashi"
-version = "0.2.1"
+version = "0.2.2"
 description = "Dataset shift analysis and characterization in python"
 readme = "README.md"
 authors = [
