@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dashi.unsupervised_characterization.data_source_map.data_source_map &mdash; dashi  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -87,17 +87,17 @@
 <span class="sd">Data Source Map main module.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span>
 
-<span class="kn">from</span> <span class="nn">dashi._constants</span> <span class="kn">import</span> <span class="n">VALID_TEMPORAL_PERIODS</span><span class="p">,</span> <span class="n">VALID_TYPES</span><span class="p">,</span> <span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">,</span> \
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi._constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">VALID_TEMPORAL_PERIODS</span><span class="p">,</span> <span class="n">VALID_TYPES</span><span class="p">,</span> <span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">,</span> \
     <span class="n">VALID_INTEGER_TYPE</span><span class="p">,</span> <span class="n">VALID_FLOAT_TYPE</span><span class="p">,</span> \
     <span class="n">VALID_DATE_TYPE</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_WEEK</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_MONTH</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_YEAR</span><span class="p">,</span> <span class="n">VALID_CONVERSION_STRING_TYPE</span><span class="p">,</span> \
     <span class="n">MISSING_VALUE</span><span class="p">,</span> <span class="n">VALID_TYPES_WITHOUT_DATE</span><span class="p">,</span> <span class="n">VALID_DIM_REDUCTION_TYPES</span><span class="p">,</span> <span class="n">PCA</span><span class="p">,</span> <span class="n">MCA</span><span class="p">,</span> <span class="n">FAMD</span>
-<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">_estimate_absolute_frequencies</span><span class="p">,</span> <span class="n">_create_supports</span><span class="p">,</span> <span class="n">_get_types</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.unsupervised_characterization.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">_estimate_absolute_frequencies</span><span class="p">,</span> <span class="n">_create_supports</span><span class="p">,</span> <span class="n">_get_types</span><span class="p">,</span>
                                                        <span class="n">BaseMultiVariateMap</span><span class="p">,</span> <span class="n">_perform_dimensionality_reduction</span><span class="p">,</span>
                                                        <span class="n">_scatter_plot</span><span class="p">,</span> <span class="n">_compute_kde</span><span class="p">,</span> <span class="n">_normalize_kde</span><span class="p">,</span> <span class="n">_date_to_numeric</span><span class="p">)</span>
 
@@ -105,7 +105,7 @@
 <div class="viewcode-block" id="DataSourceMap">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_source_map.html#dashi.unsupervised_characterization.data_source_map.data_source_map.DataSourceMap">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">DataSourceMap</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataSourceMap</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A class that  contains the statistical distributions of data estimated at a</span>
 <span class="sd">    specific time period. Both relative and absolute frequencies are included</span>
@@ -144,7 +144,7 @@
 
 <div class="viewcode-block" id="DataSourceMap.check">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_source_map.html#dashi.unsupervised_characterization.data_source_map.data_source_map.DataSourceMap.check">[docs]</a>
-    <span class="k">def</span> <span class="nf">check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check</span> <span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validates the consistency of the DataSourceMap attributes. This method checks for various</span>
 <span class="sd">        potential issues, such as mismatched dimensions, invalid periods, or unsupported variable types.</span>
@@ -199,7 +199,7 @@
 <div class="viewcode-block" id="MultiVariateDataSourceMap">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_source_map.html#dashi.unsupervised_characterization.data_source_map.data_source_map.MultiVariateDataSourceMap">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">MultiVariateDataSourceMap</span><span class="p">(</span><span class="n">BaseMultiVariateMap</span><span class="p">,</span> <span class="n">DataSourceMap</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiVariateDataSourceMap</span><span class="p">(</span><span class="n">BaseMultiVariateMap</span><span class="p">,</span> <span class="n">DataSourceMap</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A subclass of DataSourceMap representing a multi-variate multi-source data map.</span>
 <span class="sd">    In addition to the attributes inherited from the DataSourceMap class, this</span>
@@ -221,7 +221,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="MultiVariateDataSourceMap.check">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_source_map.html#dashi.unsupervised_characterization.data_source_map.data_source_map.MultiVariateDataSourceMap.check">[docs]</a>
-    <span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">errors</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
         <span class="n">multi_errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_multivariate</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">multi_errors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
@@ -235,7 +235,7 @@
 
 <div class="viewcode-block" id="estimate_univariate_data_source_map">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_source_map.html#dashi.unsupervised_characterization.data_source_map.data_source_map.estimate_univariate_data_source_map">[docs]</a>
-<span class="k">def</span> <span class="nf">estimate_univariate_data_source_map</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_univariate_data_source_map</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">source_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">supports</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -389,7 +389,7 @@
 
 <div class="viewcode-block" id="estimate_multivariate_data_source_map">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_source_map.html#dashi.unsupervised_characterization.data_source_map.data_source_map.estimate_multivariate_data_source_map">[docs]</a>
-<span class="k">def</span> <span class="nf">estimate_multivariate_data_source_map</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_multivariate_data_source_map</span><span class="p">(</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">source_column_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">kde_resolution</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
@@ -522,7 +522,7 @@
 
 <div class="viewcode-block" id="estimate_conditional_data_source_map">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_source_map.html#dashi.unsupervised_characterization.data_source_map.data_source_map.estimate_conditional_data_source_map">[docs]</a>
-<span class="k">def</span> <span class="nf">estimate_conditional_data_source_map</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_conditional_data_source_map</span><span class="p">(</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">source_column_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">label_column_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -673,7 +673,7 @@
 
 
 
-<span class="k">def</span> <span class="nf">_generate_multivariate_dsm</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_generate_multivariate_dsm</span><span class="p">(</span>
         <span class="n">reduced_data</span><span class="p">,</span>
         <span class="n">sources_info</span><span class="p">,</span>
         <span class="n">verbose</span><span class="p">,</span>

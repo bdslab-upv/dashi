@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dashi.unsupervised_characterization.variability_metrics.igt_plotting &mdash; dashi  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -87,25 +87,23 @@
 <span class="sd">Information Geometric Temporal (IGT) plotting main functions and classes</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">plotly.graph_objs</span> <span class="k">as</span> <span class="nn">go</span>
-<span class="kn">import</span> <span class="nn">plotly.io</span> <span class="k">as</span> <span class="nn">pio</span>
-<span class="kn">from</span> <span class="nn">plotly.colors</span> <span class="kn">import</span> <span class="n">sample_colorscale</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.io</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_colorscale</span>
 
-<span class="kn">from</span> <span class="nn">dashi._constants</span> <span class="kn">import</span> <span class="n">VALID_COLOR_PALETTES</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_YEAR</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_MONTH</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_WEEK</span><span class="p">,</span> \
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi._constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">VALID_COLOR_PALETTES</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_YEAR</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_MONTH</span><span class="p">,</span> <span class="n">TEMPORAL_PERIOD_WEEK</span><span class="p">,</span> \
     <span class="n">MONTH_LONG_ABBREVIATIONS</span>
-<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.variability_metrics.igt_projection</span> <span class="kn">import</span> <span class="n">IGTProjection</span>
-<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.variability_metrics.igt_trajectory_estimator</span> <span class="kn">import</span> <span class="n">_estimate_igt_trajectory</span>
-<span class="kn">from</span> <span class="nn">dashi.utils</span> <span class="kn">import</span> <span class="n">_format_date_for_year</span><span class="p">,</span> <span class="n">_format_date_for_month</span><span class="p">,</span> <span class="n">_format_date_for_week</span>
-
-<span class="n">pio</span><span class="o">.</span><span class="n">renderers</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="s1">&#39;browser&#39;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.unsupervised_characterization.variability_metrics.igt_projection</span><span class="w"> </span><span class="kn">import</span> <span class="n">IGTProjection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.unsupervised_characterization.variability_metrics.igt_trajectory_estimator</span><span class="w"> </span><span class="kn">import</span> <span class="n">_estimate_igt_trajectory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_format_date_for_year</span><span class="p">,</span> <span class="n">_format_date_for_month</span><span class="p">,</span> <span class="n">_format_date_for_week</span>
 
 <div class="viewcode-block" id="plot_IGT_projection">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.variability_metrics.html#dashi.unsupervised_characterization.variability_metrics.igt_plotting.plot_IGT_projection">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_IGT_projection</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_IGT_projection</span><span class="p">(</span>
         <span class="n">igt_projection</span><span class="p">:</span> <span class="n">IGTProjection</span><span class="p">,</span>
         <span class="n">dimensions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">start_date</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -161,6 +159,9 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s1">&#39;Currently IGT plot can only be made on 2 or 3 dimensions, please set dimensions parameter accordingly&#39;</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">dimensions</span> <span class="o">&gt;</span> <span class="n">igt_projection</span><span class="o">.</span><span class="n">projection</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The plotting dimensions cannot be higher than the IGT projection dimensions.&#39;</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">color_palette</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_COLOR_PALETTES</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;color_palette must be one of the defined in </span><span class="si">{</span><span class="n">VALID_COLOR_PALETTES</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
@@ -205,6 +206,7 @@
 
     <span class="c1"># Plotting</span>
     <span class="k">if</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">projection</span> <span class="o">=</span> <span class="n">projection</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">period</span> <span class="o">==</span> <span class="n">TEMPORAL_PERIOD_YEAR</span><span class="p">:</span>
             <span class="c1"># Add scatter for each point</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">projection</span><span class="p">):</span>
@@ -269,15 +271,6 @@
                     <span class="n">hovertext</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Approx. date: </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">trajectory_dates</span><span class="p">]</span>
                 <span class="p">)</span>
             <span class="p">)</span>
-
-        <span class="n">title</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="s1">&#39;Information Geometric Temporal (IGT) projection&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-            <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span>
-            <span class="s1">&#39;xanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;yanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;top&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">}</span>
-        <span class="p">}</span>
 
     <span class="k">elif</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">period</span> <span class="o">==</span> <span class="n">TEMPORAL_PERIOD_YEAR</span><span class="p">:</span>
@@ -351,14 +344,14 @@
                 <span class="p">)</span>
             <span class="p">)</span>
 
-        <span class="n">title</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="s1">&#39;Information Geometric Temporal (IGT) projection&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-            <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>
-            <span class="s1">&#39;xanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;yanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;top&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">}</span>
-        <span class="p">}</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="s1">&#39;Information Geometric Temporal (IGT) projection&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mf">0.93</span><span class="p">,</span>
+        <span class="s1">&#39;xanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;yanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;top&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">}</span>
+    <span class="p">}</span>
 
     <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
         <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span>
@@ -421,7 +414,6 @@
         <span class="n">titlefont</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">),</span>
         <span class="n">tickfont</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">fig</span></div>
 
 </pre></div>

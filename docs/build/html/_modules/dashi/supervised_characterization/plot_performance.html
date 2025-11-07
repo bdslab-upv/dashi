@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dashi.supervised_characterization.plot_performance &mdash; dashi  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -87,20 +87,20 @@
 <span class="sd">Main function for multi-batch metrics exploration.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span>
 
-<span class="kn">import</span> <span class="nn">plotly.graph_objects</span> <span class="k">as</span> <span class="nn">go</span>
-<span class="kn">import</span> <span class="nn">plotly.io</span> <span class="k">as</span> <span class="nn">pio</span>
-<span class="kn">from</span> <span class="nn">plotly.colors</span> <span class="kn">import</span> <span class="n">get_colorscale</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.io</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_colorscale</span>
 
-<span class="kn">from</span> <span class="nn">.arrange_metrics</span> <span class="kn">import</span> <span class="n">arrange_performance_metrics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.arrange_metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">arrange_performance_metrics</span>
 
 <span class="n">_FONTSIZE</span> <span class="o">=</span> <span class="mi">14</span>
 
 
 <div class="viewcode-block" id="plot_multibatch_performance">
 <a class="viewcode-back" href="../../../dashi.supervised_characterization.html#dashi.supervised_characterization.plot_performance.plot_multibatch_performance">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_multibatch_performance</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_multibatch_performance</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plots a heatmap visualizing the specified metric for multiple batches of training and test models.</span>
 
@@ -146,10 +146,8 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    None</span>
-<span class="sd">        This function generates and displays an interactive heatmap using Plotly,</span>
-<span class="sd">        and does not return any value. The heatmap is displayed directly in the output</span>
-<span class="sd">        environment (e.g., Jupyter notebook, web browser).</span>
+<span class="sd">    fig</span>
+<span class="sd">        A Plotly figure object containing the heatmap visualization of the specified metric.</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
@@ -192,7 +190,8 @@
 
     <span class="c1"># Create the figure and plot</span>
     <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="n">heatmap_data</span><span class="p">],</span> <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+    <span class="k">return</span> <span class="n">fig</span></div>
 
 </pre></div>
 

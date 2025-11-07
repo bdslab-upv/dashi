@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter &mdash; dashi  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -87,32 +87,27 @@
 <span class="sd">Data Temporal Map plotting main functions and classes</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">plotly.graph_objs</span> <span class="k">as</span> <span class="nn">go</span>
-<span class="kn">import</span> <span class="nn">plotly.subplots</span> <span class="k">as</span> <span class="nn">sp</span>
-<span class="kn">import</span> <span class="nn">plotly.io</span> <span class="k">as</span> <span class="nn">pio</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.subplots</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
-<span class="kn">from</span> <span class="nn">dashi._constants</span> <span class="kn">import</span> <span class="n">VALID_SORTING_METHODS</span><span class="p">,</span> <span class="n">VALID_COLOR_PALETTES</span><span class="p">,</span> \
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi._constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">VALID_SORTING_METHODS</span><span class="p">,</span> <span class="n">VALID_COLOR_PALETTES</span><span class="p">,</span> \
     <span class="n">VALID_PLOT_MODES</span><span class="p">,</span> <span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span>
 
-<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.data_temporal_map.data_temporal_map</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DataTemporalMap</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.unsupervised_characterization.data_temporal_map.data_temporal_map</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">DataTemporalMap</span><span class="p">,</span>
                                                                                      <span class="n">MultiVariateDataTemporalMap</span><span class="p">,</span>
                                                                                      <span class="n">trim_data_temporal_map</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">_validate_plot_args</span><span class="p">,</span> <span class="n">_sort_support_and_map</span><span class="p">,</span> <span class="n">_get_counts_array</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.unsupervised_characterization.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">_validate_plot_args</span><span class="p">,</span> <span class="n">_sort_support_and_map</span><span class="p">,</span> <span class="n">_get_counts_array</span><span class="p">,</span>
                                                        <span class="n">_create_heatmap_figure</span><span class="p">,</span> <span class="n">_create_series_figure</span><span class="p">,</span>
                                                        <span class="n">_marginalize_multivariate_map</span><span class="p">)</span>
 
-<span class="c1"># SETTINGS</span>
-<span class="c1"># pio.renderers.default = &#39;browser&#39;</span>
-
-
 <div class="viewcode-block" id="plot_univariate_data_temporal_map">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_univariate_data_temporal_map">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_univariate_data_temporal_map</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_univariate_data_temporal_map</span><span class="p">(</span>
         <span class="n">data_temporal_map</span><span class="p">:</span> <span class="n">DataTemporalMap</span><span class="p">,</span>
         <span class="n">absolute</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">log_transform</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -258,7 +253,7 @@
 
 <div class="viewcode-block" id="plot_multivariate_data_temporal_map">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_multivariate_data_temporal_map">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_multivariate_data_temporal_map</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_multivariate_data_temporal_map</span><span class="p">(</span>
         <span class="n">data_temporal_map</span><span class="p">:</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">,</span>
         <span class="n">absolute</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">log_transform</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
@@ -363,19 +358,17 @@
         <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="s2">&quot;Absolute frequencies&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">absolute</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;Probability distribution&quot;</span><span class="si">}</span><span class="s1"> &#39;</span>
               <span class="sa">f</span><span class="s1">&#39;data temporal heatmap&#39;</span>
     <span class="p">)</span>
-
-    <span class="n">subplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">subplot</span></div>
 
 
 
 <div class="viewcode-block" id="plot_conditional_data_temporal_map">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.data_temporal_map.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_conditional_data_temporal_map">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_conditional_data_temporal_map</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_conditional_data_temporal_map</span><span class="p">(</span>
         <span class="n">data_temporal_map_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">],</span>
         <span class="n">absolute</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">log_transform</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="p">):</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plots a Figure for each dimension selected in the data_temporal_map_dict. Each Figure represents the</span>
 <span class="sd">    Data Temporal heatmap of each label in that dimension</span>
@@ -394,7 +387,8 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    None</span>
+<span class="sd">    conditional_plots_list : List[Figure]</span>
+<span class="sd">        A list of Plotly figure objects representing the conditional data temporal heatmaps for each dimension.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_temporal_map_dict</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;data_temporal_map must be a dictionary of objects MultiVariateDataTemporalMap, resultant of &#39;</span>
@@ -429,6 +423,7 @@
 
         <span class="n">probability_map_dict</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">probability_map_list</span>
 
+    <span class="n">conditional_plots_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dimensions</span><span class="p">):</span>
         <span class="n">subplot</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span>
                                    <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -491,8 +486,8 @@
                   <span class="sa">f</span><span class="s1">&#39;conditional data temporal heatmap of Principal Component </span><span class="si">{</span><span class="n">dim</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span>
         <span class="p">)</span>
 
-        <span class="n">subplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-    <span class="k">return</span> <span class="kc">None</span></div>
+        <span class="n">conditional_plots_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subplot</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">conditional_plots_list</span></div>
 
 </pre></div>
 
