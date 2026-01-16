@@ -43,35 +43,34 @@ class DataTemporalMap:
 
     Attributes
     ----------
-    probability_map: Union[List[List[float]], None]
+    probability_map: Optional[List[List[float]]]
         Numerical matrix representing the probability distribution temporal map (relative frequency).
 
-    counts_map: Union[List[List[int]], None]
+    counts_map: Optional[List[List[int]]]
         Numerical matrix representing the counts temporal map (absolute frequency).
 
-    dates: Union[List[datetime], None]
-        Array of the temporal batches.
+    dates: Optional[List[datetime]]
+        Array of datetime objects representing the temporal batches.
 
-    support: Union[List[str], None]
-        Numerical or character matrix representing the support (the value at each bin) of probability_map
-        and counts_map.
+    support: Optional[pd.DataFrame]
+        DataFrame representing the support (the value at each bin) for both probability_map and counts_map.
 
-    variable_name: Union[str, None]
-        Name of the variable (character).
+    variable_name: Optional[str]
+        String representing the name of the variable being analyzed.
 
-    variable_type: Union[str, None]
-        Type of the variable (character).
+    variable_type: Optional[str]
+        String representing the type of the variable being analyzed.
 
-    period: Union[str, None]
-        Batching period among 'week', 'month' and 'year'.
+    period: Optional[str]
+        String representing the batching period, which can be one of 'week', 'month', or 'year'.
     """
-    probability_map: Union[List[List[float]], None] = None
-    counts_map: Union[List[List[int]], None] = None
-    dates: Union[List[datetime], None] = None
-    support: Union[List[str], None] = None
-    variable_name: Union[str, None] = None
-    variable_type: Union[str, None] = None
-    period: Union[str, None] = None
+    probability_map: Optional[List[List[float]]] = None
+    counts_map: Optional[List[List[int]]] = None
+    dates: Optional[List[datetime]] = None
+    support: Optional[List[str]] = None
+    variable_name: Optional[str] = None
+    variable_type: Optional[str] = None
+    period: Optional[str] = None
 
     def check(self) -> Union[List[str], bool]:
         """
@@ -182,14 +181,14 @@ def trim_data_temporal_map(
         The input DataTemporalMap object with trimmed data.
     """
     if start_date is None:
-        start_date = data_temporal_map.dates.min()
+        start_date = min(data_temporal_map.dates)
     else:
-        start_date = data_temporal_map.dates[data_temporal_map.dates >= start_date].min()
+        start_date = min([d for d in data_temporal_map.dates if d >= start_date])
 
     if end_date is None:
-        end_date = data_temporal_map.dates.max()
+        end_date = max(data_temporal_map.dates)
     else:
-        end_date = data_temporal_map.dates[data_temporal_map.dates <= end_date].max()
+        end_date = max([d for d in data_temporal_map.dates if d <= end_date])
 
     start_index = data_temporal_map.dates.get_loc(start_date)
     end_index = data_temporal_map.dates.get_loc(end_date) + 1
@@ -380,18 +379,18 @@ def estimate_univariate_data_temporal_map(
         )
 
         mapped_data = pd.DataFrame(period_function.tolist(), period_function.index)
-        dates_map = pd.to_datetime(mapped_data.index)
+        non_empty_dates = (mapped_data != 0).any(axis=1)
+        dates_map = pd.to_datetime(mapped_data.index[non_empty_dates])
 
-        full_date_sequence = pd.date_range(min(dates_map), max(dates_map), freq=freq)
+        full_date_sequence = mapped_data.index
         date_gaps_smoothing_done = False
 
         if len(dates_map) != len(full_date_sequence):
             number_of_gaps = len(full_date_sequence) - len(dates_map)
 
-            data_series_sequence = pd.Series(index=full_date_sequence)
-            mapped_data = pd.concat([mapped_data, data_series_sequence], axis=1)
-
             if date_gaps_smoothing:
+                empty_dates = full_date_sequence[~non_empty_dates]
+                mapped_data.loc[empty_dates] = mapped_data.loc[empty_dates].replace(0, np.nan)
                 mapped_data.interpolate(method='linear', axis=0, inplace=True)
                 if verbose:
                     print(f'-\'{column}\': {number_of_gaps} {period} date gaps filled by linear smoothing')
@@ -409,9 +408,11 @@ def estimate_univariate_data_temporal_map(
 
         probability_arrays = []
         for array in counts_map:
-            probability_arrays.append(
-                np.divide(array, array.sum())
-            )
+            s = array.sum()
+            if s > 0:
+                probability_arrays.append(np.divide(array, s))
+            else:
+                probability_arrays.append(np.full_like(array, np.nan, dtype='float64'))
         probability_map = np.array(probability_arrays)
 
         if posterior_data_classes[column] == VALID_DATE_TYPE:

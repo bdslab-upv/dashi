@@ -26,7 +26,7 @@ def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fa
 
     elif varclass == VALID_FLOAT_TYPE:
         if np.all(np.isnan(data)):
-            map_data =  np.full(len(support), np.nan, dtype=float)
+            map_data =  np.full(len(support), 0, dtype=float)
         else:
             if not numeric_smoothing:
                 if len(support) == 1:

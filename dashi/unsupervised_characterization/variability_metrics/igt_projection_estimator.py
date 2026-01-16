@@ -39,8 +39,11 @@ def _igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='c
     Computes the core Information Geometric Temporal (IGT) projection for a given DataTemporalMap or
     MultiVariateDataTemporalMap.
     """
-    dates = data_temporal_map.dates
     temporal_map = data_temporal_map.probability_map
+    nan_rows = np.all(np.isnan(temporal_map), axis=1)
+    temporal_map = temporal_map[~nan_rows]
+    dates = data_temporal_map.dates
+    dates = dates[~nan_rows]
     number_of_dates = len(dates)
 
     dissimilarity_matrix = np.zeros((number_of_dates, number_of_dates))
@@ -56,9 +59,8 @@ def _igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='c
     embedding_results = None
     stress_value = None
     if embedding_type == 'classicalmds':
-        mds = _cmdscale(dissimilarity_matrix, k=dimensions)
+        embedding_results = _cmdscale(dissimilarity_matrix, k=dimensions)
 
-        embedding_results = mds
     elif embedding_type == 'nonmetricmds':
         nonMDS = MDS(n_components=dimensions,
                      metric=False,
@@ -76,9 +78,11 @@ def _igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='c
         pca = PCA(n_components=dimensions)
         embedding_results = pca.fit_transform(scaled_temporal_map)
 
+    projection = np.zeros((len(nan_rows), dimensions))
+    projection[~nan_rows] = embedding_results
     igt_projection = IGTProjection(
         data_temporal_map=data_temporal_map,
-        projection=embedding_results,
+        projection=projection,
         embedding_type=embedding_type,
         stress=stress_value
     )

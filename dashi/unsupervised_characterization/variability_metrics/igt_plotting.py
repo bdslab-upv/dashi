@@ -99,7 +99,9 @@ def plot_IGT_projection(
 
     # Date filtering
     date_mask = (igt_projection.data_temporal_map.dates >= np.datetime64(start_date)) & (
-            igt_projection.data_temporal_map.dates <= np.datetime64(end_date))
+            igt_projection.data_temporal_map.dates <= np.datetime64(end_date)) & (
+        ~np.all(np.isnan(igt_projection.data_temporal_map.probability_map), axis=1)
+    )
     dates = igt_projection.data_temporal_map.dates[date_mask]
     projection = igt_projection.projection[date_mask]
 
