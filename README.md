@@ -77,7 +77,7 @@ pip install .
 
 ## Usage & Examples & documentation
 
-You can find the tutorial on how to use `dashi` in this [link](https://bdslab-upv.github.io/dashi/examples/Usage_tutorial.html) 
+You can find the tutorial on how to use `dashi` in this [link](https://dashi.upv.es/tutorial) 
 or in the [examples](examples/) directory.
 
 Detailed documentation is available at [documentation](https://bdslab-upv.github.io/dashi/docs/build/html/).

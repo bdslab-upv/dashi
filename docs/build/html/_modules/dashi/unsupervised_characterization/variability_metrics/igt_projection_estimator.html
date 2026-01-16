@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dashi.unsupervised_characterization.variability_metrics.igt_projection_estimator &mdash; dashi  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -87,25 +87,25 @@
 <span class="sd">Functions for Information Geometric Temporal creation</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="kn">import</span> <span class="n">eigh</span>
-<span class="kn">from</span> <span class="nn">sklearn.decomposition</span> <span class="kn">import</span> <span class="n">PCA</span>
-<span class="kn">from</span> <span class="nn">sklearn.manifold</span> <span class="kn">import</span> <span class="n">MDS</span>
-<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">MinMaxScaler</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">eigh</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.decomposition</span><span class="w"> </span><span class="kn">import</span> <span class="n">PCA</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.manifold</span><span class="w"> </span><span class="kn">import</span> <span class="n">MDS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">MinMaxScaler</span>
 
-<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.data_temporal_map.data_temporal_map</span> <span class="kn">import</span> <span class="p">(</span><span class="n">trim_data_temporal_map</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.unsupervised_characterization.data_temporal_map.data_temporal_map</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">trim_data_temporal_map</span><span class="p">,</span>
                                                                                      <span class="n">DataTemporalMap</span><span class="p">,</span>
                                                                                      <span class="n">MultiVariateDataTemporalMap</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.variability_metrics.igt_projection</span> <span class="kn">import</span> <span class="n">IGTProjection</span>
-<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.utils</span> <span class="kn">import</span> <span class="n">_js_divergence</span><span class="p">,</span> <span class="n">_cmdscale</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.unsupervised_characterization.variability_metrics.igt_projection</span><span class="w"> </span><span class="kn">import</span> <span class="n">IGTProjection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.unsupervised_characterization.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_js_divergence</span><span class="p">,</span> <span class="n">_cmdscale</span>
 
 
 
-<span class="k">def</span> <span class="nf">_igt_projection_core</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dimensions</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">embedding_type</span><span class="o">=</span><span class="s1">&#39;classicalmds&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_igt_projection_core</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dimensions</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">embedding_type</span><span class="o">=</span><span class="s1">&#39;classicalmds&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the core Information Geometric Temporal (IGT) projection for a given DataTemporalMap or</span>
 <span class="sd">    MultiVariateDataTemporalMap.</span>
@@ -119,6 +119,10 @@
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">number_of_dates</span><span class="p">):</span>
             <span class="n">dissimilarity_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">_js_divergence</span><span class="p">(</span><span class="n">temporal_map</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span> <span class="n">temporal_map</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:]))</span>
             <span class="n">dissimilarity_matrix</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dissimilarity_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+
+    <span class="c1"># Check if the dissimilarity matrix is all zeros</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dissimilarity_matrix</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The dissimilarity matrix is all zeros. Cannot compute IGT projection.&quot;</span><span class="p">)</span>
 
     <span class="n">embedding_results</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">stress_value</span> <span class="o">=</span> <span class="kc">None</span>
@@ -155,7 +159,7 @@
 
 <div class="viewcode-block" id="estimate_igt_projection">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.variability_metrics.html#dashi.unsupervised_characterization.variability_metrics.igt_projection_estimator.estimate_igt_projection">[docs]</a>
-<span class="k">def</span> <span class="nf">estimate_igt_projection</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DataTemporalMap</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_igt_projection</span><span class="p">(</span><span class="n">data_temporal_map</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DataTemporalMap</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">,</span>
                             <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MultiVariateDataTemporalMap</span><span class="p">]],</span>
                             <span class="n">dimensions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
                             <span class="n">start_date</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

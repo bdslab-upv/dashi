@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics &mdash; dashi  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -87,19 +87,19 @@
 <span class="sd">Multi Source Variability (MSV) metrics estimation module</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span>
 
-<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.utils</span> <span class="kn">import</span> <span class="n">_js_divergence</span><span class="p">,</span> <span class="n">_cmdscale</span>
-<span class="kn">from</span> <span class="nn">dashi.unsupervised_characterization.data_source_map.data_source_map</span> <span class="kn">import</span> <span class="n">DataSourceMap</span><span class="p">,</span> <span class="n">MultiVariateDataSourceMap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.unsupervised_characterization.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_js_divergence</span><span class="p">,</span> <span class="n">_cmdscale</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi.unsupervised_characterization.data_source_map.data_source_map</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSourceMap</span><span class="p">,</span> <span class="n">MultiVariateDataSourceMap</span>
 
 
 <div class="viewcode-block" id="MSVMetrics">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.variability_metrics.html#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">MSVMetrics</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MSVMetrics</span><span class="p">:</span>
     <span class="n">GPD</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">SPO</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">vertices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span>
@@ -107,7 +107,7 @@
     <span class="n">nBySource</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
-<span class="k">def</span> <span class="nf">_distc</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_distc</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="mf">0.5</span>
     <span class="n">gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
@@ -116,7 +116,7 @@
 
 <div class="viewcode-block" id="estimate_MSV_metrics">
 <a class="viewcode-back" href="../../../../dashi.unsupervised_characterization.variability_metrics.html#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.estimate_MSV_metrics">[docs]</a>
-<span class="k">def</span> <span class="nf">estimate_MSV_metrics</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_MSV_metrics</span><span class="p">(</span>
         <span class="n">data_source_map</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DataSourceMap</span><span class="p">,</span> <span class="n">MultiVariateDataSourceMap</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MultiVariateDataSourceMap</span><span class="p">]],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MSVMetrics</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
