@@ -18,25 +18,39 @@ Main function for estimating models over multiple temporal or multi-source batch
 
 # MODULES IMPORT
 import warnings
+import gc
 from typing import List, Dict, Optional, Tuple
 
 import sklearn.metrics as skmet
 from numpy import ndarray, sqrt
+import numpy as np
 from pandas import DataFrame, concat, to_datetime
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+import pandas as pd
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    RandomForestRegressor,
+    HistGradientBoostingClassifier,
+    HistGradientBoostingRegressor
+)
 from sklearn.model_selection import train_test_split, KFold
-from sklearn.preprocessing import LabelEncoder, RobustScaler, OneHotEncoder
+from sklearn.preprocessing import LabelEncoder, RobustScaler, OneHotEncoder, OrdinalEncoder
 from tqdm.auto import tqdm
 
 
 # FUNCTION DEFINITION
-def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names: Optional[List[str]] = None,
-                               inputs_categorical_column_names: Optional[List[str]] = None,
-                               output_regression_column_name: Optional[str] = None,
-                               output_classification_column_name: Optional[str] = None,
-                               date_column_name: Optional[str] = None,
-                               period: Optional[str] = None, source_column_name: Optional[str] = None,
-                               learning_strategy: Optional[str] = 'from_scratch') -> Dict[Tuple, Dict[str, float]]:
+def estimate_multibatch_models(
+    *,
+    data: pd.DataFrame,
+    inputs_numerical_column_names: Optional[List[str]] = None,
+    inputs_categorical_column_names: Optional[List[str]] = None,
+    output_regression_column_name: Optional[str] = None,
+    output_classification_column_name: Optional[str] = None,
+    date_column_name: Optional[str] = None,
+    period: Optional[str] = None,
+    source_column_name: Optional[str] = None,
+    learning_strategy: Optional[str] = "from_scratch",
+    model_type: Optional[str] = 'histogram_gradient_boosting'
+) -> Dict[Tuple, Dict[str, float]]:
     """
     Estimates models across multiple batches, based on either time (temporal) or source.
     Requires specifying one target variable (regression or classification) and at least one
@@ -44,7 +58,7 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
     At the same time, it is necessary to provide either a date variable (indicating the period with the corresponding
     argument) or a source variable. The date variable must be a valid date, and the source variable categories need to
     be specified as strings.
-    Additionally, it is recommended that the amount of data in each batching group be  sufficient for statistical
+    Additionally, it is recommended that the amount of data in each batching group be sufficient for statistical
     representativeness.
 
     Parameters
@@ -83,6 +97,14 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
         Defines the learning strategy: either 'from_scratch' or 'cumulative'. Note that the 'cumulative' strategy
         can only be applied to temporal analyses, not multi-source analyses.
 
+    model_type : Optional[str], default='histogram_gradient_boosting'
+        Defines the model family to use: either 'random_forest' or 'histogram_gradient_boosting'.
+        When 'random_forest' is selected, categorical features are one-hot encoded and a
+        ``RandomForestClassifier``/``RandomForestRegressor`` is used.
+        When 'histogram_gradient_boosting' is selected, categorical features are ordinal encoded
+        (with native categorical support) and a
+        ``HistGradientBoostingClassifier``/``HistGradientBoostingRegressor`` is used.
+
     Returns
     -------
     Dict[Tuple, Dict[str, float]]
@@ -115,222 +137,270 @@ def estimate_multibatch_models(*, data: DataFrame, inputs_numerical_column_names
             - 'F1-SCORE_WEIGHTED'
     """
 
-    # Input checking
-    _check_inputs(data=data, inputs_numerical_column_names=inputs_numerical_column_names,
-                  inputs_categorical_column_names=inputs_categorical_column_names,
-                  output_regression_column_name=output_regression_column_name,
-                  output_classification_column_name=output_classification_column_name,
-                  date_column_name=date_column_name, period=period, source_column_name=source_column_name,
-                  learning_strategy=learning_strategy)
-
-    # Memory allocation for metrics
-    metrics = {}
+    _check_inputs(
+        data=data,
+        inputs_numerical_column_names=inputs_numerical_column_names,
+        inputs_categorical_column_names=inputs_categorical_column_names,
+        output_regression_column_name=output_regression_column_name,
+        output_classification_column_name=output_classification_column_name,
+        date_column_name=date_column_name,
+        period=period,
+        source_column_name=source_column_name,
+        learning_strategy=learning_strategy,
+        model_type=model_type,
+    )
 
     # Modeling settings
-    number_trees = 450
-    maximum_depth = 9
     random_seed = 42
+    use_hgb = model_type == "histogram_gradient_boosting"
 
-    # Make a copy to avoid modifying the original DataFrame
-    data = data.copy()
+    # Shallow copy to avoid modifying the original DataFrame
+    df_work = data.copy(deep=False)
 
-    # Label encoding (for classification tasks)
+    # Label encoding for y (classification)
+    index2class_map = None
     if output_classification_column_name is not None:
-        # label encoder initialization
-        label_encoder = LabelEncoder()
-        # label encoding
-        encoded = label_encoder.fit_transform(data[output_classification_column_name])
+        le = LabelEncoder()
+        y_encoded = le.fit_transform(df_work[output_classification_column_name])
+        df_work[output_classification_column_name] = y_encoded.astype("int64")
+        index2class_map = dict(enumerate(le.classes_))
 
-        # Replace column with integer dtype
-        data[output_classification_column_name] = encoded.astype("int64")
-        # index to class map derivation
-        index2class_map = dict(enumerate(label_encoder.classes_))
-
-    # Batching logic: temporal or multi-source
-    # multi-source analysis
+    # Batching column
     if date_column_name is None and source_column_name is not None:
         batching_column_name = source_column_name
-    # temporal analysis
     elif date_column_name is not None and source_column_name is None:
-        # convert column to datetime format if not already, handling both strings and datetimes
-        data[date_column_name] = to_datetime(data[date_column_name])
-        # sorting by date
-        data = data.sort_values(by=date_column_name)
-        # batching period adjusting
-        if period == 'month':
-            data[date_column_name] = data[date_column_name].dt.strftime("%B %Y")
-        elif period == 'year':
-            data[date_column_name] = data[date_column_name].dt.strftime("%Y")
+        df_work[date_column_name] = pd.to_datetime(df_work[date_column_name], errors="coerce")
+        df_work = df_work.sort_values(by=date_column_name)
+
+        if period == "month":
+            df_work[date_column_name] = df_work[date_column_name].dt.strftime("%B %Y")
+        elif period == "year":
+            df_work[date_column_name] = df_work[date_column_name].dt.strftime("%Y")
         else:
-            raise ValueError("Current supported batching periods are 'month' and 'year'.")
-        # batching column assignation
+            raise ValueError("Period must be 'month' or 'year'.")
         batching_column_name = date_column_name
     else:
-        raise ValueError("Invalid configuration: Please provide exactly one of 'date_column_name' for "
-                         "temporal batching or 'source_column_name' for source-based batching. "
-                         "You have either provided both or neither.")
+        raise ValueError(
+            "Invalid configuration: Please provide exactly one of 'date_column_name' for "
+            "temporal batching or 'source_column_name' for source-based batching. "
+            "You have either provided both or neither."
+        )
 
     # Generate split indexes based on batching
-    split_indexes = _generate_split_indexes(data=data, batching_column_name=batching_column_name)
-
+    split_indexes = _generate_split_indexes(data=df_work, batching_column_name=batching_column_name)
     # Extract batch identifiers
-    batch_identifiers = tuple(split_indexes.keys())
+    batch_identifiers = list(split_indexes.keys())
 
-    # Memory allocation
-    trained_scalers = {}
-    trained_encoders = {}
-    trained_models = {}
+    cat_cols = inputs_categorical_column_names or []
+    num_cols = inputs_numerical_column_names or []
 
-    # Generate combinations for training and testing batches
-    # memory allocation
-    combinations = []
-    # filling
-    if learning_strategy == 'from_scratch':
-        for batch_idf_train in batch_identifiers:
-            combinations.append(((batch_idf_train,), batch_idf_train, 'train',))
-            for batch_idf_test in batch_identifiers:
-                combinations.append(((batch_idf_train,), batch_idf_test, 'test'))
-    elif learning_strategy == 'cumulative':
-        for idx, batch_idf_train in enumerate(batch_identifiers):
-            batch_cumulative_identifiers = tuple([batch_identifiers[i] for i in range(0, idx + 1)])
-            combinations.append((batch_cumulative_identifiers, batch_idf_train, 'train',))
-            for batch_idf_test in batch_identifiers:
-                combinations.append((batch_cumulative_identifiers, batch_idf_test, 'test'))
-    else:
-        raise ValueError('Unrecognized learning strategy.')
+    if len(cat_cols) + len(num_cols) == 0:
+        raise ValueError("No input features provided.")
 
-    # Preprocessing, training and evaluation
-    for combination in tqdm(combinations, total=len(combinations), colour='#32CD32',
-                            desc='Learning and testing over experiences', position=0, leave=True):
+    # ---------- Preprocessing helpers per model type ----------
 
-        train_batch_identifiers, current_batch_idf, data_set = combination
+    def _fit_transform_features(df_train: pd.DataFrame):
+        """
+        Fit encoder/scaler on training data and return (X_train, encoder, scaler, final_input_features).
+        """
+        final_input_features = []
+        encoder = None
+        scaler = None
+        df_out = df_train.copy()
 
-        # --- Training Pipeline ---
-        if data_set == 'train':
-            # For 'from_scratch', train_batch_identifiers will have one ID.
-            # For 'cumulative', it will have one or more IDs.
-            train_data_list = [data.loc[split_indexes[idf]['train_test']['train_indexes']] for idf in
-                               train_batch_identifiers]
-            data_batch_train = concat(train_data_list)
-
-            # Initialize lists for final feature names for this training run
-            final_input_features = []
-
-            # --- Categorical Feature Processing (Fit and Transform Train Data) ---
-            if inputs_categorical_column_names is not None:
-                encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
-                encoder.fit(data_batch_train[inputs_categorical_column_names])
-                encoded_cols = encoder.get_feature_names_out(inputs_categorical_column_names)
-
-                train_encoded_df = DataFrame(
-                    encoder.transform(data_batch_train[inputs_categorical_column_names]),
-                    columns=encoded_cols,
-                    index=data_batch_train.index
+        # Categorical encoding
+        if cat_cols:
+            if use_hgb:
+                encoder = OrdinalEncoder(
+                    handle_unknown="use_encoded_value",
+                    unknown_value=np.nan,
+                    encoded_missing_value=np.nan,
+                    dtype=np.float32,
                 )
-                data_batch_train.drop(columns=inputs_categorical_column_names, inplace=True)
-                data_batch_train = concat([data_batch_train, train_encoded_df], axis=1)
+                df_out[cat_cols] = encoder.fit_transform(df_out[cat_cols])
+                final_input_features.extend(cat_cols)
+            else:
+                encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+                encoder.fit(df_out[cat_cols])
+                encoded_cols = encoder.get_feature_names_out(cat_cols).tolist()
+                encoded_df = pd.DataFrame(
+                    encoder.transform(df_out[cat_cols]),
+                    columns=encoded_cols,
+                    index=df_out.index,
+                )
+                df_out = df_out.drop(columns=cat_cols)
+                df_out = pd.concat([df_out, encoded_df], axis=1)
                 final_input_features.extend(encoded_cols)
 
-                # Store the fitted encoder
-                trained_encoders[train_batch_identifiers] = encoder
+        # Numerical scaling
+        if num_cols:
+            scaler = RobustScaler()
+            df_out[num_cols] = scaler.fit_transform(df_out[num_cols])
+            final_input_features.extend(num_cols)
 
-            # --- Numerical Feature Processing (Fit and Transform Train Data) ---
-            if inputs_numerical_column_names is not None:
-                robust_scaler = RobustScaler()
-                data_batch_train[inputs_numerical_column_names] = robust_scaler.fit_transform(
-                    data_batch_train[inputs_numerical_column_names])
-                final_input_features.extend(inputs_numerical_column_names)
+        X = df_out[final_input_features].to_numpy(dtype=np.float32, copy=True)
+        return X, encoder, scaler, final_input_features
 
-                # Store the fitted scaler
-                trained_scalers[train_batch_identifiers] = robust_scaler
+    def _transform_features(df_test: pd.DataFrame, encoder, scaler, final_input_features):
+        """
+        Transform test data using already-fitted encoder/scaler.
+        """
+        df_out = df_test.copy()
 
-            # Extract final training inputs and outputs
-            inputs_batch_train = data_batch_train[final_input_features]
-
-            # --- Model Training ---
-            if output_regression_column_name is not None:
-                outputs_batch_train = data_batch_train[output_regression_column_name]
-                model = RandomForestRegressor(n_estimators=number_trees, max_depth=maximum_depth,
-                                              random_state=random_seed, n_jobs=-1)
-                model.fit(inputs_batch_train, outputs_batch_train)
-                trained_models[train_batch_identifiers] = model
-
-            elif output_classification_column_name is not None:
-                outputs_batch_train = data_batch_train[output_classification_column_name]
-                model = RandomForestClassifier(n_estimators=number_trees, max_depth=maximum_depth,
-                                               random_state=random_seed, class_weight='balanced', n_jobs=-1)
-                model.fit(inputs_batch_train, outputs_batch_train)
-                trained_models[train_batch_identifiers] = model
-
-        # --- Testing (Inference) Pipeline ---
-        elif data_set == 'test':
-            data_batch_test = data.loc[split_indexes[current_batch_idf]['train_test']['test_indexes']].copy()
-
-            # Retrieve the correct fitted objects
-            encoder = trained_encoders.get(train_batch_identifiers)
-            scaler = trained_scalers.get(train_batch_identifiers)
-            model = trained_models.get(train_batch_identifiers)
-
-            if model is None:
-                raise ValueError(f"Model for training batch {train_batch_identifiers} not found.")
-
-            # Initialize list for final feature names
-            final_input_features = []
-
-            # --- Categorical Feature Processing (Transform Test Data) ---
-            if encoder is not None:
-                encoded_cols = encoder.get_feature_names_out(inputs_categorical_column_names)
-                test_encoded_df = DataFrame(
-                    encoder.transform(data_batch_test[inputs_categorical_column_names]),
+        if encoder is not None:
+            if use_hgb:
+                df_out[cat_cols] = encoder.transform(df_out[cat_cols])
+            else:
+                encoded_cols = encoder.get_feature_names_out(cat_cols).tolist()
+                encoded_df = pd.DataFrame(
+                    encoder.transform(df_out[cat_cols]),
                     columns=encoded_cols,
-                    index=data_batch_test.index
+                    index=df_out.index,
                 )
-                data_batch_test.drop(columns=inputs_categorical_column_names, inplace=True)
-                data_batch_test = concat([data_batch_test, test_encoded_df], axis=1)
-                final_input_features.extend(encoded_cols)
+                df_out = df_out.drop(columns=cat_cols)
+                df_out = pd.concat([df_out, encoded_df], axis=1)
 
-            # --- Numerical Feature Processing (Transform Test Data) ---
-            if scaler is not None:
-                data_batch_test[inputs_numerical_column_names] = scaler.transform(
-                    data_batch_test[inputs_numerical_column_names])
-                final_input_features.extend(inputs_numerical_column_names)
+        if scaler is not None:
+            df_out[num_cols] = scaler.transform(df_out[num_cols])
 
-            # Extract final test inputs and outputs
-            inputs_batch_test = data_batch_test[final_input_features]
+        X = df_out[final_input_features].to_numpy(dtype=np.float32, copy=True)
+        return X
 
-            # --- Model Inference ---
+    # ---------- Main loop ----------
+
+    metrics: Dict[Tuple, Dict[str, float]] = {}
+
+    train_loop = tqdm(
+        enumerate(batch_identifiers),
+        total=len(batch_identifiers),
+        colour="#32CD32",
+        desc="Learning and testing over experiences",
+    )
+
+    for idx, batch_idf_train in train_loop:
+
+        # --- Resolve training indices (label-based) ---
+        if learning_strategy == "from_scratch":
+            current_train_batch_ids = (batch_idf_train,)
+            train_label_indices = split_indexes[batch_idf_train]["train_test"]["train_indexes"]
+        elif learning_strategy == "cumulative":
+            current_train_batch_ids = tuple(batch_identifiers[i] for i in range(0, idx + 1))
+            train_label_indices = np.concatenate(
+                [split_indexes[bid]["train_test"]["train_indexes"] for bid in current_train_batch_ids]
+            )
+        else:
+            raise ValueError("Unrecognized learning strategy.")
+
+        train_sub = df_work.loc[train_label_indices]
+
+        # --- Preprocessing (fit on train) ---
+        X_train, encoder, scaler, final_input_features = _fit_transform_features(train_sub)
+
+        # --- Build model ---
+        # HGB: mark categorical feature positions for native categorical splits
+        categorical_features = list(range(len(cat_cols))) if (cat_cols and use_hgb) else None
+
+        if output_regression_column_name is not None:
+            y_train = train_sub[output_regression_column_name].to_numpy(copy=False)
+            if use_hgb:
+                model = HistGradientBoostingRegressor(
+                    max_iter=100,
+                    random_state=random_seed,
+                    early_stopping=True,
+                    scoring="loss",
+                    categorical_features=categorical_features,
+                )
+            else:
+                model = RandomForestRegressor(
+                    n_estimators=450,
+                    max_depth=9,
+                    random_state=random_seed,
+                    n_jobs=-1,
+                )
+        else:
+            y_train = train_sub[output_classification_column_name].to_numpy(copy=False)
+            if use_hgb:
+                model = HistGradientBoostingClassifier(
+                    max_iter=100,
+                    random_state=random_seed,
+                    class_weight="balanced",
+                    early_stopping=True,
+                    scoring="loss",
+                    categorical_features=categorical_features,
+                )
+            else:
+                model = RandomForestClassifier(
+                    n_estimators=450,
+                    max_depth=9,
+                    random_state=random_seed,
+                    class_weight="balanced",
+                    n_jobs=-1,
+                )
+
+        model.fit(X_train, y_train)
+
+        # Free training buffers
+        del train_sub, X_train, y_train
+        gc.collect()
+
+        # --- Testing loop ---
+        for batch_idf_test in batch_identifiers:
+            test_key = (current_train_batch_ids, batch_idf_test, "test")
+
+            test_label_indices = split_indexes[batch_idf_test]["train_test"]["test_indexes"]
+            test_sub = df_work.loc[test_label_indices]
+
+            X_test = _transform_features(test_sub, encoder, scaler, final_input_features)
+
             if output_regression_column_name is not None:
-                outputs_batch_test = data_batch_test[output_regression_column_name]
-                y_pred = model.predict(inputs_batch_test)
-                metrics[combination] = _get_regression_metrics(y_true=outputs_batch_test, y_pred=y_pred)
-
-            elif output_classification_column_name is not None:
-                outputs_batch_test = data_batch_test[output_classification_column_name]
-                probs_hat = model.predict_proba(inputs_batch_test)
-                labels_hat = model.predict(inputs_batch_test)
+                y_test = test_sub[output_regression_column_name].to_numpy(copy=False)
+                y_pred = model.predict(X_test)
+                metrics[test_key] = _get_regression_metrics(y_true=y_test, y_pred=y_pred)
+            else:
+                y_test = test_sub[output_classification_column_name].to_numpy(copy=False)
+                probs_hat = model.predict_proba(X_test)
+                labels_hat = model.predict(X_test)
 
                 index2index_map = dict(enumerate(model.classes_))
-                index2class_map_batch = {idx: index2class_map[index2index_map[idx]] for idx in index2index_map.keys()}
+                index2class_map_batch = {
+                    i: index2class_map[index2index_map[i]] for i in index2index_map
+                }
 
-                metrics_presatur = _get_presaturation_classification_metrics(label_true=outputs_batch_test,
-                                                                             label_scores=probs_hat,
-                                                                             index2class_map=index2class_map_batch)
-                metrics_postsatur = _get_postsaturation_classification_metrics(label_true=outputs_batch_test,
-                                                                               label_predicted=labels_hat,
-                                                                               index2class_map=index2class_map_batch)
-                metrics[combination] = {**metrics_presatur, **metrics_postsatur}
+                metrics_pre = _get_presaturation_classification_metrics(
+                    label_true=y_test,
+                    label_scores=probs_hat,
+                    index2class_map=index2class_map_batch,
+                )
+                metrics_post = _get_postsaturation_classification_metrics(
+                    label_true=y_test,
+                    label_predicted=labels_hat,
+                    index2class_map=index2class_map_batch,
+                )
+                metrics[test_key] = {**metrics_pre, **metrics_post}
 
-        # Output
+            del test_sub, X_test
+            gc.collect()
+
+        # Free model + preprocessors
+        del model, scaler, encoder
+        gc.collect()
+
     return metrics
 
-
 # INPUTS CHECKING
-def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: Optional[str] = None,
-                  inputs_categorical_column_names: Optional[str] = None,
-                  output_regression_column_name: Optional[str] = None,
-                  output_classification_column_name: Optional[str] = None, date_column_name: Optional[str] = None,
-                  period: Optional[str] = None, source_column_name: Optional[str] = None,
-                  learning_strategy: Optional[str] = 'from_scratch') -> None:
+def _check_inputs(
+        *,
+        data: DataFrame,
+        inputs_numerical_column_names: Optional[List[str]] = None,
+        inputs_categorical_column_names: Optional[List[str]] = None,
+        output_regression_column_name: Optional[str] = None,
+        output_classification_column_name: Optional[str] = None,
+        date_column_name: Optional[str] = None,
+        period: Optional[str] = None,
+        source_column_name: Optional[str] = None,
+        learning_strategy: Optional[str] = 'from_scratch',
+        model_type: Optional[str]
+) -> None:
     """
     Validate the inputs provided for model estimation.
 
@@ -339,10 +409,10 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: Optional[st
     data : DataFrame
         The input data containing features and target variables.
 
-    inputs_numerical_column_names : Optional[str], default=None
+    inputs_numerical_column_names : Optional[List[str]], default=None
         List of column names representing numerical input features, if applicable.
 
-    inputs_categorical_column_names : Optional[str], default=None
+    inputs_categorical_column_names : Optional[List[str]], default=None
         List of column names representing categorical input features, if applicable.
 
     output_regression_column_name : Optional[str], default=None
@@ -363,8 +433,13 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: Optional[st
     learning_strategy : Optional[str], default='from_scratch'
         Defines the learning strategy: 'from_scratch' or 'cumulative'.
 
+    model_type : Optional[str], default='histogram_gradient_boosting'
+        Defines the model family: 'random_forest' or 'histogram_gradient_boosting'.
+
     Raises
     ------
+    TypeError
+        If any input parameters have an incorrect type.
     ValueError
         If any input parameters are invalid or inconsistent.
     """
@@ -464,6 +539,11 @@ def _check_inputs(*, data: DataFrame, inputs_numerical_column_names: Optional[st
     else:
         if source_column_name is not None and learning_strategy == 'cumulative':
             raise ValueError('Cumulative learning can only be applied to temporal batches.')
+
+    # Model type
+    if model_type not in ('random_forest', 'histogram_gradient_boosting'):
+        raise ValueError("Unrecognized model type. Supported values are 'random_forest' and "
+                         "'histogram_gradient_boosting'.")
 
 
 # SPLITTING INDEXES OBTAINING
@@ -594,7 +674,7 @@ def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scor
             # area under curve per class calculation
             try:
                 auc_class = skmet.roc_auc_score(label_true_class, label_scores_class)
-            except:
+            except Exception:
                 auc_class = 0
                 # print('Problem calculating area under curve.')
             # arrangement
@@ -607,7 +687,7 @@ def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scor
         # cross-entropy loss
         try:
             metrics['LOGLOSS'] = skmet.log_loss(label_true, label_scores)
-        except:
+        except Exception:
             metrics['LOGLOSS'] = 1
             # print('Problem calculating logloss.')
 
@@ -692,7 +772,7 @@ def _get_regression_metrics(*, y_true: ndarray, y_pred: ndarray) -> dict:
 
     Parameters
     ----------
-    y_true : DataFrame
+    y_true : ndarray
         The true target values.
 
     y_pred : np.ndarray
