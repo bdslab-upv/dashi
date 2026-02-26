@@ -1,19 +1,62 @@
-import numpy as np
-import pandas as pd
-from scipy.stats import gaussian_kde
-from scipy.linalg import eigh
-from dashi._constants import (VALID_FLOAT_TYPE, VALID_CATEGORICAL_TYPE, VALID_INTEGER_TYPE, VALID_STRING_TYPE,
-                              VALID_DATE_TYPE, VALID_CONVERSION_STRING_TYPE, VALID_PLOT_MODES, VALID_COLOR_PALETTES,
-                              VALID_SORTING_METHODS, MISSING_VALUE)
-import plotly.graph_objects as go
-import plotly.subplots as sp
+import warnings
 from dataclasses import dataclass
 from typing import Optional, List, Union
-import warnings
-import prince
-import plotly.express as px
-from plotly.colors import sample_colorscale
 
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import prince
+from plotly.colors import sample_colorscale
+from scipy.linalg import eigh
+from scipy.stats import gaussian_kde
+from sklearn.decomposition import TruncatedSVD
+
+from dashi._constants import (VALID_FLOAT_TYPE1, VALID_CATEGORICAL_TYPE, VALID_INTEGER_TYPE1, VALID_STRING_TYPE,
+                              VALID_DATE_TYPE, VALID_CONVERSION_STRING_TYPE, VALID_PLOT_MODES, VALID_COLOR_PALETTES,
+                              VALID_SORTING_METHODS, MISSING_VALUE)
+
+
+class SklearnSVDAdapter:
+    """
+    Adapter class to make sklearn.decomposition.TruncatedSVD compatible
+    with the API of the 'prince' library (PCA/MCA/FAMD).
+    """
+
+    def __init__(self, n_components: int, random_state: Optional[int] = None, **kwargs):
+        # Swallow unsupported kwargs to prevent crashes, or log them if needed
+        # SVD doesn't typically need scaling parameters like 'rescale_with_mean'
+        self.n_components = n_components
+        self.model = TruncatedSVD(n_components=n_components, random_state=random_state)
+        self.eigenvalues_summary = None  # Will be populated after fit
+
+    def fit_transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """
+        Fits SVD and returns a DataFrame with index alignment, matching prince behavior.
+        """
+        # SVD works best on sparse inputs, but accepts dense DataFrames too
+        matrix_transformed = self.model.fit_transform(X)
+
+        # Calculate summary statistics immediately after fit
+        self._compute_summary()
+
+        return pd.DataFrame(
+            matrix_transformed,
+            index=X.index,
+            columns=[i for i in range(self.n_components)]
+        )
+
+    def _compute_summary(self):
+        """Generates a summary object similar to prince's eigenvalues_summary."""
+        explained_var = self.model.explained_variance_ratio_
+        singular_vals = self.model.singular_values_
+
+        # Create a DataFrame summary to mimic prince's rich reporting
+        self.eigenvalues_summary = pd.DataFrame({
+            'singular_value': singular_vals,
+            'explained_variance_ratio': explained_var,
+            'cumulative_variance': np.cumsum(explained_var)
+        })
 
 def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=False):
     """
@@ -24,7 +67,7 @@ def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fa
         value_counts = pd.Series(data).value_counts()
         map_data = value_counts.reindex(support, fill_value=0).values
 
-    elif varclass == VALID_FLOAT_TYPE:
+    elif varclass == VALID_FLOAT_TYPE1:
         if np.all(np.isnan(data)):
             map_data =  np.full(len(support), 0, dtype=float)
         else:
@@ -72,7 +115,7 @@ def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fa
                         else:
                             map_data = np.zeros_like(y, dtype=float)
 
-    elif varclass == VALID_INTEGER_TYPE:
+    elif varclass == VALID_INTEGER_TYPE1:
         if np.all(np.isnan(data)):
             map_data = np.array([np.nan] * len(support))
         else:
@@ -110,10 +153,10 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
                     )
                 elif supports[column].dtypes == VALID_DATE_TYPE:
                     error_in_support = not supports[column].dtype.name == VALID_DATE_TYPE
-                elif supports[column].dtypes == VALID_INTEGER_TYPE:
-                    error_in_support = not supports[column].dtype.name == VALID_INTEGER_TYPE
-                elif supports[column].dtypes == VALID_FLOAT_TYPE:
-                    error_in_support = not supports[column].dtype.name == VALID_FLOAT_TYPE
+                elif supports[column].dtypes == VALID_INTEGER_TYPE1:
+                    error_in_support = not supports[column].dtype.name == VALID_INTEGER_TYPE1
+                elif supports[column].dtypes == VALID_FLOAT_TYPE1:
+                    error_in_support = not supports[column].dtype.name == VALID_FLOAT_TYPE1
 
                 if error_in_support:
                     raise ValueError(
@@ -131,9 +174,9 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
         if any(all_na):
             if verbose:
                 print(
-                    f'Removing variables with no finite values: {", ".join(data.columns[all_na])}')
+                    f'Removing variables with no finite values: {", ".join(data.columns[all_na].astype(str))}')
             warnings.warn(
-                f'Removing variables with no finite values: {", ".join(data.columns[all_na])}')
+                f'Removing variables with no finite values: {", ".join(data.columns[all_na].astype(str))}')
 
             data = data.loc[:, ~all_na]
             number_of_columns = len(data.columns)
@@ -142,9 +185,9 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
 
             data_types, columns_types = _get_types(data, verbose=False)
 
-    mask = columns_types['categorical'] & supports_to_estimate_columns
-    if mask.any():
-        for name, col in data.loc[:, mask].items():
+    categorical_mask = columns_types['categorical'] & supports_to_estimate_columns.notna()
+    if categorical_mask.any():
+        for name, col in data.loc[:, categorical_mask].items():
             if col.isna().any():
                 # Add the category only if it's not already there
                 if MISSING_VALUE not in col.cat.categories:
@@ -153,51 +196,49 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
                 data[name] = col.fillna(MISSING_VALUE)
 
         # Extract levels and assign them to supports
-        selected_columns = data.loc[:, columns_types['categorical'] & supports_to_estimate_columns]
+        selected_columns = data.loc[:, categorical_mask]
         levels = selected_columns.apply(lambda col: col.cat.categories)
         supports.update(
             {
                 column: levels[column]
                 for column
-                in data.columns[columns_types['categorical'] & supports_to_estimate_columns]
+                in data.columns[categorical_mask]
             }
         )
-
-    if np.any(columns_types['float'] & supports_to_estimate_columns):
-        minimums = data.loc[:, columns_types['float'] & supports_to_estimate_columns].apply(np.nanmin,
-                                                                                                   axis=0)
-        maximums = data.loc[:, columns_types['float'] & supports_to_estimate_columns].apply(np.nanmax,
-                                                                                                   axis=0)
+    float_mask = columns_types['float'] & supports_to_estimate_columns.notna()
+    if float_mask.any():
+        minimums = data.loc[:, float_mask].apply(np.nanmin, axis=0)
+        maximums = data.loc[:, float_mask].apply(np.nanmax, axis=0)
         supports.update(
             {
                 column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
                 for column, minimum, maximum
-                in zip(data.columns[columns_types['float'] & supports_to_estimate_columns], minimums,
+                in zip(data.columns[float_mask], minimums,
                        maximums)
             }
         )
-        if np.any(minimums == maximums):
-            mask = (minimums == maximums) & columns_types['float'] & supports_to_estimate_columns
-            supports.update(
-                {
-                    column: [value[0] for value in supports[column]]
-                    for column
-                    in data.columns[mask]
-                }
-            )
+        is_constant = minimums == maximums
+        if is_constant.any():
+            # Get the names of the constant columns
+            constant_cols = is_constant[is_constant].index
 
-    if np.any(columns_types['integer'] & supports_to_estimate_columns):
-        minimums = data.loc[:, columns_types['integer'] & supports_to_estimate_columns].apply(np.nanmin,
-                                                                                                     axis=0)
-        maximums = data.loc[:, columns_types['integer'] & supports_to_estimate_columns].apply(np.nanmax,
-                                                                                                     axis=0)
-        if np.sum(columns_types['integer'] & supports_to_estimate_columns) == 1:
+            # Update only the constant columns
+            supports.update({
+                col: [supports[col][0]]
+                for col in constant_cols
+            })
+
+    int_mask = columns_types['integer'] & supports_to_estimate_columns.notna()
+    if int_mask.any():
+        minimums = data.loc[:, int_mask].apply(np.nanmin, axis=0)
+        maximums = data.loc[:, int_mask].apply(np.nanmax, axis=0)
+        if np.sum(int_mask) == 1:
             supports.update(
                 {
                     column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
                     for column, minimum, maximum
                     in
-                    zip(data.columns[columns_types['integer'] & supports_to_estimate_columns], minimums,
+                    zip(data.columns[int_mask], minimums,
                         maximums)
                 }
             )
@@ -207,30 +248,30 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
                     column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
                     for column, minimum, maximum
                     in
-                    zip(data.columns[columns_types['integer'] & supports_to_estimate_columns], minimums,
+                    zip(data.columns[int_mask], minimums,
                         maximums)
                 }
             )
 
-    if np.any(columns_types['string'] & supports_to_estimate_columns):
+    str_mask = columns_types['string'] & supports_to_estimate_columns.notna()
+    if str_mask.any():
         supports.update(
             {
                 column: data[column].unique().tolist()
                 for column
-                in data.columns[columns_types['string'] & supports_to_estimate_columns]
+                in data.columns[str_mask]
             }
         )
 
-    if np.any(columns_types['date'] & supports_to_estimate_columns):
-        minimums = data.loc[:, columns_types['date'] & supports_to_estimate_columns].apply(np.nanmin,
-                                                                                                  axis=0)
-        maximums = data.loc[:, columns_types['date'] & supports_to_estimate_columns].apply(np.nanmax,
-                                                                                                  axis=0)
+    date_mask = columns_types['date'] & supports_to_estimate_columns.notna()
+    if date_mask.any():
+        minimums = data.loc[:, date_mask].apply(np.nanmin, axis=0)
+        maximums = data.loc[:, date_mask].apply(np.nanmax, axis=0)
         supports.update(
             {
                 column: pd.date_range(minimum, maximum, periods=numeric_variables_bins).tolist()
                 for column, minimum, maximum
-                in zip(data.columns[columns_types['date'] & supports_to_estimate_columns], minimums,
+                in zip(data.columns[date_mask], minimums,
                        maximums)
             }
         )
@@ -247,9 +288,9 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
     if np.any(support_singles_indexes):
         if verbose:
             print(
-                f'Removing variables with less than two distinct values in their supports: {", ".join(data.columns[support_singles_indexes])}')
+                f'Removing variables with less than two distinct values in their supports: {", ".join(data.columns[support_singles_indexes].astype(str))}')
         print(
-            f'The following variable/s have less than two distinct values in their supports and were excluded from the analysis: {", ".join(data.columns[support_singles_indexes])}')
+            f'The following variable/s have less than two distinct values in their supports and were excluded from the analysis: {", ".join(data.columns[support_singles_indexes].astype(str))}')
         data = data.loc[:, ~support_singles_indexes]
         supports = {
             column: supports[column]
@@ -266,8 +307,8 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
 def _get_types(data, verbose=False):
     data_types = data.dtypes
 
-    float_columns = data_types == VALID_FLOAT_TYPE
-    integer_columns = data_types == VALID_INTEGER_TYPE
+    float_columns = data_types == VALID_FLOAT_TYPE1
+    integer_columns = data_types == VALID_INTEGER_TYPE1
     string_columns = data_types == VALID_STRING_TYPE
     date_columns = data_types == VALID_DATE_TYPE
     categorical_columns = data_types == VALID_CATEGORICAL_TYPE
@@ -629,33 +670,48 @@ def _perform_dimensionality_reduction(
         n_components: int,
         verbose: bool = True,
         **reduction_kwargs) -> pd.DataFrame:
+    """
+        Factory function to perform dimensionality reduction using various strategies.
+        Supports PCA, MCA, FAMD (via prince) and SVD (via sklearn adapter).
+    """
 
     reduction_strategies = {
         'PCA': prince.PCA,
         'MCA': prince.MCA,
-        'FAMD': prince.FAMD
+        'FAMD': prince.FAMD,
+        'SVD': SklearnSVDAdapter
     }
 
     MethodClass = reduction_strategies[dim_reduction]
+    algo_kwargs = reduction_kwargs.copy()
 
     if 'scale' in reduction_kwargs:
         if dim_reduction == 'PCA':
-            scale_value = reduction_kwargs.pop('scale')
-            reduction_kwargs['rescale_with_mean'] = scale_value
-            reduction_kwargs['rescale_with_std'] = scale_value
+            scale_value = algo_kwargs.pop('scale')
+            algo_kwargs['rescale_with_mean'] = scale_value
+            algo_kwargs['rescale_with_std'] = scale_value
         else:
-            reduction_kwargs.pop('scale')
+            algo_kwargs.pop('scale')
 
-    reduction_method = MethodClass(n_components=n_components, random_state=112, **reduction_kwargs)
+    try:
+        reduction_method = MethodClass(n_components=n_components, random_state=112, **algo_kwargs)
+    except TypeError as e:
+        raise TypeError(f"Error initializing {dim_reduction}. Check valid arguments. Details: {e}")
     reduced_data = reduction_method.fit_transform(data)
+
     if verbose:
-        print(f'Eigenvalues summary:\n{reduction_method.eigenvalues_summary}')
+        print(f"--- {dim_reduction} Summary ---")
+        # All wrappers/classes are guaranteed to have this attribute now
+        if hasattr(reduction_method, 'eigenvalues_summary'):
+            print(reduction_method.eigenvalues_summary)
+        else:
+            print("No summary available for this method.")
 
     return reduced_data
 
 def _scatter_plot(reduced_data: pd.DataFrame, dim_reduction: str, verbose: bool, **kwargs) -> None:
+    warnings.filterwarnings('ignore', category=FutureWarning)
     if verbose:
-        warnings.filterwarnings('ignore', category=FutureWarning)
         print(f'Plotting {dim_reduction} 2D Scatter Plot')
 
     color_col = kwargs.get('color_column', None)

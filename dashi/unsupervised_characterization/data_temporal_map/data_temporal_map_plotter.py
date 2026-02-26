@@ -17,15 +17,11 @@ Data Temporal Map plotting main functions and classes
 """
 
 from datetime import datetime
-
-import numpy as np
-import pandas as pd
-import plotly.graph_objs as go
-import plotly.subplots as sp
 from typing import Optional, Dict, List
 
-from dashi._constants import VALID_SORTING_METHODS, VALID_COLOR_PALETTES, \
-    VALID_PLOT_MODES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
+import numpy as np
+import plotly.graph_objs as go
+import plotly.subplots as sp
 
 from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (DataTemporalMap,
                                                                                      MultiVariateDataTemporalMap,
@@ -33,6 +29,7 @@ from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map imp
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
                                                        _create_heatmap_figure, _create_series_figure,
                                                        _marginalize_multivariate_map)
+
 
 def plot_univariate_data_temporal_map(
         data_temporal_map: DataTemporalMap,
@@ -123,10 +120,10 @@ def plot_univariate_data_temporal_map(
         sorting_method=sorting_method
     )
 
-    if not end_value or end_value > temporal_map.shape[0]:
+    if not end_value or end_value > temporal_map.shape[1]:
         end_value = temporal_map.shape[1]
 
-    if start_value > temporal_map.shape[0]:
+    if start_value > temporal_map.shape[1]:
         start_value = temporal_map.shape[1]
 
     counts_subarray = _get_counts_array(

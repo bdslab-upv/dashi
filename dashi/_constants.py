@@ -22,15 +22,17 @@ VALID_TEMPORAL_PERIODS = [TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_
 
 # Types
 VALID_DATE_TYPE = 'datetime64[ns]'
-VALID_FLOAT_TYPE = 'float64'
-VALID_INTEGER_TYPE = 'int64'
-VALID_DEFAULT_STRING_TYPE = 'object'  # recommended string type, more efficient than object
-VALID_STRING_TYPE = 'object'  # recommended string type, more efficient than object # string
-VALID_CONVERSION_STRING_TYPE = 'object'  # recommended string type, more efficient than object #string
+VALID_FLOAT_TYPE1 = 'float64'
+VALID_FLOAT_TYPE2 = 'float32'
+VALID_INTEGER_TYPE1 = 'int64'
+VALID_INTEGER_TYPE2 = 'int32'
+VALID_DEFAULT_STRING_TYPE = 'object'
+VALID_STRING_TYPE = 'object'
+VALID_CONVERSION_STRING_TYPE = 'object'
 VALID_CATEGORICAL_TYPE = 'category'
-VALID_TYPES_WITHOUT_DATE = [VALID_INTEGER_TYPE, VALID_STRING_TYPE, VALID_FLOAT_TYPE,
-                            VALID_CATEGORICAL_TYPE]  # Pandas types
-VALID_TYPES = VALID_TYPES_WITHOUT_DATE + [VALID_DATE_TYPE]  # Pandas types
+VALID_TYPES_WITHOUT_DATE = [VALID_INTEGER_TYPE1,VALID_INTEGER_TYPE2, VALID_STRING_TYPE, VALID_FLOAT_TYPE1,
+                            VALID_FLOAT_TYPE2, VALID_CATEGORICAL_TYPE]
+VALID_TYPES = VALID_TYPES_WITHOUT_DATE + [VALID_DATE_TYPE]
 
 # Missings
 MISSING_VALUE = 'NA'
@@ -43,7 +45,8 @@ MONTH_LONG_ABBREVIATIONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Au
 FAMD = 'FAMD'
 PCA = 'PCA'
 MCA = 'MCA'
-VALID_DIM_REDUCTION_TYPES = [FAMD, PCA, MCA]
+SVD = 'SVD'
+VALID_DIM_REDUCTION_TYPES = [FAMD, PCA, MCA, SVD]
 
 # Sorting method
 Frequency = 'frequency'

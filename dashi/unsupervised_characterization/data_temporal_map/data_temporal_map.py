@@ -15,21 +15,16 @@
 """
 Data Temporal Map main functions and classes
 """
-import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Union, List, Dict, Optional
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import prince
-from scipy.stats import gaussian_kde
 
 from dashi._constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, \
-    VALID_INTEGER_TYPE, VALID_FLOAT_TYPE, \
-    VALID_DATE_TYPE, TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_YEAR, VALID_CONVERSION_STRING_TYPE, \
-    MISSING_VALUE, VALID_TYPES_WITHOUT_DATE, VALID_DIM_REDUCTION_TYPES, PCA, MCA, FAMD
+    VALID_DATE_TYPE, TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_YEAR, VALID_TYPES_WITHOUT_DATE, \
+    VALID_DIM_REDUCTION_TYPES
 from dashi.unsupervised_characterization.utils import (_estimate_absolute_frequencies, _create_supports, _get_types,
                                                        BaseMultiVariateMap, _perform_dimensionality_reduction,
                                                        _scatter_plot, _normalize_kde, _compute_kde)
@@ -497,8 +492,9 @@ def estimate_multivariate_data_temporal_map(
 
     dim_reduction: str
         A dimensionality reduction technique to be used on the data. Default is `PCA` (Principal Component Analysis)
-        for numerical data. Other options can include 'MCA' (Multiple Correspondence Analysis) for categorical data or
-        'FAMD' (Factor Analysis of Mixed Data) for mixed data. Note: in case of using 'FAMD', numerical variables must be
+        for numerical data. Other options can include 'SVD' (Singular Value Decomposition) for numerical data,
+        'MCA' (Multiple Correspondence Analysis) for categorical data or 'FAMD' (Factor Analysis of Mixed Data) for
+        mixed data. Note: in case of using 'FAMD', numerical variables must be
         in float type. Otherwise they will be treated as categorical.
 
     scale: bool
@@ -688,9 +684,10 @@ def estimate_conditional_data_temporal_map(
         different from the last chronological date in the date column.
 
     dim_reduction: str
-        A dimensionality reduction technique to be used on the data. Default is 'PCA' (Principal Component Analysis)
-        for numerical data. Other options can include 'MCA' (Multiple Correspondence Analysis) for categorical data or
-        'FAMD' (Factor Analysis of Mixed Data) for mixed data. Note: in case of using 'FAMD', numerical variables must be
+        A dimensionality reduction technique to be used on the data. Default is `PCA` (Principal Component Analysis)
+        for numerical data. Other options can include 'SVD' (Singular Value Decomposition) for numerical data,
+        'MCA' (Multiple Correspondence Analysis) for categorical data or 'FAMD' (Factor Analysis of Mixed Data) for
+        mixed data. Note: in case of using 'FAMD', numerical variables must be
         in float type. Otherwise they will be treated as categorical.
 
     scale: str
