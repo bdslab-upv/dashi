@@ -72,6 +72,7 @@ def format_data(input_dataframe: pd.DataFrame,
                 source_column_name: Optional[str] = None,
                 date_format: Optional[str] = '%y/%m/%d',
                 verbose: bool = False,
+                inplace: bool = False,
                 numerical_column_names: Optional[List[str]] = None,
                 categorical_column_names: Optional[List[str]] = None) -> pd.DataFrame:
     """
@@ -96,6 +97,9 @@ def format_data(input_dataframe: pd.DataFrame,
     verbose: bool
         Whether to display additional information during the process. Defaults to `False`.
 
+    inplace: bool
+        If inplace=True, this modifies the input dataframe directly to save memory. Defaults to `False`.
+
     numerical_column_names: Optional[List[str]]
         A list containing all the numerical column names in the dataset. If this parameter is `None`, the variables
         types must be managed by the user.
@@ -116,19 +120,20 @@ def format_data(input_dataframe: pd.DataFrame,
     if source_column_name is not None and source_column_name not in input_dataframe.columns:
         raise ValueError(f'There is no column in your DataFrame named as: {source_column_name}')
 
-    output_dataframe = input_dataframe.copy()
+    if inplace:
+        output_dataframe = input_dataframe
+    else:
+        output_dataframe = input_dataframe.copy()
 
     if numerical_column_names is not None:
         if verbose:
             print('Formating numerical columns as float')
-        for col in numerical_column_names:
-            output_dataframe[col] = output_dataframe[col].astype(float)
+        output_dataframe[numerical_column_names] = output_dataframe[numerical_column_names].astype(float)
 
     if categorical_column_names is not None:
         if verbose:
             print('Formating categorical columns as category')
-        for col in categorical_column_names:
-            output_dataframe[col] = output_dataframe[col].astype(str).astype('category')
+        output_dataframe[categorical_column_names] = output_dataframe[categorical_column_names].astype(str).astype('category')
 
 
     if date_column_name is not None:
