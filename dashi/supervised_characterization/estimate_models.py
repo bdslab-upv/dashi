@@ -16,16 +16,16 @@
 Main function for estimating models over multiple temporal or multi-source batches.
 """
 
+import gc
 # MODULES IMPORT
 import warnings
-import gc
 from typing import List, Dict, Optional, Tuple
 
+import numpy as np
+import pandas as pd
 import sklearn.metrics as skmet
 from numpy import ndarray, sqrt
-import numpy as np
-from pandas import DataFrame, concat, to_datetime
-import pandas as pd
+from pandas import DataFrame
 from sklearn.ensemble import (
     RandomForestClassifier,
     RandomForestRegressor,
@@ -120,7 +120,9 @@ def estimate_multibatch_models(
             - 'R_SQUARED'
         Classification metrics, if applicable:
             - 'AUC_{class_identifier}'
+            - 'PR-AUC_{class_identifier}'
             - 'AUC_MACRO'
+            - 'PR-AUC_MACRO'
             - 'LOGLOSS'
             - 'RECALL_{class_identifier}'
             - 'PRECISION_{class_identifier}'
@@ -654,7 +656,8 @@ def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scor
 
     # Metrics calculation
     # memory allocation
-    auc_classes = []  # area under curve per class
+    auc_classes: list = []  # area under curve per class
+    pr_auc_classes: list = []
 
     # Catch warnings
     with warnings.catch_warnings():
@@ -674,16 +677,21 @@ def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scor
             # area under curve per class calculation
             try:
                 auc_class = skmet.roc_auc_score(label_true_class, label_scores_class)
+                pr_auc_class = skmet.average_precision_score(label_true_class, label_scores_class)
             except Exception:
                 auc_class = 0
+                pr_auc_class = 0
                 # print('Problem calculating area under curve.')
             # arrangement
             auc_classes.append(auc_class)
+            pr_auc_classes.append(pr_auc_class)
             metrics['AUC_' + class_idf] = auc_class
+            metrics['PR-AUC_'+ class_idf] = pr_auc_class
 
         # multi-class
         # area under curve
         metrics['AUC_MACRO'] = sum(auc_classes) / len(auc_classes)
+        metrics['PR-AUC_MACRO'] = sum(pr_auc_classes) / len(pr_auc_classes)
         # cross-entropy loss
         try:
             metrics['LOGLOSS'] = skmet.log_loss(label_true, label_scores)
