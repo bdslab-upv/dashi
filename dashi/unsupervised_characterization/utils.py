@@ -13,7 +13,7 @@ from scipy.linalg import eigh
 from scipy.stats import gaussian_kde
 from sklearn.decomposition import TruncatedSVD
 
-from dashi._constants import (VALID_FLOAT_TYPE1, VALID_CATEGORICAL_TYPE, VALID_INTEGER_TYPE1, VALID_STRING_TYPE,
+from dashi._constants import (VALID_FLOAT_TYPE, VALID_CATEGORICAL_TYPE, VALID_INTEGER_TYPE, VALID_STRING_TYPE,
                               VALID_CONVERSION_STRING_TYPE, VALID_PLOT_MODES, VALID_COLOR_PALETTES,
                               VALID_SORTING_METHODS, MISSING_VALUE)
 
@@ -68,7 +68,7 @@ def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fa
         value_counts = pd.Series(data).value_counts()
         map_data = value_counts.reindex(support, fill_value=0).values
 
-    elif varclass == VALID_FLOAT_TYPE1:
+    elif varclass in VALID_FLOAT_TYPE:
         if np.all(np.isnan(data)):
             map_data =  np.full(len(support), 0, dtype=float)
         else:
@@ -116,7 +116,7 @@ def _estimate_absolute_frequencies(data, varclass, support, numeric_smoothing=Fa
                         else:
                             map_data = np.zeros_like(y, dtype=float)
 
-    elif varclass == VALID_INTEGER_TYPE1:
+    elif varclass in VALID_INTEGER_TYPE:
         if np.all(np.isnan(data)):
             map_data = np.array([np.nan] * len(support))
         else:
@@ -137,9 +137,6 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
     supports_to_fill = {column: None for column in data.columns}
     supports_to_estimate_columns = data.columns.to_series()
 
-    supports_to_fill = {column: None for column in data.columns}
-    supports_to_estimate_columns = data.columns.to_series()
-
     if supports is not None:
         for column_index, column in enumerate(supports):
             if column in supports_to_fill:
@@ -154,10 +151,10 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
                     )
                 elif is_datetime64_any_dtype(supports[column]):
                     error_in_support = not is_datetime64_any_dtype(supports[column])
-                elif supports[column].dtypes == VALID_INTEGER_TYPE1:
-                    error_in_support = not supports[column].dtype.name == VALID_INTEGER_TYPE1
-                elif supports[column].dtypes == VALID_FLOAT_TYPE1:
-                    error_in_support = not supports[column].dtype.name == VALID_FLOAT_TYPE1
+                elif supports[column].dtypes in VALID_INTEGER_TYPE:
+                    error_in_support = supports[column].dtype.name not in VALID_INTEGER_TYPE
+                elif supports[column].dtypes in VALID_FLOAT_TYPE:
+                    error_in_support = supports[column].dtype.name not in VALID_FLOAT_TYPE
 
                 if error_in_support:
                     raise ValueError(
@@ -308,8 +305,8 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
 def _get_types(data, verbose=False):
     data_types = data.dtypes
 
-    float_columns = data_types == VALID_FLOAT_TYPE1
-    integer_columns = data_types == VALID_INTEGER_TYPE1
+    float_columns = data_types.astype(str).isin(VALID_FLOAT_TYPE)
+    integer_columns = data_types.astype(str).isin(VALID_INTEGER_TYPE)
     string_columns = data_types == VALID_STRING_TYPE
     date_columns = data_types.apply(lambda dtype: is_datetime64_any_dtype(dtype))
     categorical_columns = data_types == VALID_CATEGORICAL_TYPE
