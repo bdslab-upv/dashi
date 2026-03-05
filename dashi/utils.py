@@ -20,8 +20,9 @@ from datetime import datetime
 from typing import Optional, List
 
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 
-from dashi._constants import MONTH_SHORT_ABBREVIATIONS, VALID_DATE_TYPE
+from dashi._constants import MONTH_SHORT_ABBREVIATIONS
 
 
 def _format_date_for_year(date: datetime) -> str:
@@ -137,7 +138,7 @@ def format_data(input_dataframe: pd.DataFrame,
 
 
     if date_column_name is not None:
-        if output_dataframe[date_column_name].dtype == VALID_DATE_TYPE:
+        if is_datetime64_any_dtype(output_dataframe[date_column_name]):
             return output_dataframe
 
         if verbose:
@@ -145,7 +146,7 @@ def format_data(input_dataframe: pd.DataFrame,
 
         _validate_date_format(date_format, verbose)
 
-        output_dataframe[date_column_name] = pd.to_datetime(output_dataframe[date_column_name], format=date_format)
+        output_dataframe[date_column_name] = pd.to_datetime(output_dataframe[date_column_name], format=date_format).dt.as_unit("us")
 
         initial_len = len(output_dataframe)
         output_dataframe = output_dataframe.dropna(subset=[date_column_name]).reset_index(drop=True)

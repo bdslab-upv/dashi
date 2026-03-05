@@ -7,13 +7,14 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import prince
+from pandas.api.types import is_datetime64_any_dtype
 from plotly.colors import sample_colorscale
 from scipy.linalg import eigh
 from scipy.stats import gaussian_kde
 from sklearn.decomposition import TruncatedSVD
 
 from dashi._constants import (VALID_FLOAT_TYPE1, VALID_CATEGORICAL_TYPE, VALID_INTEGER_TYPE1, VALID_STRING_TYPE,
-                              VALID_DATE_TYPE, VALID_CONVERSION_STRING_TYPE, VALID_PLOT_MODES, VALID_COLOR_PALETTES,
+                              VALID_CONVERSION_STRING_TYPE, VALID_PLOT_MODES, VALID_COLOR_PALETTES,
                               VALID_SORTING_METHODS, MISSING_VALUE)
 
 
@@ -151,8 +152,8 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
                             not supports[column].dtype.name == VALID_CATEGORICAL_TYPE
                             or not supports[column].dtype.name == VALID_STRING_TYPE
                     )
-                elif supports[column].dtypes == VALID_DATE_TYPE:
-                    error_in_support = not supports[column].dtype.name == VALID_DATE_TYPE
+                elif is_datetime64_any_dtype(supports[column]):
+                    error_in_support = not is_datetime64_any_dtype(supports[column])
                 elif supports[column].dtypes == VALID_INTEGER_TYPE1:
                     error_in_support = not supports[column].dtype.name == VALID_INTEGER_TYPE1
                 elif supports[column].dtypes == VALID_FLOAT_TYPE1:
@@ -310,7 +311,7 @@ def _get_types(data, verbose=False):
     float_columns = data_types == VALID_FLOAT_TYPE1
     integer_columns = data_types == VALID_INTEGER_TYPE1
     string_columns = data_types == VALID_STRING_TYPE
-    date_columns = data_types == VALID_DATE_TYPE
+    date_columns = data_types.apply(lambda dtype: is_datetime64_any_dtype(dtype))
     categorical_columns = data_types == VALID_CATEGORICAL_TYPE
 
     columns_by_type = {

@@ -21,9 +21,10 @@ from typing import Optional, List, Union, Dict
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 
 from dashi._constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, \
-    VALID_DATE_TYPE, VALID_TYPES_WITHOUT_DATE, VALID_DIM_REDUCTION_TYPES
+    VALID_TYPES_WITHOUT_DATE, VALID_DIM_REDUCTION_TYPES
 from dashi.unsupervised_characterization.utils import (_estimate_absolute_frequencies, _create_supports, _get_types,
                                                        BaseMultiVariateMap, _perform_dimensionality_reduction,
                                                        _scatter_plot, _compute_kde, _normalize_kde, _date_to_numeric)
@@ -271,7 +272,7 @@ def estimate_univariate_data_source_map(
             for arr in counts_map
         ])
 
-        if posterior_data_types[column] == VALID_DATE_TYPE:
+        if is_datetime64_any_dtype(posterior_data_types[column]):
             support = pd.DataFrame(pd.to_datetime(supports[column]))
         elif posterior_data_types[column] in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
             support = pd.DataFrame(supports[column], columns=[column])

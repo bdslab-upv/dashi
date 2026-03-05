@@ -21,9 +21,10 @@ from typing import Union, List, Dict, Optional
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 
 from dashi._constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, \
-    VALID_DATE_TYPE, TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_YEAR, VALID_TYPES_WITHOUT_DATE, \
+    TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_YEAR, VALID_TYPES_WITHOUT_DATE, \
     VALID_DIM_REDUCTION_TYPES
 from dashi.unsupervised_characterization.utils import (_estimate_absolute_frequencies, _create_supports, _get_types,
                                                        BaseMultiVariateMap, _perform_dimensionality_reduction,
@@ -274,7 +275,7 @@ def estimate_univariate_data_temporal_map(
     if date_column_name not in data.columns:
         raise ValueError(f'There is not a column named \'{date_column_name}\' in the input data.')
 
-    if data[date_column_name].dtype != VALID_DATE_TYPE:
+    if not is_datetime64_any_dtype(data[date_column_name]):
         raise ValueError('The specified date column must be of type pandas.Timestamp.')
 
     if period not in VALID_TEMPORAL_PERIODS:
@@ -410,7 +411,7 @@ def estimate_univariate_data_temporal_map(
                 probability_arrays.append(np.full_like(array, np.nan, dtype='float64'))
         probability_map = np.array(probability_arrays)
 
-        if posterior_data_classes[column] == VALID_DATE_TYPE:
+        if is_datetime64_any_dtype(posterior_data_classes[column]):
             support = pd.DataFrame(pd.to_datetime(supports[column]))
         elif posterior_data_classes[column] in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
             support = pd.DataFrame(supports[column], columns=[column])
@@ -525,7 +526,7 @@ def estimate_multivariate_data_temporal_map(
     if date_column_name not in data.columns:
         raise ValueError(f'There is not a column named \'{date_column_name}\' in the input data.')
 
-    if data[date_column_name].dtype != VALID_DATE_TYPE:
+    if not is_datetime64_any_dtype(data[date_column_name]):
         raise ValueError('The specified date column must be of type pandas.Timestamp.')
 
     if period not in VALID_TEMPORAL_PERIODS:
@@ -721,7 +722,7 @@ def estimate_conditional_data_temporal_map(
     if date_column_name not in data.columns:
         raise ValueError(f'There is not a column named \'{date_column_name}\' in the input data.')
 
-    if data[date_column_name].dtype != VALID_DATE_TYPE:
+    if not is_datetime64_any_dtype(data[date_column_name]):
         raise ValueError('The specified date column must be of type pandas.Timestamp.')
 
     if period not in VALID_TEMPORAL_PERIODS:
