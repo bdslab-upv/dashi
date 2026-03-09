@@ -13,10 +13,10 @@ Subpackages
 Submodules
 ----------
 
-dashi.constants module
-----------------------
+dashi.\_constants module
+------------------------
 
-.. automodule:: dashi.constants
+.. automodule:: dashi._constants
    :members:
    :undoc-members:
    :show-inheritance:

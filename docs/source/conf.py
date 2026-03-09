@@ -3,6 +3,11 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath('../../'))     
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
@@ -28,26 +33,18 @@ exclude_patterns = []
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath('../../'))  # Adjust the path to your library
-
 napoleon_google_docstring = False  # Disable Google-style
 napoleon_numpy_docstring = True  # Enable NumPy-style
 napoleon_include_init_with_doc = True  # Include __init__ method docstrings
 napoleon_use_param = True  # Use :param: syntax in output
 napoleon_use_rtype = True  # Use :rtype: syntax in output
 
-utodoc_default_options = {
+autodoc_default_options = {                        # Fixed: was "utodoc_default_options"
     'members': True,
     'undoc-members': True,  # Ensure undocumented members are also listed
     'show-inheritance': True,
 }
 
 add_module_names = False
-
-napoleon_use_param = True
-napoleon_use_rtype = True
 
 autosummary_generate = True  # Auto-generate summaries
