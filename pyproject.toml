@@ -1,6 +1,6 @@
 [project]
 name = "dashi"
-version = "0.2.4"
+version = "0.3.0"
 description = "Dataset shift analysis and characterization in python"
 readme = "README.md"
 authors = [
@@ -12,8 +12,8 @@ keywords = ["dashi", "dataset shift", "machine learning", "artificial intelligen
 dependencies = [
     "numpy>=1.26.1",
     "pandas>=2.2.2",
-    "plotly==5.18.0",
-    "scikit-learn==1.5.1",
+    "plotly>=5.18.0,<6.0.0",
+    "scikit-learn>=1.5.1,<2.0.0",
     "python-dateutil>=2.8.2",
     "tqdm>=4.66.5",
     "prince>=0.14.0"
