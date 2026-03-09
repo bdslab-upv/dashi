@@ -1,0 +1,234 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; dashi 0.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=e259d695"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Quick Start Guide" href="quickstart.html" />
+    <link rel="prev" title="dashi documentation" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            dashi
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#install-from-pypi">Install from PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#install-from-source">Install from source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#data-formatting">1. Data Formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#unsupervised-temporal-analysis">2. Unsupervised Temporal Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#unsupervised-multi-source-analysis">3. Unsupervised Multi-Source Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#variability-metrics-igt-msv">4. Variability Metrics (IGT &amp; MSV)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#supervised-characterization">5. Supervised Characterization</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/data_formatting.html">Data Formatting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/data_formatting.html#dashi.utils.format_data"><code class="docutils literal notranslate"><span class="pre">format_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/unsupervised_temporal.html">Unsupervised Temporal Analysis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/unsupervised_temporal.html#module-dashi.unsupervised_characterization.data_temporal_map.data_temporal_map">Data Temporal Map</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_temporal.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.DataTemporalMap"><code class="docutils literal notranslate"><span class="pre">DataTemporalMap</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_temporal.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.MultiVariateDataTemporalMap"><code class="docutils literal notranslate"><span class="pre">MultiVariateDataTemporalMap</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_temporal.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.estimate_conditional_data_temporal_map"><code class="docutils literal notranslate"><span class="pre">estimate_conditional_data_temporal_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_temporal.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.estimate_multivariate_data_temporal_map"><code class="docutils literal notranslate"><span class="pre">estimate_multivariate_data_temporal_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_temporal.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.estimate_univariate_data_temporal_map"><code class="docutils literal notranslate"><span class="pre">estimate_univariate_data_temporal_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_temporal.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map.trim_data_temporal_map"><code class="docutils literal notranslate"><span class="pre">trim_data_temporal_map()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/unsupervised_temporal.html#module-dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter">Plotting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_temporal.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_conditional_data_temporal_map"><code class="docutils literal notranslate"><span class="pre">plot_conditional_data_temporal_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_temporal.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_multivariate_data_temporal_map"><code class="docutils literal notranslate"><span class="pre">plot_multivariate_data_temporal_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_temporal.html#dashi.unsupervised_characterization.data_temporal_map.data_temporal_map_plotter.plot_univariate_data_temporal_map"><code class="docutils literal notranslate"><span class="pre">plot_univariate_data_temporal_map()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/unsupervised_source.html">Unsupervised Multi-Source Analysis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/unsupervised_source.html#module-dashi.unsupervised_characterization.data_source_map.data_source_map">Data Source Map</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_source.html#dashi.unsupervised_characterization.data_source_map.data_source_map.DataSourceMap"><code class="docutils literal notranslate"><span class="pre">DataSourceMap</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_source.html#dashi.unsupervised_characterization.data_source_map.data_source_map.MultiVariateDataSourceMap"><code class="docutils literal notranslate"><span class="pre">MultiVariateDataSourceMap</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_source.html#dashi.unsupervised_characterization.data_source_map.data_source_map.estimate_conditional_data_source_map"><code class="docutils literal notranslate"><span class="pre">estimate_conditional_data_source_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_source.html#dashi.unsupervised_characterization.data_source_map.data_source_map.estimate_multivariate_data_source_map"><code class="docutils literal notranslate"><span class="pre">estimate_multivariate_data_source_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_source.html#dashi.unsupervised_characterization.data_source_map.data_source_map.estimate_univariate_data_source_map"><code class="docutils literal notranslate"><span class="pre">estimate_univariate_data_source_map()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/unsupervised_source.html#module-dashi.unsupervised_characterization.data_source_map.data_source_map_plotter">Plotting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_source.html#dashi.unsupervised_characterization.data_source_map.data_source_map_plotter.plot_conditional_data_source_map"><code class="docutils literal notranslate"><span class="pre">plot_conditional_data_source_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_source.html#dashi.unsupervised_characterization.data_source_map.data_source_map_plotter.plot_multivariate_data_source_map"><code class="docutils literal notranslate"><span class="pre">plot_multivariate_data_source_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_source.html#dashi.unsupervised_characterization.data_source_map.data_source_map_plotter.plot_univariate_data_source_map"><code class="docutils literal notranslate"><span class="pre">plot_univariate_data_source_map()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/unsupervised_variability.html">Variability Metrics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/unsupervised_variability.html#module-dashi.unsupervised_characterization.variability_metrics.igt_projection">IGT Projection</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_variability.html#dashi.unsupervised_characterization.variability_metrics.igt_projection.IGTProjection"><code class="docutils literal notranslate"><span class="pre">IGTProjection</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/unsupervised_variability.html#module-dashi.unsupervised_characterization.variability_metrics.igt_projection_estimator">IGT Projection Estimator</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_variability.html#dashi.unsupervised_characterization.variability_metrics.igt_projection_estimator.estimate_igt_projection"><code class="docutils literal notranslate"><span class="pre">estimate_igt_projection()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/unsupervised_variability.html#module-dashi.unsupervised_characterization.variability_metrics.igt_plotting">IGT Plotting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_variability.html#dashi.unsupervised_characterization.variability_metrics.igt_plotting.plot_IGT_projection"><code class="docutils literal notranslate"><span class="pre">plot_IGT_projection()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/unsupervised_variability.html#module-dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics">MSV Metrics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_variability.html#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.MSVMetrics"><code class="docutils literal notranslate"><span class="pre">MSVMetrics</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_variability.html#dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics.estimate_MSV_metrics"><code class="docutils literal notranslate"><span class="pre">estimate_MSV_metrics()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/unsupervised_variability.html#module-dashi.unsupervised_characterization.variability_metrics.plot_msv">MSV Plotting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/unsupervised_variability.html#dashi.unsupervised_characterization.variability_metrics.plot_msv.plot_MSV"><code class="docutils literal notranslate"><span class="pre">plot_MSV()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/supervised.html">Supervised Characterization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/supervised.html#module-dashi.supervised_characterization.estimate_models">Model Estimation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/supervised.html#dashi.supervised_characterization.estimate_models.estimate_multibatch_models"><code class="docutils literal notranslate"><span class="pre">estimate_multibatch_models()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/supervised.html#module-dashi.supervised_characterization.arrange_metrics">Arrange Metrics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/supervised.html#dashi.supervised_characterization.arrange_metrics.arrange_performance_metrics"><code class="docutils literal notranslate"><span class="pre">arrange_performance_metrics()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/supervised.html#module-dashi.supervised_characterization.plot_performance">Plot Performance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/supervised.html#dashi.supervised_characterization.plot_performance.plot_multibatch_performance"><code class="docutils literal notranslate"><span class="pre">plot_multibatch_performance()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dashi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/installation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Python &gt;= 3.10</p></li>
+<li><p>numpy &gt;= 1.26.1</p></li>
+<li><p>pandas &gt;= 2.2.2</p></li>
+<li><p>plotly &gt;= 5.18.0</p></li>
+<li><p>scikit-learn &gt;= 1.5.1</p></li>
+<li><p>python-dateutil &gt;= 2.8.2</p></li>
+<li><p>tqdm &gt;= 4.66.5</p></li>
+<li><p>prince &gt;= 0.14.0</p></li>
+</ul>
+</section>
+<section id="install-from-pypi">
+<h2>Install from PyPI<a class="headerlink" href="#install-from-pypi" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>dashi
+</pre></div>
+</div>
+</section>
+<section id="install-from-source">
+<h2>Install from source<a class="headerlink" href="#install-from-source" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/bdslab-upv/dashi.git
+<span class="nb">cd</span><span class="w"> </span>dashi
+pip<span class="w"> </span>install<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="dashi documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral float-right" title="Quick Start Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Carlos Sáez Silvestre, David Fernández Narro, Pablo Ferri Borredá, Ángel Sánchez García.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

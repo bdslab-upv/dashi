@@ -1,0 +1,916 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashi.unsupervised_characterization.utils &mdash; dashi  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            dashi
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../dashi.html">dashi package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">dashi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dashi.unsupervised_characterization.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dashi.unsupervised_characterization.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">prince</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pandas.api.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_datetime64_any_dtype</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_colorscale</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">eigh</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_kde</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.decomposition</span><span class="w"> </span><span class="kn">import</span> <span class="n">TruncatedSVD</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dashi._constants</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">VALID_FLOAT_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">,</span> <span class="n">VALID_INTEGER_TYPE</span><span class="p">,</span> <span class="n">VALID_STRING_TYPE</span><span class="p">,</span>
+                              <span class="n">VALID_CONVERSION_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_PLOT_MODES</span><span class="p">,</span> <span class="n">VALID_COLOR_PALETTES</span><span class="p">,</span>
+                              <span class="n">VALID_SORTING_METHODS</span><span class="p">,</span> <span class="n">MISSING_VALUE</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SklearnSVDAdapter">
+<a class="viewcode-back" href="../../../dashi.unsupervised_characterization.html#dashi.unsupervised_characterization.utils.SklearnSVDAdapter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SklearnSVDAdapter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adapter class to make sklearn.decomposition.TruncatedSVD compatible</span>
+<span class="sd">    with the API of the &#39;prince&#39; library (PCA/MCA/FAMD).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_components</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Swallow unsupported kwargs to prevent crashes, or log them if needed</span>
+        <span class="c1"># SVD doesn&#39;t typically need scaling parameters like &#39;rescale_with_mean&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_components</span> <span class="o">=</span> <span class="n">n_components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">TruncatedSVD</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues_summary</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Will be populated after fit</span>
+
+<div class="viewcode-block" id="SklearnSVDAdapter.fit_transform">
+<a class="viewcode-back" href="../../../dashi.unsupervised_characterization.html#dashi.unsupervised_characterization.utils.SklearnSVDAdapter.fit_transform">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fits SVD and returns a DataFrame with index alignment, matching prince behavior.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># SVD works best on sparse inputs, but accepts dense DataFrames too</span>
+        <span class="n">matrix_transformed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+        <span class="c1"># Calculate summary statistics immediately after fit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compute_summary</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="n">matrix_transformed</span><span class="p">,</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_components</span><span class="p">)]</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a summary object similar to prince&#39;s eigenvalues_summary.&quot;&quot;&quot;</span>
+        <span class="n">explained_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">explained_variance_ratio_</span>
+        <span class="n">singular_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">singular_values_</span>
+
+        <span class="c1"># Create a DataFrame summary to mimic prince&#39;s rich reporting</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues_summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+            <span class="s1">&#39;singular_value&#39;</span><span class="p">:</span> <span class="n">singular_vals</span><span class="p">,</span>
+            <span class="s1">&#39;explained_variance_ratio&#39;</span><span class="p">:</span> <span class="n">explained_var</span><span class="p">,</span>
+            <span class="s1">&#39;cumulative_variance&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">explained_var</span><span class="p">)</span>
+        <span class="p">})</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_estimate_absolute_frequencies</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">varclass</span><span class="p">,</span> <span class="n">support</span><span class="p">,</span> <span class="n">numeric_smoothing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimates the absolute frequencies of data, which will be the counts_map in the final DataTemporalMap object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">varclass</span> <span class="o">==</span> <span class="n">VALID_STRING_TYPE</span><span class="p">:</span>
+        <span class="n">value_counts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+        <span class="n">map_data</span> <span class="o">=</span> <span class="n">value_counts</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">support</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">elif</span> <span class="n">varclass</span> <span class="ow">in</span> <span class="n">VALID_FLOAT_TYPE</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="n">map_data</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">support</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">numeric_smoothing</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">support</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">dx_last</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">dx_last</span> <span class="o">=</span> <span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">hist_support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">support</span><span class="p">,</span> <span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dx_last</span><span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span> <span class="o">&gt;=</span> <span class="nb">min</span><span class="p">(</span><span class="n">hist_support</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">hist_support</span><span class="p">))]</span>
+                <span class="n">map_data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">hist_support</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">)]</span>
+                <span class="n">n_non_nan</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
+
+                <span class="k">if</span> <span class="n">n_non_nan</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                        <span class="s2">&quot;Estimating a 1D KDE with &lt; 4 data points can be inaccurate &quot;</span>
+                        <span class="s2">&quot;(see Silverman, 1986, ch. 4.5.2). You may consider disabling numeric_smoothing to obtain &quot;</span>
+                        <span class="s2">&quot;the histogram without KDE.&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">n_non_nan</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">map_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">support</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Handle the case where all data points are identical</span>
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ptp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">ndata</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">n_non_nan</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">n_non_nan</span>
+                        <span class="n">idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">support</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span>
+                        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">support</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                        <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ndata</span><span class="p">)</span>
+                        <span class="n">map_data</span> <span class="o">=</span> <span class="n">out</span>
+
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">ndata</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">n_non_nan</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">n_non_nan</span>
+                        <span class="k">if</span> <span class="n">n_non_nan</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+                        <span class="n">kde</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                        <span class="n">y</span> <span class="o">=</span> <span class="n">kde</span><span class="p">(</span><span class="n">support</span><span class="p">)</span>
+                        <span class="n">denom</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+                        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">denom</span><span class="p">)</span> <span class="ow">and</span> <span class="n">denom</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">map_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">y</span> <span class="o">/</span> <span class="n">denom</span><span class="p">)</span> <span class="o">*</span> <span class="n">ndata</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">map_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">varclass</span> <span class="ow">in</span> <span class="n">VALID_INTEGER_TYPE</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="n">map_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">support</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">support</span><span class="p">):</span>
+                <span class="n">support_int</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">support</span><span class="p">]</span>
+                <span class="n">support</span> <span class="o">=</span> <span class="n">support_int</span>
+            <span class="n">hist_support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">support</span><span class="p">,</span> <span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">support</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[(</span><span class="n">data</span> <span class="o">&gt;=</span> <span class="nb">min</span><span class="p">(</span><span class="n">hist_support</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">hist_support</span><span class="p">))]</span>
+            <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">hist_support</span>
+            <span class="n">map_data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;data class </span><span class="si">{</span><span class="n">varclass</span><span class="si">}</span><span class="s1"> not valid for distribution estimation.&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">map_data</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_create_supports</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">supports</span><span class="p">,</span> <span class="n">columns_types</span><span class="p">,</span> <span class="n">number_of_columns</span><span class="p">,</span> <span class="n">numeric_variables_bins</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+    <span class="n">supports_to_fill</span> <span class="o">=</span> <span class="p">{</span><span class="n">column</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span>
+    <span class="n">supports_to_estimate_columns</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_series</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">supports</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">column_index</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">supports</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">supports_to_fill</span><span class="p">:</span>
+                <span class="n">supports_to_fill</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
+                <span class="n">supports_to_estimate_columns</span> <span class="o">=</span> <span class="n">supports_to_estimate_columns</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+                <span class="n">error_in_support</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="k">if</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">:</span>
+                    <span class="n">error_in_support</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="ow">not</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">VALID_CATEGORICAL_TYPE</span>
+                            <span class="ow">and</span> <span class="ow">not</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">VALID_STRING_TYPE</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="n">is_datetime64_any_dtype</span><span class="p">(</span><span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]):</span>
+                    <span class="n">error_in_support</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">is_datetime64_any_dtype</span><span class="p">(</span><span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="ow">in</span> <span class="n">VALID_INTEGER_TYPE</span><span class="p">:</span>
+                    <span class="n">error_in_support</span> <span class="o">=</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_INTEGER_TYPE</span>
+                <span class="k">elif</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="ow">in</span> <span class="n">VALID_FLOAT_TYPE</span><span class="p">:</span>
+                    <span class="n">error_in_support</span> <span class="o">=</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_FLOAT_TYPE</span>
+
+                <span class="k">if</span> <span class="n">error_in_support</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;The provided support for variable </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s1"> does not match with its variable type&#39;</span><span class="p">)</span>
+
+    <span class="n">supports</span> <span class="o">=</span> <span class="n">supports_to_fill</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">supports_to_estimate_columns</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Estimating supports from data&#39;</span><span class="p">)</span>
+
+        <span class="n">all_na</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">supports_to_estimate_columns</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+
+        <span class="c1"># Exclude from the analysis those variables with no finite values, if any</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">all_na</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;Removing variables with no finite values: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">all_na</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">))</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Removing variables with no finite values: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">all_na</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">))</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="o">~</span><span class="n">all_na</span><span class="p">]</span>
+            <span class="n">number_of_columns</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="n">supports</span> <span class="o">=</span> <span class="p">{</span><span class="n">column_name</span><span class="p">:</span> <span class="n">data_type</span> <span class="k">for</span> <span class="n">column_name</span><span class="p">,</span> <span class="n">data_type</span> <span class="ow">in</span> <span class="n">supports</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span>
+                        <span class="ow">not</span> <span class="n">all_na</span><span class="p">[</span><span class="n">column_name</span><span class="p">]}</span>
+
+            <span class="n">data_types</span><span class="p">,</span> <span class="n">columns_types</span> <span class="o">=</span> <span class="n">_get_types</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">categorical_mask</span> <span class="o">=</span> <span class="n">columns_types</span><span class="p">[</span><span class="s1">&#39;categorical&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">categorical_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">categorical_mask</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="c1"># Add the category only if it&#39;s not already there</span>
+                <span class="k">if</span> <span class="n">MISSING_VALUE</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">:</span>
+                    <span class="n">col</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">add_categories</span><span class="p">([</span><span class="n">MISSING_VALUE</span><span class="p">])</span>
+                <span class="c1"># Fill NaNs with the new category</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">MISSING_VALUE</span><span class="p">)</span>
+
+        <span class="c1"># Extract levels and assign them to supports</span>
+        <span class="n">selected_columns</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">categorical_mask</span><span class="p">]</span>
+        <span class="n">levels</span> <span class="o">=</span> <span class="n">selected_columns</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">col</span><span class="p">:</span> <span class="n">col</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">)</span>
+        <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">column</span><span class="p">:</span> <span class="n">levels</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">column</span>
+                <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">categorical_mask</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+    <span class="n">float_mask</span> <span class="o">=</span> <span class="n">columns_types</span><span class="p">[</span><span class="s1">&#39;float&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">float_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">minimums</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">float_mask</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">maximums</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">float_mask</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">column</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span><span class="p">,</span> <span class="n">numeric_variables_bins</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span>
+                <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">float_mask</span><span class="p">],</span> <span class="n">minimums</span><span class="p">,</span>
+                       <span class="n">maximums</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">is_constant</span> <span class="o">=</span> <span class="n">minimums</span> <span class="o">==</span> <span class="n">maximums</span>
+        <span class="k">if</span> <span class="n">is_constant</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="c1"># Get the names of the constant columns</span>
+            <span class="n">constant_cols</span> <span class="o">=</span> <span class="n">is_constant</span><span class="p">[</span><span class="n">is_constant</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+
+            <span class="c1"># Update only the constant columns</span>
+            <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="n">col</span><span class="p">:</span> <span class="p">[</span><span class="n">supports</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">constant_cols</span>
+            <span class="p">})</span>
+
+    <span class="n">int_mask</span> <span class="o">=</span> <span class="n">columns_types</span><span class="p">[</span><span class="s1">&#39;integer&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">int_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">minimums</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">int_mask</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">maximums</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">int_mask</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">column</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span><span class="p">,</span> <span class="n">numeric_variables_bins</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span>
+                <span class="ow">in</span>
+                <span class="nb">zip</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">int_mask</span><span class="p">],</span> <span class="n">minimums</span><span class="p">,</span>
+                    <span class="n">maximums</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+    <span class="n">str_mask</span> <span class="o">=</span> <span class="n">columns_types</span><span class="p">[</span><span class="s1">&#39;string&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">str_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">column</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">column</span>
+                <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">str_mask</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+    <span class="n">date_mask</span> <span class="o">=</span> <span class="n">columns_types</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">supports_to_estimate_columns</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">date_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">minimums</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">date_mask</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">maximums</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">date_mask</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">supports</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">column</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="n">numeric_variables_bins</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span>
+                <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">date_mask</span><span class="p">],</span> <span class="n">minimums</span><span class="p">,</span>
+                       <span class="n">maximums</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Convert factor variables to characters, as used by the xts Objects</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">columns_types</span><span class="p">[</span><span class="s1">&#39;categorical&#39;</span><span class="p">]):</span>
+        <span class="n">converted_columns</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">columns_types</span><span class="p">[</span><span class="s1">&#39;categorical&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="n">VALID_CONVERSION_STRING_TYPE</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="n">converted_columns</span><span class="p">)</span>
+
+    <span class="c1"># Exclude from the analysis those variables with a single value, if any</span>
+    <span class="n">support_lengths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">])</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+    <span class="n">support_singles_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">support_lengths</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">support_singles_indexes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Removing variables with less than two distinct values in their supports: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">support_singles_indexes</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">))</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;The following variable/s have less than two distinct values in their supports and were excluded from the analysis: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">support_singles_indexes</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">))</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="o">~</span><span class="n">support_singles_indexes</span><span class="p">]</span>
+        <span class="n">supports</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">column</span><span class="p">:</span> <span class="n">supports</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">column</span>
+            <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span>
+        <span class="p">}</span>
+        <span class="n">number_of_columns</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">number_of_columns</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Zero remaining variables to be analyzed.&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">supports</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_types</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">data_types</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dtypes</span>
+
+    <span class="n">float_columns</span> <span class="o">=</span> <span class="n">data_types</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">VALID_FLOAT_TYPE</span><span class="p">)</span>
+    <span class="n">integer_columns</span> <span class="o">=</span> <span class="n">data_types</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">VALID_INTEGER_TYPE</span><span class="p">)</span>
+    <span class="n">string_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_STRING_TYPE</span>
+    <span class="n">date_columns</span> <span class="o">=</span> <span class="n">data_types</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">is_datetime64_any_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">))</span>
+    <span class="n">categorical_columns</span> <span class="o">=</span> <span class="n">data_types</span> <span class="o">==</span> <span class="n">VALID_CATEGORICAL_TYPE</span>
+
+    <span class="n">columns_by_type</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;float&quot;</span><span class="p">:</span> <span class="n">float_columns</span><span class="p">,</span>
+        <span class="s2">&quot;integer&quot;</span><span class="p">:</span> <span class="n">integer_columns</span><span class="p">,</span>
+        <span class="s2">&quot;string&quot;</span><span class="p">:</span> <span class="n">string_columns</span><span class="p">,</span>
+        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">date_columns</span><span class="p">,</span>
+        <span class="s2">&quot;categorical&quot;</span><span class="p">:</span> <span class="n">categorical_columns</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s2">&quot;float&quot;</span><span class="p">]):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of float columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s2">&quot;float&quot;</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s2">&quot;integer&quot;</span><span class="p">]):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of integer columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s2">&quot;integer&quot;</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">]):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of string columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of date columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s2">&quot;categorical&quot;</span><span class="p">]):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of categorical columns: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s2">&quot;categorical&quot;</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">data_types</span><span class="p">,</span> <span class="n">columns_by_type</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_plot_args</span><span class="p">(</span>
+        <span class="n">mode</span><span class="p">,</span>
+        <span class="n">color_palette</span><span class="p">,</span>
+        <span class="n">absolute</span><span class="p">,</span>
+        <span class="n">log_transform</span><span class="p">,</span>
+        <span class="n">start_value</span><span class="p">,</span>
+        <span class="n">sorting_method</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_PLOT_MODES</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;mode must be one of the defined in </span><span class="si">{</span><span class="n">VALID_PLOT_MODES</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">color_palette</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">color_palette</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_COLOR_PALETTES</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;color_palette must be one of the defined in </span><span class="si">{</span><span class="n">VALID_COLOR_PALETTES</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;absolute must be a logical value&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">log_transform</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;log_transform must be a logical value&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start_value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">start_value</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;start_value must be greater or equal than 1&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sorting_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_SORTING_METHODS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;sorting_method must be one of the defined in </span><span class="si">{</span><span class="n">VALID_SORTING_METHODS</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_sort_support_and_map</span><span class="p">(</span>
+        <span class="n">support</span><span class="p">,</span>
+        <span class="n">data_map</span><span class="p">,</span>
+        <span class="n">variable_type</span><span class="p">,</span>
+        <span class="n">sorting_method</span>
+<span class="p">):</span>
+    <span class="k">if</span> <span class="n">variable_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">sorting_method</span> <span class="o">==</span> <span class="s1">&#39;frequency&#39;</span><span class="p">:</span>
+            <span class="n">support_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">data_map</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">support_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">support</span><span class="p">)</span>
+
+        <span class="n">support</span> <span class="o">=</span> <span class="n">support</span><span class="p">[</span><span class="n">support_order</span><span class="p">]</span>
+
+        <span class="c1"># Resort temporal map by support_order</span>
+        <span class="n">data_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">row</span><span class="p">[</span><span class="n">support_order</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">data_map</span><span class="p">])</span>
+
+        <span class="n">any_supp_na</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">support</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">any_supp_na</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">support</span><span class="p">[</span><span class="n">any_supp_na</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&lt;NA&gt;&#39;</span>
+
+    <span class="k">return</span> <span class="n">support</span><span class="p">,</span> <span class="n">data_map</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_counts_array</span><span class="p">(</span>
+        <span class="n">data_map</span><span class="p">,</span>
+        <span class="n">start_value</span><span class="p">,</span>
+        <span class="n">end_value</span><span class="p">,</span>
+        <span class="n">log_transform</span><span class="p">,</span>
+        <span class="n">temporal</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">):</span>
+    <span class="k">if</span> <span class="n">log_transform</span><span class="p">:</span>
+        <span class="n">data_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">data_map</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
+
+    <span class="n">counts_subarray</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="n">start_value</span><span class="p">:</span> <span class="n">end_value</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">data_map</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">temporal</span><span class="p">:</span>
+        <span class="n">counts_subarray</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">counts_subarray</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">counts_subarray</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_create_heatmap_figure</span><span class="p">(</span>
+        <span class="n">data_map</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">z</span><span class="p">,</span>
+        <span class="n">color_palette</span><span class="p">,</span>
+        <span class="n">font</span><span class="p">,</span>
+        <span class="n">x_axis</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">,</span>
+        <span class="n">absolute</span>
+<span class="p">):</span>
+    <span class="n">figure</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">go</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+            <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">,</span>
+            <span class="n">colorscale</span><span class="o">=</span><span class="n">color_palette</span><span class="p">,</span>
+            <span class="n">reversescale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">colorbar</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">tickfont</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                    <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">y_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">data_map</span><span class="o">.</span><span class="n">variable_name</span><span class="p">,</span>
+        <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+        <span class="n">automargin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tickfont</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">},</span>
+        <span class="n">ticks</span><span class="o">=</span><span class="s1">&#39;outside&#39;</span><span class="p">,</span>
+        <span class="n">tickcolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">figure</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">x_axis</span><span class="p">)</span>
+
+    <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">yaxis</span><span class="o">=</span><span class="n">y_axis</span><span class="p">,</span>
+                         <span class="n">autosize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                         <span class="n">paper_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span>
+                         <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span>
+                         <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data_map</span><span class="o">.</span><span class="n">variable_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">VALID_STRING_TYPE</span><span class="p">,</span> <span class="n">VALID_CATEGORICAL_TYPE</span><span class="p">]:</span>
+        <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">yaxis_type</span><span class="o">=</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+                                    <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span>
+                                             <span class="p">}</span>
+                                    <span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Probability distribution data temporal heatmap&#39;</span>
+        <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Absolute frequencies data temporal heatmap&#39;</span>
+        <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+                                    <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span>
+                                             <span class="p">}</span>
+                                    <span class="p">}</span>
+                             <span class="p">)</span>
+    <span class="k">return</span> <span class="n">figure</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_create_series_figure</span><span class="p">(</span>
+        <span class="n">data_map</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="n">absolute</span><span class="p">,</span>
+        <span class="n">x_axis</span><span class="p">,</span>
+        <span class="n">font</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">,</span>
+        <span class="n">_range</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+    <span class="n">figure</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">_range</span><span class="p">:</span>
+        <span class="n">trace</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="n">figure</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">trace</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">absolute</span><span class="p">:</span>
+        <span class="n">y_axis_title</span> <span class="o">=</span> <span class="s1">&#39;Absolute frequency&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">y_axis_title</span> <span class="o">=</span> <span class="s1">&#39;Relative frequency&#39;</span>
+
+    <span class="n">y_axis</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">y_axis_title</span><span class="p">,</span>
+        <span class="n">titlefont</span><span class="o">=</span><span class="n">font</span><span class="p">,</span>
+        <span class="n">automargin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tickfont</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">},</span>
+        <span class="n">ticks</span><span class="o">=</span><span class="s1">&#39;outside&#39;</span><span class="p">,</span>
+        <span class="n">tickcolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">figure</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span>
+        <span class="n">x_axis</span>
+    <span class="p">)</span>
+
+    <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+        <span class="n">autosize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">yaxis</span><span class="o">=</span><span class="n">y_axis</span><span class="p">,</span>
+        <span class="n">template</span><span class="o">=</span><span class="s1">&#39;plotly_white&#39;</span><span class="p">,</span>
+        <span class="n">paper_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span>
+        <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span>
+        <span class="n">legend_title_text</span><span class="o">=</span><span class="n">data_map</span><span class="o">.</span><span class="n">variable_name</span> <span class="k">if</span> <span class="s1">&#39;temporal&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="s1">&#39;Source&#39;</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+                                    <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span>
+                                             <span class="p">}</span>
+                                    <span class="p">}</span>
+                             <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">figure</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="s1">&#39;Evolution of &#39;</span> <span class="o">+</span> <span class="n">data_map</span><span class="o">.</span><span class="n">variable_name</span><span class="p">,</span>
+                                    <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span>
+                                             <span class="p">}</span>
+                                    <span class="p">}</span>
+                             <span class="p">)</span>
+    <span class="k">return</span> <span class="n">figure</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_js_divergence</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the Jensen-Shannon (JS) divergence between two probability distributions.</span>
+
+<span class="sd">    The Jensen-Shannon divergence is a symmetric and smoothed version of the Kullback-Leibler (KL) divergence</span>
+<span class="sd">    and measures the similarity between two probability distributions. Unlike the KL divergence, which is asymmetric,</span>
+<span class="sd">    the JS divergence is symmetric and bounded, making it a more stable measure for comparing distributions.</span>
+
+<span class="sd">    The JS divergence is calculated as:</span>
+<span class="sd">    JS(p || q) = 0.5 * (KL(p || m) + KL(q || m))</span>
+<span class="sd">    where m = 0.5 * (p + q) is the average distribution, and KL(p || m) is the Kullback-Leibler divergence between</span>
+<span class="sd">    distribution `p` and `m`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">p</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">q</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+
+    <span class="n">m</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">q</span><span class="p">)</span>
+
+    <span class="n">kl_p_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">p</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">p</span> <span class="o">/</span> <span class="n">m</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">kl_q_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">q</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">q</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">q</span> <span class="o">/</span> <span class="n">m</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">kl_p_m</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">kl_q_m</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_cmdscale</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">eig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">add</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">x_ret</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs Classical Multidimensional Scaling (MDS) on a distance matrix to reduce the dimensionality</span>
+<span class="sd">    of the data, while preserving pairwise distances as much as possible.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check for NA values (Not Applicable in numpy, but we can check for NaN)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;NA values not allowed in &#39;d&#39;&quot;</span><span class="p">)</span>
+
+    <span class="n">list_</span> <span class="o">=</span> <span class="n">eig</span> <span class="ow">or</span> <span class="n">add</span> <span class="ow">or</span> <span class="n">x_ret</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">list_</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">eig</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: eig=TRUE is disregarded when list_=FALSE&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x_ret</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: x_ret=TRUE is disregarded when list_=FALSE&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">add</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">d</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">!=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;distances must be result of &#39;dist&#39; or a square matrix&quot;</span><span class="p">)</span>
+        <span class="n">rn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">rn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">add</span><span class="p">:</span>
+            <span class="n">d0</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">triu_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">triu_indices_from</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">triu_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">triu_indices</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">x</span> <span class="o">+=</span> <span class="n">x</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">if</span> <span class="n">add</span><span class="p">:</span>
+            <span class="n">d0</span><span class="p">[</span><span class="n">triu_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">triu_indices</span><span class="p">]</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">d0</span> <span class="o">+</span> <span class="n">d0</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">46340</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid value of &#39;n&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;k&#39; must be in {1, 2, ..  n - 1}&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Double centering</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">H</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">add</span><span class="p">:</span>
+        <span class="n">i2</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">))</span>
+        <span class="n">Z</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">Z</span><span class="p">[</span><span class="n">i2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span> <span class="o">=</span> <span class="o">-</span><span class="n">x</span>
+        <span class="n">Z</span><span class="p">[</span><span class="n">i2</span><span class="p">,</span> <span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">d</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvals</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+        <span class="n">add_c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+        <span class="n">non_diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">triu_indices_from</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">non_diag</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">non_diag</span><span class="p">]</span> <span class="o">+</span> <span class="n">add_c</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">H</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+
+    <span class="n">e_vals</span><span class="p">,</span> <span class="n">e_vecs</span> <span class="o">=</span> <span class="n">eigh</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">e_vals</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">e_vals</span> <span class="o">=</span> <span class="n">e_vals</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="n">e_vecs</span> <span class="o">=</span> <span class="n">e_vecs</span><span class="p">[:,</span> <span class="n">idx</span><span class="p">]</span>
+
+    <span class="n">ev</span> <span class="o">=</span> <span class="n">e_vals</span><span class="p">[:</span><span class="n">k</span><span class="p">]</span>
+    <span class="n">evec</span> <span class="o">=</span> <span class="n">e_vecs</span><span class="p">[:,</span> <span class="p">:</span><span class="n">k</span><span class="p">]</span>
+    <span class="n">k1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ev</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">k1</span> <span class="o">&lt;</span> <span class="n">k</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: only </span><span class="si">{</span><span class="n">k1</span><span class="si">}</span><span class="s2"> of the first </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> eigenvalues are &gt; 0&quot;</span><span class="p">)</span>
+        <span class="n">evec</span> <span class="o">=</span> <span class="n">evec</span><span class="p">[:,</span> <span class="n">ev</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">ev</span> <span class="o">=</span> <span class="n">ev</span><span class="p">[</span><span class="n">ev</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">points</span> <span class="o">=</span> <span class="n">evec</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ev</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">list_</span><span class="p">:</span>
+        <span class="n">evalus</span> <span class="o">=</span> <span class="n">e_vals</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="n">points</span><span class="p">,</span>
+            <span class="s1">&#39;eig&#39;</span><span class="p">:</span> <span class="n">evalus</span> <span class="k">if</span> <span class="n">eig</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">B</span> <span class="k">if</span> <span class="n">x_ret</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;ac&#39;</span><span class="p">:</span> <span class="n">add_c</span> <span class="k">if</span> <span class="n">add</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;GOF&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ev</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">evalus</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">evalus</span><span class="p">,</span> <span class="mi">0</span><span class="p">))])</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">points</span>
+
+<div class="viewcode-block" id="BaseMultiVariateMap">
+<a class="viewcode-back" href="../../../dashi.unsupervised_characterization.html#dashi.unsupervised_characterization.utils.BaseMultiVariateMap">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseMultiVariateMap</span><span class="p">:</span>
+    <span class="n">multivariate_probability_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">multivariate_counts_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">multivariate_support</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="BaseMultiVariateMap.check_multivariate">
+<a class="viewcode-back" href="../../../dashi.unsupervised_characterization.html#dashi.unsupervised_characterization.utils.BaseMultiVariateMap.check_multivariate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_multivariate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]:</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_probability_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_counts_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_probability_map</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_counts_map</span><span class="p">)</span> <span class="ow">or</span> \
+               <span class="nb">any</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">prob_row</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">count_row</span><span class="p">)</span>
+                   <span class="k">for</span> <span class="n">prob_row</span><span class="p">,</span> <span class="n">count_row</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_probability_map</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_counts_map</span><span class="p">)):</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;The dimensions of multivariate_probability_map and multivariate_counts_map do not match.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_support</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_probability_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_support</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_probability_map</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;The length of multivariate_support must match the columns of multivariate_probability_map.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_support</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivariate_counts_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_support</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multivariate_counts_map</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;The length of multivariate_support must match the columns of multivariate_counts_map.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">errors</span> <span class="k">if</span> <span class="n">errors</span> <span class="k">else</span> <span class="kc">True</span></div>
+</div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_perform_dimensionality_reduction</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">dim_reduction</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">n_components</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">reduction_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Factory function to perform dimensionality reduction using various strategies.</span>
+<span class="sd">        Supports PCA, MCA, FAMD (via prince) and SVD (via sklearn adapter).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">reduction_strategies</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;PCA&#39;</span><span class="p">:</span> <span class="n">prince</span><span class="o">.</span><span class="n">PCA</span><span class="p">,</span>
+        <span class="s1">&#39;MCA&#39;</span><span class="p">:</span> <span class="n">prince</span><span class="o">.</span><span class="n">MCA</span><span class="p">,</span>
+        <span class="s1">&#39;FAMD&#39;</span><span class="p">:</span> <span class="n">prince</span><span class="o">.</span><span class="n">FAMD</span><span class="p">,</span>
+        <span class="s1">&#39;SVD&#39;</span><span class="p">:</span> <span class="n">SklearnSVDAdapter</span>
+    <span class="p">}</span>
+
+    <span class="n">MethodClass</span> <span class="o">=</span> <span class="n">reduction_strategies</span><span class="p">[</span><span class="n">dim_reduction</span><span class="p">]</span>
+    <span class="n">algo_kwargs</span> <span class="o">=</span> <span class="n">reduction_kwargs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="s1">&#39;scale&#39;</span> <span class="ow">in</span> <span class="n">reduction_kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dim_reduction</span> <span class="o">==</span> <span class="s1">&#39;PCA&#39;</span><span class="p">:</span>
+            <span class="n">scale_value</span> <span class="o">=</span> <span class="n">algo_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;scale&#39;</span><span class="p">)</span>
+            <span class="n">algo_kwargs</span><span class="p">[</span><span class="s1">&#39;rescale_with_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_value</span>
+            <span class="n">algo_kwargs</span><span class="p">[</span><span class="s1">&#39;rescale_with_std&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">algo_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;scale&#39;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">reduction_method</span> <span class="o">=</span> <span class="n">MethodClass</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">112</span><span class="p">,</span> <span class="o">**</span><span class="n">algo_kwargs</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error initializing </span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s2">. Check valid arguments. Details: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">reduced_data</span> <span class="o">=</span> <span class="n">reduction_method</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--- </span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s2"> Summary ---&quot;</span><span class="p">)</span>
+        <span class="c1"># All wrappers/classes are guaranteed to have this attribute now</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">reduction_method</span><span class="p">,</span> <span class="s1">&#39;eigenvalues_summary&#39;</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">reduction_method</span><span class="o">.</span><span class="n">eigenvalues_summary</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No summary available for this method.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">reduced_data</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_scatter_plot</span><span class="p">(</span><span class="n">reduced_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">dim_reduction</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Plotting </span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> 2D Scatter Plot&#39;</span><span class="p">)</span>
+
+    <span class="n">color_col</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;color_column&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">color_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">color_col</span><span class="p">]):</span>
+        <span class="n">categories</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">reduced_data</span><span class="p">[</span><span class="n">color_col</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="n">stops</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">categories</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">categories</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.5</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">categories</span><span class="p">))]</span>
+        <span class="n">palette</span> <span class="o">=</span> <span class="n">sample_colorscale</span><span class="p">(</span><span class="s1">&#39;Viridis&#39;</span><span class="p">,</span> <span class="n">stops</span><span class="p">)</span>
+        <span class="n">color_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">cat</span><span class="p">:</span> <span class="n">col</span> <span class="k">for</span> <span class="n">cat</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">categories</span><span class="p">,</span> <span class="n">palette</span><span class="p">)}</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">reduced_data</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> Scatter Plot&#39;</span><span class="p">,</span>
+        <span class="n">template</span><span class="o">=</span><span class="s1">&#39;plotly_white&#39;</span><span class="p">,</span>
+        <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">color_col</span><span class="p">,</span>
+        <span class="n">category_orders</span><span class="o">=</span><span class="p">{</span><span class="n">color_col</span><span class="p">:</span> <span class="n">categories</span><span class="p">},</span>
+        <span class="n">color_discrete_map</span><span class="o">=</span><span class="n">color_map</span>
+    <span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dim_reduction</span><span class="si">}</span><span class="s1"> Scatter Plot&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span>
+            <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+            <span class="s1">&#39;xanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;yanchor&#39;</span><span class="p">:</span> <span class="s1">&#39;top&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">}</span>
+        <span class="p">},</span>
+        <span class="n">xaxis_title</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC1&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">}</span>
+        <span class="p">},</span>
+        <span class="n">yaxis_title</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;PC2&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mi">18</span><span class="p">}</span>
+        <span class="p">}</span>
+
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_kde</span><span class="p">(</span><span class="n">data_subset</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs a Gaussian Kernel Density Estimation (KDE) on a subset of the original data to estimate</span>
+<span class="sd">    the probability density function over a specified range, using a grid resolution determined by</span>
+<span class="sd">    kde_resolution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data_subset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_subset</span><span class="p">)</span>
+    <span class="n">kde</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">data_subset</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">bw_method</span><span class="o">=</span><span class="s1">&#39;silverman&#39;</span><span class="p">)</span>  <span class="c1"># Transpose for data compatibility</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">kde_resolution</span><span class="p">)</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">)]</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="o">*</span><span class="n">grid</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s1">&#39;ij&#39;</span><span class="p">)</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mesh</span><span class="p">])</span>
+    <span class="n">kde_values</span> <span class="o">=</span> <span class="n">kde</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="n">kde_resolution</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">xmin</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">kde_values</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_kde</span><span class="p">(</span><span class="n">kde_values</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Normalizes the results of the Kernel Density Estimation (KDE) values so that the total area under the</span>
+<span class="sd">    estimated probability density function equals 1. This ensures that the KDE represents a valid probability</span>
+<span class="sd">    distribution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kde_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">kde_values</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># Set negative values to 0</span>
+    <span class="k">return</span> <span class="n">kde_values</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">kde_values</span><span class="p">)</span>  <span class="c1"># Normalize</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_marginalize_multivariate_map</span><span class="p">(</span><span class="n">multivariate_map</span><span class="p">,</span> <span class="n">supports</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="n">probability_map_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">multivariate_map</span><span class="p">)</span>
+        <span class="n">probability_map_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">probability_map_dim1</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">probability_map_dim2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">probability_map_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">probability_map_dim1</span><span class="p">,</span> <span class="n">probability_map_dim2</span><span class="p">])</span>
+
+    <span class="k">elif</span> <span class="n">dimensions</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">probability_map_dim1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">probability_map_dim2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">probability_map_dim3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">dim3</span> <span class="ow">in</span> <span class="n">multivariate_map</span><span class="p">],</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="n">supports</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">probability_map_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">probability_map_dim1</span><span class="p">,</span> <span class="n">probability_map_dim2</span><span class="p">,</span> <span class="n">probability_map_dim3</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">probability_map_list</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_date_to_numeric</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">columns_by_type</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+    <span class="c1"># Convert dates to numbers</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]):</span>
+        <span class="n">date_cols</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">columns_by_type</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">date_cols</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;coerce&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int64&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Converting date columns to numeric for distribution analysis&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Carlos Sáez Silvestre, David Fernández Narro, Pablo Ferri Borredá, Ángel Sánchez García.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

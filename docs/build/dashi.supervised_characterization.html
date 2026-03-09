@@ -1,0 +1,354 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dashi.supervised_characterization package &mdash; dashi  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="dashi.unsupervised_characterization package" href="dashi.unsupervised_characterization.html" />
+    <link rel="prev" title="dashi package" href="dashi.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            dashi
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="dashi.html">dashi package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="dashi.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">dashi.supervised_characterization package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization.arrange_metrics">dashi.supervised_characterization.arrange_metrics module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization.estimate_models">dashi.supervised_characterization.estimate_models module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization.plot_performance">dashi.supervised_characterization.plot_performance module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-dashi.supervised_characterization">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dashi.unsupervised_characterization.html">dashi.unsupervised_characterization package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi._constants">dashi._constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi.utils">dashi.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dashi.html#module-dashi">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">dashi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="dashi.html">dashi package</a></li>
+      <li class="breadcrumb-item active">dashi.supervised_characterization package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/dashi.supervised_characterization.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dashi-supervised-characterization-package">
+<h1>dashi.supervised_characterization package<a class="headerlink" href="#dashi-supervised-characterization-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-dashi.supervised_characterization.arrange_metrics">
+<span id="dashi-supervised-characterization-arrange-metrics-module"></span><h2>dashi.supervised_characterization.arrange_metrics module<a class="headerlink" href="#module-dashi.supervised_characterization.arrange_metrics" title="Link to this heading"></a></h2>
+<p>Functions for arranging metrics in a data frame from the original metrics dictionary.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.supervised_characterization.arrange_metrics.arrange_performance_metrics">
+<span class="sig-name descname"><span class="pre">arrange_performance_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/arrange_metrics.html#arrange_performance_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.arrange_metrics.arrange_performance_metrics" title="Link to this definition"></a></dt>
+<dd><p>Organizes and formats a subset of metrics from a dictionary into a pandas DataFrame.</p>
+<p>This function filters the metrics based on the provided metric name, selects only those
+relevant to the ‘test’ subset, and formats the result into a DataFrame with a corrected
+index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em><em> of </em><em>{tuple: dict{str: float}}</em>) – A dictionary where each key is a tuple <cite>(train_batch_ids, test_batch_id, ‘test’)</cite>
+representing the training/testing combination. Each corresponding value is another
+dictionary containing the calculated performance metrics for that specific test.</p></li>
+<li><p><strong>metric_name</strong> (<em>str</em>) – <p>The name of the metric to be selected from the <cite>metrics</cite> dictionary.
+Regression metric names, when applicable:</p>
+<blockquote>
+<div><ul>
+<li><p>’MEAN_ABSOLUTE_ERROR’</p></li>
+<li><p>’MEAN_SQUARED_ERROR’</p></li>
+<li><p>’ROOT_MEAN_SQUARED_ERROR’</p></li>
+<li><p>’R_SQUARED’</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Classification metric names, when applicable:</dt><dd><ul>
+<li><p>’AUC_{class_identifier}’</p></li>
+<li><p>’AUC_MACRO’</p></li>
+<li><p>’LOGLOSS’</p></li>
+<li><p>’RECALL_{class_identifier}’</p></li>
+<li><p>’PRECISION_{class_identifier}’</p></li>
+<li><p>’F1-SCORE_{class_identifier}’</p></li>
+<li><p>’ACCURACY’</p></li>
+<li><p>’RECALL_MACRO’</p></li>
+<li><p>’RECALL_MICRO’</p></li>
+<li><p>’RECALL_WEIGHTED’</p></li>
+<li><p>’PRECISION_MACRO’</p></li>
+<li><p>’PRECISION_MICRO’</p></li>
+<li><p>’PRECISION_WEIGHTED’</p></li>
+<li><p>’F1-SCORE_MACRO’</p></li>
+<li><p>’F1-SCORE_MICRO’</p></li>
+<li><p>’F1-SCORE_WEIGHTED’</p></li>
+</ul>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataFrame where the rows represent the combinations and the columns represent
+the metric values, with the index corrected for cumulative learning strategies.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>TypeError</strong> – If <cite>metrics</cite> is not a dictionary or if <cite>metric_name</cite> is not a string.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The function assumes that the <cite>metrics</cite> dictionary contains a third element ‘test’ for
+filtering the relevant metrics.</p>
+</dd></dl>
+
+</section>
+<section id="module-dashi.supervised_characterization.estimate_models">
+<span id="dashi-supervised-characterization-estimate-models-module"></span><h2>dashi.supervised_characterization.estimate_models module<a class="headerlink" href="#module-dashi.supervised_characterization.estimate_models" title="Link to this heading"></a></h2>
+<p>Main function for estimating models over multiple temporal or multi-source batches.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.supervised_characterization.estimate_models.estimate_multibatch_models">
+<span class="sig-name descname"><span class="pre">estimate_multibatch_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_numerical_column_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_categorical_column_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_regression_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_classification_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'from_scratch'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'histogram_gradient_boosting'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/estimate_models.html#estimate_multibatch_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.estimate_models.estimate_multibatch_models" title="Link to this definition"></a></dt>
+<dd><p>Estimates models across multiple batches, based on either time (temporal) or source.
+Requires specifying one target variable (regression or classification) and at least one
+numerical or categorical input feature within the input DataFrame.
+At the same time, it is necessary to provide either a date variable (indicating the period with the corresponding
+argument) or a source variable. The date variable must be a valid date, and the source variable categories need to
+be specified as strings.
+Additionally, it is recommended that the amount of data in each batching group be sufficient for statistical
+representativeness.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>DataFrame</em>) – The input data containing numerical and/or categorical features, as well as the target variable
+(either a classification or regression target).</p></li>
+<li><p><strong>inputs_numerical_column_names</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>default=None</em>) – List of column names representing numerical input features. If there are no numerical input features,
+set this to None.</p></li>
+<li><p><strong>inputs_categorical_column_names</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>default=None</em>) – List of column names representing categorical input features. If there are no categorical input features,
+set this to None.</p></li>
+<li><p><strong>output_regression_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name for the regression target variable. If there is no regression target, set this to None.</p></li>
+<li><p><strong>output_classification_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name for the classification target variable. If there is no classification target, set this to None.</p></li>
+<li><p><strong>date_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name containing date or time information for temporal batching. If performing source-based
+analysis instead of temporal batching, set this to None.</p></li>
+<li><p><strong>period</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Period for batching the data (‘month’ or ‘year’) when using temporal batching. If not using temporal
+batching, set this to None.</p></li>
+<li><p><strong>source_column_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=None</em>) – Column name representing the source of the data (for multi-source batching). If performing temporal
+batching, set this to None.</p></li>
+<li><p><strong>learning_strategy</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default='from_scratch'</em>) – Defines the learning strategy: either ‘from_scratch’ or ‘cumulative’. Note that the ‘cumulative’ strategy
+can only be applied to temporal analyses, not multi-source analyses.</p></li>
+<li><p><strong>model_type</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default='histogram_gradient_boosting'</em>) – Defines the model family to use: either ‘random_forest’ or ‘histogram_gradient_boosting’.
+When ‘random_forest’ is selected, categorical features are one-hot encoded and a
+<code class="docutils literal notranslate"><span class="pre">RandomForestClassifier</span></code>/<code class="docutils literal notranslate"><span class="pre">RandomForestRegressor</span></code> is used.
+When ‘histogram_gradient_boosting’ is selected, categorical features are ordinal encoded
+(with native categorical support) and a
+<code class="docutils literal notranslate"><span class="pre">HistGradientBoostingClassifier</span></code>/<code class="docutils literal notranslate"><span class="pre">HistGradientBoostingRegressor</span></code> is used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>A dictionary where each key is a tuple <cite>(train_batch_ids, test_batch_id, ‘test’)</cite>
+representing the training/testing combination. Each corresponding value is another
+dictionary containing the calculated performance metrics for that specific test.</p>
+<p>The inner dictionary contains metric names (str) and their values (float):
+Regression metrics, if applicable:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>’MEAN_ABSOLUTE_ERROR’</p></li>
+<li><p>’MEAN_SQUARED_ERROR’</p></li>
+<li><p>’ROOT_MEAN_SQUARED_ERROR’</p></li>
+<li><p>’R_SQUARED’</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Classification metrics, if applicable:</dt><dd><ul class="simple">
+<li><p>’AUC_{class_identifier}’</p></li>
+<li><p>’PR-AUC_{class_identifier}’</p></li>
+<li><p>’AUC_MACRO’</p></li>
+<li><p>’PR-AUC_MACRO’</p></li>
+<li><p>’LOGLOSS’</p></li>
+<li><p>’RECALL_{class_identifier}’</p></li>
+<li><p>’PRECISION_{class_identifier}’</p></li>
+<li><p>’F1-SCORE_{class_identifier}’</p></li>
+<li><p>’ACCURACY’</p></li>
+<li><p>’RECALL_MACRO’</p></li>
+<li><p>’RECALL_MICRO’</p></li>
+<li><p>’RECALL_WEIGHTED’</p></li>
+<li><p>’PRECISION_MACRO’</p></li>
+<li><p>’PRECISION_MICRO’</p></li>
+<li><p>’PRECISION_WEIGHTED’</p></li>
+<li><p>’F1-SCORE_MACRO’</p></li>
+<li><p>’F1-SCORE_MICRO’</p></li>
+<li><p>’F1-SCORE_WEIGHTED’</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[Tuple, Dict[str, float]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-dashi.supervised_characterization.plot_performance">
+<span id="dashi-supervised-characterization-plot-performance-module"></span><h2>dashi.supervised_characterization.plot_performance module<a class="headerlink" href="#module-dashi.supervised_characterization.plot_performance" title="Link to this heading"></a></h2>
+<p>Main function for multi-batch metrics exploration.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dashi.supervised_characterization.plot_performance.plot_multibatch_performance">
+<span class="sig-name descname"><span class="pre">plot_multibatch_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dashi/supervised_characterization/plot_performance.html#plot_multibatch_performance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dashi.supervised_characterization.plot_performance.plot_multibatch_performance" title="Link to this definition"></a></dt>
+<dd><p>Plots a heatmap visualizing the specified metric for multiple batches of training and test models.</p>
+<p>The function takes a dictionary of metrics and filters them based on the metric identifier.
+It then generates a heatmap where the x-axis represents the test batches,
+the y-axis represents the training batches, and the color scale indicates the
+values of the specified metric.</p>
+<p>The plot is interactive and can be explored (zoomed, hovered, etc.) using Plotly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em>) – A dictionary where keys are tuples of (training_batch, test_batch, dataset_type),
+and values are the metric values for the corresponding combination.
+The <cite>dataset_type</cite> should be <cite>‘test’</cite> to include the metric in the heatmap.</p></li>
+<li><p><strong>metric_name</strong> (<em>str</em>) – <p>The name of the metric to visualize.
+The function will filter metrics based on this identifier and only plot those for the ‘test’ set.
+Regression metric names, when applicable:</p>
+<blockquote>
+<div><ul>
+<li><p>’MEAN_ABSOLUTE_ERROR’</p></li>
+<li><p>’MEAN_SQUARED_ERROR’</p></li>
+<li><p>’ROOT_MEAN_SQUARED_ERROR’</p></li>
+<li><p>’R_SQUARED’</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Classification metric names, when applicable:</dt><dd><ul>
+<li><p>’AUC_{class_identifier}’</p></li>
+<li><p>’AUC_MACRO’</p></li>
+<li><p>’LOGLOSS’</p></li>
+<li><p>’RECALL_{class_identifier}’</p></li>
+<li><p>’PRECISION_{class_identifier}’</p></li>
+<li><p>’F1-SCORE_{class_identifier}’</p></li>
+<li><p>’ACCURACY’</p></li>
+<li><p>’RECALL_MACRO’</p></li>
+<li><p>’RECALL_MICRO’</p></li>
+<li><p>’RECALL_WEIGHTED’</p></li>
+<li><p>’PRECISION_MACRO’</p></li>
+<li><p>’PRECISION_MICRO’</p></li>
+<li><p>’PRECISION_WEIGHTED’</p></li>
+<li><p>’F1-SCORE_MACRO’</p></li>
+<li><p>’F1-SCORE_MICRO’</p></li>
+<li><p>’F1-SCORE_WEIGHTED’</p></li>
+</ul>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Plotly figure object containing the heatmap visualization of the specified metric.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>fig</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>TypeError</strong> – If the <cite>metrics</cite> parameter is not a dictionary or if <cite>metric_identifier</cite> is not a string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-dashi.supervised_characterization">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-dashi.supervised_characterization" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dashi.html" class="btn btn-neutral float-left" title="dashi package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dashi.unsupervised_characterization.html" class="btn btn-neutral float-right" title="dashi.unsupervised_characterization package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Carlos Sáez Silvestre, David Fernández Narro, Pablo Ferri Borredá, Ángel Sánchez García.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
