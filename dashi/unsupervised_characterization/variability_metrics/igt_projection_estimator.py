@@ -21,7 +21,6 @@ from typing import Optional, Dict, Union
 
 import numpy as np
 import pandas as pd
-from scipy.linalg import eigh
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 from sklearn.preprocessing import MinMaxScaler
@@ -29,9 +28,10 @@ from sklearn.preprocessing import MinMaxScaler
 from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (trim_data_temporal_map,
                                                                                      DataTemporalMap,
                                                                                      MultiVariateDataTemporalMap)
-from dashi.unsupervised_characterization.variability_metrics.igt_projection import IGTProjection
 from dashi.unsupervised_characterization.utils import _js_divergence, _cmdscale
+from dashi.unsupervised_characterization.variability_metrics.igt_projection import IGTProjection
 
+__all__ = ['estimate_igt_projection']
 
 
 def _igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='classicalmds'):
@@ -167,7 +167,7 @@ def estimate_igt_projection(data_temporal_map: Union[DataTemporalMap, MultiVaria
 
     if start_date is not None or end_date is not None:
         if start_date is not None and end_date is not None:
-            if start_date and end_date in data_temporal_map.dates:
+            if start_date in data_temporal_map.dates and end_date in data_temporal_map.dates:
                 data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date=start_date, end_date=end_date)
             else:
                 raise ValueError('start_date and end_date must be in the range of dataTemporalMap.dates')

@@ -29,6 +29,14 @@ from dashi.unsupervised_characterization.utils import (_estimate_absolute_freque
                                                        BaseMultiVariateMap, _perform_dimensionality_reduction,
                                                        _scatter_plot, _compute_kde, _normalize_kde, _date_to_numeric)
 
+__all__ = [
+    'DataSourceMap',
+    'MultiVariateDataSourceMap',
+    'estimate_univariate_data_source_map',
+    'estimate_multivariate_data_source_map',
+    'estimate_conditional_data_source_map',
+]
+
 
 @dataclass
 class DataSourceMap:
@@ -56,9 +64,6 @@ class DataSourceMap:
 
     variable_type: Union[str, None]
         Type of the variable (character).
-
-    period: Union[str, None]
-        Batching period among 'week', 'month' and 'year'.
     """
 
     probability_map: Union[List[List[float]], None] = None
@@ -100,17 +105,13 @@ class DataSourceMap:
 
         # Check if the length of support matches the columns of probability_map
         if self.support is not None and self.probability_map is not None:
-            if len(self.support) != len(self.probability_map):
+            if len(self.support) != len(self.probability_map[1]):
                 errors.append("the length of support must match the columns of probability_map")
 
         # Check if the length of support matches the columns of counts_map
         if self.support is not None and self.counts_map is not None:
-            if len(self.support) != len(self.counts_map):
+            if len(self.support) != len(self.counts_map[1]):
                 errors.append("the length of support must match the columns of counts_map")
-
-        # Check if period is one of the valid periods
-        if self.period is not None and self.period not in VALID_TEMPORAL_PERIODS:
-            errors.append(f"period must be one of the following: {', '.join(VALID_TEMPORAL_PERIODS)}")
 
         # Check if variableType is one of the valid types
         if self.variable_type is not None and self.variable_type not in VALID_TYPES:
@@ -476,7 +477,7 @@ def estimate_conditional_data_source_map(
         mixed data. Note: in case of using 'FAMD', numerical variables must be
         in float type. Otherwise they will be treated as categorical.
 
-    scale: str
+    scale: bool
         Applicable just when using PCA dimensionality reduction. If true scales the input data using z-score
         normalization. Defaults to `True`
 

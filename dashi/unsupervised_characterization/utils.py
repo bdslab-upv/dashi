@@ -141,13 +141,13 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
         for column_index, column in enumerate(supports):
             if column in supports_to_fill:
                 supports_to_fill[column] = supports[column]
-                supports_to_estimate_columns.drop(column)
+                supports_to_estimate_columns = supports_to_estimate_columns.drop(column)
                 error_in_support = False
 
                 if supports[column].dtypes == VALID_CATEGORICAL_TYPE:
                     error_in_support = (
                             not supports[column].dtype.name == VALID_CATEGORICAL_TYPE
-                            or not supports[column].dtype.name == VALID_STRING_TYPE
+                            and not supports[column].dtype.name == VALID_STRING_TYPE
                     )
                 elif is_datetime64_any_dtype(supports[column]):
                     error_in_support = not is_datetime64_any_dtype(supports[column])
@@ -230,26 +230,15 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
     if int_mask.any():
         minimums = data.loc[:, int_mask].apply(np.nanmin, axis=0)
         maximums = data.loc[:, int_mask].apply(np.nanmax, axis=0)
-        if np.sum(int_mask) == 1:
-            supports.update(
-                {
-                    column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
-                    for column, minimum, maximum
-                    in
-                    zip(data.columns[int_mask], minimums,
-                        maximums)
-                }
-            )
-        else:
-            supports.update(
-                {
-                    column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
-                    for column, minimum, maximum
-                    in
-                    zip(data.columns[int_mask], minimums,
-                        maximums)
-                }
-            )
+        supports.update(
+            {
+                column: np.linspace(minimum, maximum, numeric_variables_bins).tolist()
+                for column, minimum, maximum
+                in
+                zip(data.columns[int_mask], minimums,
+                    maximums)
+            }
+        )
 
     str_mask = columns_types['string'] & supports_to_estimate_columns.notna()
     if str_mask.any():

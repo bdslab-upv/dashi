@@ -20,6 +20,7 @@ from typing import Dict, Union, Tuple
 
 from pandas import Series, DataFrame
 
+__all__ = ['arrange_performance_metrics']
 
 def arrange_performance_metrics(*, metrics: Dict[Tuple, Dict[str, float]], metric_name: str) -> DataFrame:
     """

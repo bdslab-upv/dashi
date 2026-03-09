@@ -24,6 +24,8 @@ from pandas.api.types import is_datetime64_any_dtype
 
 from dashi._constants import MONTH_SHORT_ABBREVIATIONS
 
+__all__ = ['format_data']
+
 
 def _format_date_for_year(date: datetime) -> str:
     year_part = date.strftime('%Y')
@@ -41,12 +43,14 @@ def _format_date_for_month(date: datetime) -> str:
 def _format_date_for_week(date: datetime) -> str:
     year_part = date.strftime('%y')
     month_part = MONTH_SHORT_ABBREVIATIONS[date.month - 1]
-    day_part = str(date.isoweekday())
+    day_part = str(date.isocalendar().week)
 
     return year_part + month_part + day_part
 
 def _validate_date_format(date_format, verbose=False):
-    """Valida el formato de fecha y muestra mensajes informativos si verbose=True."""
+    """
+    Validate date formate and show information messages if verbose=True.
+    """
     has_year = _is_letter_in_date_format(date_format, ['Y', 'y'])
     has_month = _is_letter_in_date_format(date_format, ['m', 'M', 'b', 'B', 'h'])
     has_day = _is_letter_in_date_format(date_format, ['d', 'D'])
@@ -63,8 +67,10 @@ def _validate_date_format(date_format, verbose=False):
             print('The data format contains only the year')
             print('Take into account that if you perform an analysis by week or by month, they will be automatically assigned as the first day of the month and first month of the year.')
     else:
-        print('Please, check the format of the date. At least it should contain the year.')
-        raise ValueError('Invalid date format')
+        raise ValueError(
+            'Invalid date format. Please check the format of the date. '
+            'At least it should contain the year.'
+        )
 
 
 def format_data(input_dataframe: pd.DataFrame,
@@ -148,18 +154,20 @@ def format_data(input_dataframe: pd.DataFrame,
 
         output_dataframe[date_column_name] = pd.to_datetime(output_dataframe[date_column_name], format=date_format).dt.as_unit("us")
 
-        initial_len = len(output_dataframe)
-        output_dataframe = output_dataframe.dropna(subset=[date_column_name]).reset_index(drop=True)
-        removed_rows = initial_len - len(output_dataframe)
+        rows_to_drop = output_dataframe[output_dataframe[date_column_name].isna()].index
+        removed_rows = len(rows_to_drop)
         if removed_rows > 0:
+            output_dataframe.drop(index=rows_to_drop, inplace=True)
+            output_dataframe.reset_index(drop=True, inplace=True)
             print(f'There are {removed_rows} rows that do not contain date information. They have been removed.')
         return output_dataframe
 
     elif source_column_name is not None:
-        initial_len = len(output_dataframe)
-        output_dataframe = output_dataframe.dropna(subset=[source_column_name]).reset_index(drop=True)
-        removed_rows = initial_len - len(output_dataframe)
+        rows_to_drop = output_dataframe[output_dataframe[source_column_name].isna()].index
+        removed_rows = len(rows_to_drop)
         if removed_rows > 0:
+            output_dataframe.drop(index=rows_to_drop, inplace=True)
+            output_dataframe.reset_index(drop=True, inplace=True)
             print(f'There are {removed_rows} rows that do not contain source information. They have been removed.')
         return output_dataframe
 

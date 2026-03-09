@@ -17,7 +17,6 @@ Main function for estimating models over multiple temporal or multi-source batch
 """
 
 import gc
-# MODULES IMPORT
 import warnings
 from typing import List, Dict, Optional, Tuple
 
@@ -35,6 +34,8 @@ from sklearn.ensemble import (
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import LabelEncoder, RobustScaler, OneHotEncoder, OrdinalEncoder
 from tqdm.auto import tqdm
+
+__all__ = ['estimate_multibatch_models']
 
 
 # FUNCTION DEFINITION

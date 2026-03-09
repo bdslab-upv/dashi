@@ -15,18 +15,23 @@
 """
 Data Source Map plotting main functions and classes
 """
-import numpy as np
-import pandas as pd
-import plotly.graph_objs as go
-import plotly.subplots as sp
-import plotly.colors
 from typing import Optional, Dict, List
 
-from dashi._constants import VALID_SORTING_METHODS, VALID_COLOR_PALETTES, \
-    VALID_PLOT_MODES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE
+import numpy as np
+import plotly.colors
+import plotly.graph_objs as go
+import plotly.subplots as sp
+
 from dashi.unsupervised_characterization.data_source_map.data_source_map import DataSourceMap, MultiVariateDataSourceMap
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
                                                        _marginalize_multivariate_map, _create_series_figure)
+
+__all__ = [
+    'plot_univariate_data_source_map',
+    'plot_multivariate_data_source_map',
+    'plot_conditional_data_source_map'
+]
+
 
 def plot_univariate_data_source_map(
         data_source_map: DataSourceMap,
@@ -96,10 +101,10 @@ def plot_univariate_data_source_map(
         sorting_method=sorting_method
     )
 
-    if not end_value or end_value > source_map.shape[0]:
+    if not end_value or end_value > source_map.shape[1]:
         end_value = source_map.shape[1]
 
-    if start_value > source_map.shape[0]:
+    if start_value > source_map.shape[1]:
         start_value = source_map.shape[1]
 
     counts_subarray = _get_counts_array(

@@ -19,10 +19,11 @@ Main function for multi-batch metrics exploration.
 from typing import Dict
 
 import plotly.graph_objects as go
-import plotly.io as pio
 from plotly.colors import get_colorscale
 
 from .arrange_metrics import arrange_performance_metrics
+
+__all__ = ['plot_multibatch_performance']
 
 _FONTSIZE = 14
 

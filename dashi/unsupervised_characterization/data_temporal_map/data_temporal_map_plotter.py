@@ -30,6 +30,12 @@ from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sor
                                                        _create_heatmap_figure, _create_series_figure,
                                                        _marginalize_multivariate_map)
 
+__all__ = [
+    'plot_univariate_data_temporal_map',
+    'plot_multivariate_data_temporal_map',
+    'plot_conditional_data_temporal_map'
+]
+
 
 def plot_univariate_data_temporal_map(
         data_temporal_map: DataTemporalMap,

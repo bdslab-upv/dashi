@@ -19,19 +19,21 @@ Multi Source Variability (MSV) metrics estimation module
 from dataclasses import dataclass
 
 import numpy as np
-from typing import Union, Dict
+from typing import Union, Dict, Optional
 
 from dashi.unsupervised_characterization.utils import _js_divergence, _cmdscale
 from dashi.unsupervised_characterization.data_source_map.data_source_map import DataSourceMap, MultiVariateDataSourceMap
 
+__all__ = ['MSVMetrics', 'estimate_MSV_metrics']
+
 
 @dataclass
 class MSVMetrics:
-    GPD: float = None
-    SPO: np.array = None
-    vertices: np.array = None
-    sources: np.array = None
-    nBySource: np.array = None
+    GPD: Optional[float] = None
+    SPO: Optional[np.array] = None
+    vertices: Optional[np.array] = None
+    sources: Optional[np.array] = None
+    nBySource: Optional[np.array] = None
 
 def _distc(n: int) -> float:
     if n == 1:

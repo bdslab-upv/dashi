@@ -30,6 +30,15 @@ from dashi.unsupervised_characterization.utils import (_estimate_absolute_freque
                                                        BaseMultiVariateMap, _perform_dimensionality_reduction,
                                                        _scatter_plot, _normalize_kde, _compute_kde)
 
+__all__ = [
+    'DataTemporalMap',
+    'MultiVariateDataTemporalMap',
+    'trim_data_temporal_map',
+    'estimate_univariate_data_temporal_map',
+    'estimate_multivariate_data_temporal_map',
+    'estimate_conditional_data_temporal_map',
+]
+
 
 @dataclass
 class DataTemporalMap:
@@ -100,12 +109,12 @@ class DataTemporalMap:
 
         # Check if the length of support matches the columns of probability_map
         if self.support is not None and self.probability_map is not None:
-            if len(self.support) != len(self.probability_map):
+            if len(self.support) != len(self.probability_map[1]):
                 errors.append("the length of support must match the columns of probability_map")
 
         # Check if the length of support matches the columns of counts_map
         if self.support is not None and self.counts_map is not None:
-            if len(self.support) != len(self.counts_map):
+            if len(self.support) != len(self.counts_map[1]):
                 errors.append("the length of support must match the columns of counts_map")
 
         # Check if period is one of the valid periods
@@ -566,18 +575,7 @@ def estimate_multivariate_data_temporal_map(
         dates = pd.Series(data_without_date_column.index)
         data_without_date_column = data_without_date_column.reset_index(drop=True)
 
-    if period == TEMPORAL_PERIOD_MONTH:
-        dates_for_batching = pd.to_datetime(dates).dt.to_period('M').astype('str')
-        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='MS')
-        unique_dates = pd.to_datetime(full_range)
-    if period == TEMPORAL_PERIOD_YEAR:
-        dates_for_batching = pd.to_datetime(dates).dt.to_period('Y').astype('str')
-        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='YS')
-        unique_dates = pd.to_datetime(full_range)
-    if period == TEMPORAL_PERIOD_WEEK:
-        dates_for_batching = pd.to_datetime(dates).dt.to_period('W').astype('str')
-        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='W-SUN')
-        unique_dates = pd.to_datetime(full_range)
+    dates_for_batching, unique_dates = _prepare_dates_for_batching(dates, period)
 
     if verbose:
         print(f'Total number of columns to analyze: {number_of_columns}')
@@ -609,7 +607,7 @@ def estimate_multivariate_data_temporal_map(
     )
 
     reduced_data[[date_column_name]] = pd.DataFrame({
-        date_column_name: pd.to_datetime(dates_for_batching)
+        date_column_name: dates_for_batching.values
     })
 
     if scatter_plot:
@@ -750,34 +748,27 @@ def estimate_conditional_data_temporal_map(
         raise ValueError('Scatter plot cannot be generated when dimensions is set to 1')
 
     # Separate analysis data from analysis dates
-    labels_columns = data[label_column_name]
+    labels = data[label_column_name]
     dates = data[date_column_name]
     data_without_date_column = data.drop(columns=[date_column_name, label_column_name])
     number_of_columns = len(data_without_date_column.columns)
 
     if start_date is not None or end_date is not None:
         data_without_date_column = data_without_date_column.set_index(dates)
+        labels = labels.set_axis(dates)
         data_without_date_column = data_without_date_column.sort_index(ascending=True)
+        labels = labels.sort_index(ascending=True)
         if start_date is None:
             start_date = min(dates)
         if end_date is None:
             end_date = max(dates)
         data_without_date_column = data_without_date_column.loc[start_date:end_date]
+        labels = labels.loc[start_date:end_date]
         dates = pd.Series(data_without_date_column.index)
         data_without_date_column = data_without_date_column.reset_index(drop=True)
+        labels = labels.reset_index(drop=True)
 
-    if period == TEMPORAL_PERIOD_MONTH:
-        dates_for_batching = pd.to_datetime(dates).dt.to_period('M').astype('str')
-        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='MS')
-        unique_dates = pd.to_datetime(full_range)
-    if period == TEMPORAL_PERIOD_YEAR:
-        dates_for_batching = pd.to_datetime(dates).dt.to_period('Y').astype('str')
-        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='YS')
-        unique_dates = pd.to_datetime(full_range)
-    if period == TEMPORAL_PERIOD_WEEK:
-        dates_for_batching = pd.to_datetime(dates).dt.to_period('W').astype('str')
-        full_range = pd.date_range(start=dates_for_batching.min(), end=dates_for_batching.max(), freq='W-SUN')
-        unique_dates = pd.to_datetime(full_range)
+    dates_for_batching, unique_dates = _prepare_dates_for_batching(dates, period)
 
     if verbose:
         print(f'Total number of columns to analyze: {number_of_columns}')
@@ -810,8 +801,8 @@ def estimate_conditional_data_temporal_map(
     )
 
     reduced_data[[label_column_name, date_column_name]] = pd.DataFrame({
-        label_column_name: labels_columns,
-        date_column_name: pd.to_datetime(dates_for_batching)
+        label_column_name: labels,
+        date_column_name: dates_for_batching.values
     })
 
     if scatter_plot:
@@ -902,4 +893,53 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
 
     return dtm
 
+def _prepare_dates_for_batching(dates, period):
+    """
+    Floors raw dates to the start of the corresponding temporal period and
+    generates the full date range covering all periods between the earliest
+    and latest date.
+
+    Parameters
+    ----------
+    dates : pd.Series
+        Series of datetime values to be batched.
+
+    period : str
+        One of 'week', 'month', or 'year'.
+
+    Returns
+    -------
+    dates_for_batching : pd.Series
+        Dates floored to the start of each period (timezone-naive timestamps).
+
+    unique_dates : pd.DatetimeIndex
+        Complete date range covering every period from the earliest to the
+        latest batching date.
+    """
+    dt_dates = pd.to_datetime(dates)
+
+    if period == TEMPORAL_PERIOD_MONTH:
+        dates_for_batching = dt_dates - pd.to_timedelta(dt_dates.dt.day - 1, unit='D')
+        freq = 'MS'
+    elif period == TEMPORAL_PERIOD_YEAR:
+        dates_for_batching = dt_dates - pd.to_timedelta(dt_dates.dt.dayofyear - 1, unit='D')
+        freq = 'YS'
+    elif period == TEMPORAL_PERIOD_WEEK:
+        # Floor to the start of the week (Sunday)
+        dates_for_batching = dt_dates - pd.to_timedelta((dt_dates.dt.dayofweek + 1) % 7, unit='D')
+        freq = 'W-SUN'
+    else:
+        raise ValueError(f'Period must be one of the following: {", ".join(VALID_TEMPORAL_PERIODS)}')
+
+    # Normalize to midnight to avoid time-component mismatches
+    dates_for_batching = dates_for_batching.dt.normalize()
+
+    full_range = pd.date_range(
+        start=dates_for_batching.min(),
+        end=dates_for_batching.max(),
+        freq=freq
+    )
+    unique_dates = pd.to_datetime(full_range)
+
+    return dates_for_batching, unique_dates
 

@@ -21,7 +21,6 @@ from typing import Optional
 
 import numpy as np
 import plotly.graph_objs as go
-import plotly.io as pio
 from plotly.colors import sample_colorscale
 
 from dashi._constants import VALID_COLOR_PALETTES, TEMPORAL_PERIOD_YEAR, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_WEEK, \
@@ -29,6 +28,10 @@ from dashi._constants import VALID_COLOR_PALETTES, TEMPORAL_PERIOD_YEAR, TEMPORA
 from dashi.unsupervised_characterization.variability_metrics.igt_projection import IGTProjection
 from dashi.unsupervised_characterization.variability_metrics.igt_trajectory_estimator import _estimate_igt_trajectory
 from dashi.utils import _format_date_for_year, _format_date_for_month, _format_date_for_week
+
+__all__ = [
+    'plot_IGT_projection'
+]
 
 def plot_IGT_projection(
         igt_projection: IGTProjection,

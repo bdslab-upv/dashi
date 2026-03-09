@@ -15,11 +15,12 @@
 """
 Main module for plotting Multi Source Variability (MSV) metrics.
 """
-from dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics import MSVMetrics
 import plotly.graph_objects as go
-import plotly.express as px
-import plotly.io as pio
+
 from dashi._constants import VALID_COLOR_PALETTES
+from dashi.unsupervised_characterization.variability_metrics.estimate_msv_metrics import MSVMetrics
+
+__all__ = ['plot_MSV']
 
 def plot_MSV(msv_metrics: MSVMetrics,
              dimensions: int=1,
