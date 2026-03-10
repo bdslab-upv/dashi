@@ -1,0 +1,52 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main] # Rebuild docs automatically when you push to the main branch
+  workflow_dispatch: # Allows manual workflow runs if needed
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - uses: actions/checkout@v4
+
+      # Set up Python, adjust Python version if applicable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # Install dependencies - adjust any dependencies here if needed
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints
+
+      # Build the documentation using Sphinx
+      - name: Build docs
+        run: |
+          cd docs
+          make html
+
+      # Upload the built HTML files as an artifact for deployment to GitHub Pages
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build/html # Path to the built HTML files
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
