@@ -39,7 +39,7 @@ inspiration = "Part of the Python library dashi has been inspired by the R EHRte
 
 [project.urls]
 "Homepage" = "https://github.com/bdslab-upv/dashi"
-"Documentation" = "https://github.com/bdslab-upv/dashi/docs"
+"Documentation" = "https://bdslab-upv.github.io/dashi/"
 "Source" = "https://github.com/bdslab-upv/dashi"
 "Tracker" = "https://github.com/bdslab-upv/dashi/issues"
 "License of Reference" = "https://github.com/hms-dbmi/EHRtemporalVariability/blob/master/LICENSE"

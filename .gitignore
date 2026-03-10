@@ -184,7 +184,7 @@ fabric.properties
 # idea folder, uncomment if you don't need it
 .idea
 
-# Unignore the build directory in docs
-!docs/build/
+# Ignore the build directory in docs
+docs/build/
 
 .DS_Store
