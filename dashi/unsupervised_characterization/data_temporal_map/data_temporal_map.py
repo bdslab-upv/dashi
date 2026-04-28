@@ -18,7 +18,10 @@ Data Temporal Map main functions and classes
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Union, List, Dict, Optional
+from numpy.linalg import LinAlgError as NpLinAlgError
+from scipy.linalg import LinAlgError as ScipyLinAlgError
 
+import warnings
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
@@ -850,9 +853,26 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
     kde_list: list = []
     for date in dates_info['unique_dates']:
         if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
-            kde = _compute_kde(reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
-                columns=[dates_info['date_column_name']]),
-                xmin[:dimensions], xmax[:dimensions], kde_resolution)
+            # Compute KDE for this temporal batch. Degenerate covariance matrices may raise LinAlgError.
+            try:
+                kde = _compute_kde(
+                    reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
+                        columns=[dates_info['date_column_name']]
+                    ),
+                    xmin[:dimensions],
+                    xmax[:dimensions],
+                    kde_resolution
+                )
+            except (ScipyLinAlgError, NpLinAlgError) as exc:
+                # Robust behavior: skip only the failing batch, keep processing remaining dates/labels.
+                warnings.warn(
+                    f"Skipping KDE for date {date} due to singular covariance matrix "
+                    f"(dimensions={dimensions}). Original error: {exc}",
+                    RuntimeWarning
+                )
+                kde_shape = (kde_resolution,) * dimensions
+                kde = np.full(kde_shape, np.nan)
+
             kde_list.append(kde)
         else:
             if verbose:
