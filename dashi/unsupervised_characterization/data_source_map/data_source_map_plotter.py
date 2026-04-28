@@ -304,6 +304,7 @@ def plot_conditional_data_source_map(
 
         probability_map_dict[label] = probability_map_list
 
+    conditional_plots_list = list()
     for dim in range(dimensions):
         subplot = sp.make_subplots(
             rows=len(labels),
@@ -314,7 +315,6 @@ def plot_conditional_data_source_map(
 
         font = dict(size=20, color='#7f7f7f')
 
-        conditional_plots_list = list()
         for i, (label, probability_map_list) in enumerate(probability_map_dict.items()):
             sources = sources_dict[label]
             source_map = probability_map_list[dim]
