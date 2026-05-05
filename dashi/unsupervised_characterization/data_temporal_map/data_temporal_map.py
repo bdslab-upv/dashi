@@ -163,12 +163,13 @@ class MultiVariateDataTemporalMap(BaseMultiVariateMap, DataTemporalMap):
 
 
 def trim_data_temporal_map(
-        data_temporal_map: DataTemporalMap,
+        data_temporal_map: Union[DataTemporalMap, MultiVariateDataTemporalMap],
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None
-) -> DataTemporalMap:
+) -> Union[DataTemporalMap, MultiVariateDataTemporalMap]:
     """
-    Trims the data in the DataTemporalMap object to the specified date range.
+    Returns a new, trimmed DataTemporalMap (or MultiVariateDataTemporalMap)
+    bounded by the specified date range.
 
     Parameters
     ----------
@@ -185,8 +186,8 @@ def trim_data_temporal_map(
 
     Returns
     -------
-    DataTemporalMap:
-        The input DataTemporalMap object with trimmed data.
+    DataTemporalMap | MultiVariateDataTemporalMap:
+        A new instance containing the sliced temporal data.
     """
     if start_date is None:
         start_date = min(data_temporal_map.dates)
@@ -201,11 +202,24 @@ def trim_data_temporal_map(
     start_index = data_temporal_map.dates.get_loc(start_date)
     end_index = data_temporal_map.dates.get_loc(end_date) + 1
 
-    data_temporal_map.probability_map = data_temporal_map.probability_map[start_index:end_index]
-    data_temporal_map.counts_map = data_temporal_map.counts_map[start_index:end_index]
-    data_temporal_map.dates = data_temporal_map.dates[start_index:end_index]
+    new_kwargs = data_temporal_map.__dict__.copy()
 
-    return data_temporal_map
+    if new_kwargs.get('probability_map') is not None:
+        new_kwargs['probability_map'] = new_kwargs['probability_map'][start_index:end_index]
+
+    if new_kwargs.get('counts_map') is not None:
+        new_kwargs['counts_map'] = new_kwargs['counts_map'][start_index:end_index]
+
+    if new_kwargs.get('dates') is not None:
+        new_kwargs['dates'] = new_kwargs['dates'][start_index:end_index]
+
+    if 'multivariate_probability_map' in new_kwargs and new_kwargs['multivariate_probability_map'] is not None:
+        new_kwargs['multivariate_probability_map'] = new_kwargs['multivariate_probability_map'][start_index:end_index]
+
+    if 'multivariate_counts_map' in new_kwargs and new_kwargs['multivariate_counts_map'] is not None:
+        new_kwargs['multivariate_counts_map'] = new_kwargs['multivariate_counts_map'][start_index:end_index]
+
+    return data_temporal_map.__class__(**new_kwargs)
 
 
 def estimate_univariate_data_temporal_map(
