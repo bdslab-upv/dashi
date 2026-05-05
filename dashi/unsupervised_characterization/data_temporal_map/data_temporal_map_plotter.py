@@ -183,7 +183,10 @@ def plot_univariate_data_temporal_map(
 def plot_multivariate_data_temporal_map(
         data_temporal_map: MultiVariateDataTemporalMap,
         absolute: bool = False,
-        log_transform: bool = False
+        log_transform: bool = False,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        color_palette: str = 'Spectral'
 ) -> go.Figure:
     """
     Plots a Data Temporal heatmap from a MultiVariateDataTemporalMap object.
@@ -199,6 +202,16 @@ def plot_multivariate_data_temporal_map(
     log_transform : bool
         If True, applies a log transformation to the data for better visibility of small values. Default is False.
 
+    start_date : datetime, optional
+        The starting date for the plot (filters the data). If None, uses the first date in the data. Default is None.
+
+    end_date : datetime, optional
+        The ending date for the plot (filters the data). If None, uses the last date in the data. Default is None.
+
+    color_palette : str, optional
+        The color palette to be used for the plot (e.g., 'Spectral', 'viridis', 'viridis_r', 'magma', 'magma_r).
+        Default is 'Spectral'.
+
 
     Returns
     -------
@@ -211,6 +224,8 @@ def plot_multivariate_data_temporal_map(
 
     if not isinstance(absolute, bool):
         raise TypeError('absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.')
+
+    data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date, end_date)
 
     dates = data_temporal_map.dates
 
@@ -247,7 +262,6 @@ def plot_multivariate_data_temporal_map(
             x=dates,
             y=support,
             z=counts_subarray,
-            reversescale=True,
             coloraxis='coloraxis'
         )
 
@@ -281,7 +295,10 @@ def plot_multivariate_data_temporal_map(
         showlegend=False,
         template='plotly_white',
         margin=dict(t=60, r=20, b=60, l=60),
-        coloraxis=dict(colorscale='Spectral_r'),
+        coloraxis=dict(
+            colorscale=color_palette,
+            reversescale=True
+        ),
         title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
               f'data temporal heatmap'
     )
@@ -291,7 +308,10 @@ def plot_multivariate_data_temporal_map(
 def plot_conditional_data_temporal_map(
         data_temporal_map_dict: Dict[str, MultiVariateDataTemporalMap],
         absolute: bool = False,
-        log_transform: bool = False
+        log_transform: bool = False,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        color_palette: str = 'Spectral'
 ) -> List[go.Figure]:
     """
     Plots a Figure for each dimension selected in the data_temporal_map_dict. Each Figure represents the
@@ -309,6 +329,16 @@ def plot_conditional_data_temporal_map(
     log_transform : bool
         If True, applies a log transformation to the data for better visibility of small values. Default is False.
 
+    start_date : datetime, optional
+        The starting date for the plot (filters the data). If None, uses the first date in the data. Default is None.
+
+    end_date : datetime, optional
+        The ending date for the plot (filters the data). If None, uses the last date in the data. Default is None.
+
+    color_palette : str, optional
+        The color palette to be used for the plot (e.g., 'Spectral', 'viridis', 'viridis_r', 'magma', 'magma_r).
+        Default is 'Spectral'.
+
     Returns
     -------
     conditional_plots_list : List[Figure]
@@ -325,6 +355,8 @@ def plot_conditional_data_temporal_map(
     probability_map_dict = dict()
     dates_dict = dict()
     for label, data_temporal_map in data_temporal_map_dict.items():
+        data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date, end_date)
+
         dates_dict[label] = data_temporal_map.dates
         supports = data_temporal_map.multivariate_support
         dimensions = len(supports)
@@ -371,7 +403,6 @@ def plot_conditional_data_temporal_map(
                 x=dates.astype(str),
                 y=support,
                 z=counts_subarray,
-                reversescale=True,
                 coloraxis='coloraxis'
             )
 
@@ -405,7 +436,10 @@ def plot_conditional_data_temporal_map(
             showlegend=False,
             template='plotly_white',
             margin=dict(t=60, r=20, b=60, l=60),
-            coloraxis=dict(colorscale='Spectral_r'),
+            coloraxis=dict(
+                colorscale=color_palette,
+                reversescale=True
+            ),
             title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
                   f'conditional data temporal heatmap of Principal Component {dim + 1}'
         )
