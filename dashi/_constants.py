@@ -57,8 +57,9 @@ VALID_PLOT_MODES = [Heatmap, Series]
 
 # Color scale
 Spectral = 'Spectral'
+Spectral_reversed = 'Spectral_r'
 Viridis = 'viridis'
 Viridis_reversed = 'viridis_r'
 Magma = 'magma'
 Magma_reversed = 'magma_r'
-VALID_COLOR_PALETTES = [Spectral, Viridis,Viridis_reversed, Magma, Magma_reversed]
+VALID_COLOR_PALETTES = [Spectral, Spectral_reversed, Viridis, Viridis_reversed, Magma, Magma_reversed]
