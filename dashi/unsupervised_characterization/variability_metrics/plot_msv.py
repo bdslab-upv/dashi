@@ -28,7 +28,7 @@ __all__ = ['plot_MSV']
 def plot_MSV(
     msv_metrics: MSVMetrics,
     dimensions: int = 1,
-    color_palette: str = 'Spectral',
+    color_palette: str = 'Spectral_r',
     scale_factor: str | float = 'auto',
 ) -> go.Figure:
     """
@@ -44,7 +44,7 @@ def plot_MSV(
 
     color_palette : str, optional
         The color palette to use for the plot (e.g., 'Spectral', 'viridis', 'viridis_r', 'magma', 'magma_r).
-        Default is 'Spectral'.
+        Default is 'Spectral_r'.
 
     scale_factor : {'auto', float}, optional
         Marker size scaling factor.
