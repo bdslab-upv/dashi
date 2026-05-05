@@ -23,9 +23,10 @@ import numpy as np
 import plotly.graph_objs as go
 import plotly.subplots as sp
 
+from dashi._constants import VALID_COLOR_PALETTES
 from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map import (DataTemporalMap,
-                                                                                     MultiVariateDataTemporalMap,
-                                                                                     trim_data_temporal_map)
+                                                                                      MultiVariateDataTemporalMap,
+                                                                                      trim_data_temporal_map)
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
                                                        _create_heatmap_figure, _create_series_figure,
                                                        _marginalize_multivariate_map)
@@ -35,6 +36,49 @@ __all__ = [
     'plot_multivariate_data_temporal_map',
     'plot_conditional_data_temporal_map'
 ]
+
+
+def _validate_temporal_map_plot_args(
+        absolute: bool,
+        log_transform: bool,
+        color_palette: str,
+        start_date: Optional[datetime],
+        end_date: Optional[datetime]
+) -> None:
+    if not isinstance(absolute, bool):
+        raise TypeError('absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.')
+
+    if not isinstance(log_transform, bool):
+        raise TypeError('log_transform must be a boolean value.')
+
+    if color_palette not in VALID_COLOR_PALETTES:
+        raise ValueError(f'color_palette must be one of the defined in {VALID_COLOR_PALETTES}')
+
+    if start_date is not None and not isinstance(start_date, datetime):
+        raise TypeError('start_date must be a datetime value or None.')
+
+    if end_date is not None and not isinstance(end_date, datetime):
+        raise TypeError('end_date must be a datetime value or None.')
+
+    if start_date is not None and end_date is not None and start_date > end_date:
+        raise ValueError('start_date must be earlier than or equal to end_date.')
+
+
+def _validate_temporal_map_date_range(
+        data_temporal_map: MultiVariateDataTemporalMap,
+        start_date: Optional[datetime],
+        end_date: Optional[datetime]
+) -> None:
+    if data_temporal_map.dates is None or len(data_temporal_map.dates) == 0:
+        raise ValueError('data_temporal_map.dates must contain at least one date.')
+
+    first_date = min(data_temporal_map.dates)
+    last_date = max(data_temporal_map.dates)
+    effective_start_date = start_date if start_date is not None else first_date
+    effective_end_date = end_date if end_date is not None else last_date
+
+    if effective_start_date > last_date or effective_end_date < first_date:
+        raise ValueError('The selected date range does not overlap with data_temporal_map.dates.')
 
 
 def plot_univariate_data_temporal_map(
@@ -81,7 +125,8 @@ def plot_univariate_data_temporal_map(
         Default is 'frequency'.
 
     color_palette : str, optional
-        The color palette to be used for the plot (e.g., 'Spectral', 'viridis', 'viridis_r', 'magma', 'magma_r).
+        The color palette to be used for the plot (e.g., 'Spectral', 'Spectral_r', 'viridis', 'viridis_r',
+        'magma', 'magma_r').
         Default is 'Spectral'.
 
     mode : str, optional
@@ -209,7 +254,8 @@ def plot_multivariate_data_temporal_map(
         The ending date for the plot (filters the data). If None, uses the last date in the data. Default is None.
 
     color_palette : str, optional
-        The color palette to be used for the plot (e.g., 'Spectral', 'viridis', 'viridis_r', 'magma', 'magma_r).
+        The color palette to be used for the plot (e.g., 'Spectral', 'Spectral_r', 'viridis', 'viridis_r',
+        'magma', 'magma_r').
         Default is 'Spectral'.
 
 
@@ -222,8 +268,17 @@ def plot_multivariate_data_temporal_map(
         raise TypeError('data_temporal_map must be of type MultiVariateDataTemporalMap, obtained from the '
                         'estimate_multivariate_data_temporal_map function.')
 
-    if not isinstance(absolute, bool):
-        raise TypeError('absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.')
+    _validate_temporal_map_plot_args(
+        absolute=absolute,
+        log_transform=log_transform,
+        color_palette=color_palette,
+        start_date=start_date,
+        end_date=end_date
+    )
+    _validate_temporal_map_date_range(data_temporal_map, start_date, end_date)
+
+    if data_temporal_map.multivariate_support is None or len(data_temporal_map.multivariate_support) == 0:
+        raise ValueError('data_temporal_map must contain multivariate_support.')
 
     data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date, end_date)
 
@@ -336,7 +391,8 @@ def plot_conditional_data_temporal_map(
         The ending date for the plot (filters the data). If None, uses the last date in the data. Default is None.
 
     color_palette : str, optional
-        The color palette to be used for the plot (e.g., 'Spectral', 'viridis', 'viridis_r', 'magma', 'magma_r).
+        The color palette to be used for the plot (e.g., 'Spectral', 'Spectral_r', 'viridis', 'viridis_r',
+        'magma', 'magma_r').
         Default is 'Spectral'.
 
     Returns
@@ -348,8 +404,35 @@ def plot_conditional_data_temporal_map(
         raise TypeError('data_temporal_map must be a dictionary of objects MultiVariateDataTemporalMap, resultant of '
                         'the estimate_conditional_data_temporal_map function')
 
-    if not isinstance(absolute, bool):
-        raise ValueError('absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.')
+    _validate_temporal_map_plot_args(
+        absolute=absolute,
+        log_transform=log_transform,
+        color_palette=color_palette,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    if len(data_temporal_map_dict) == 0:
+        raise ValueError('data_temporal_map_dict must contain at least one MultiVariateDataTemporalMap.')
+
+    expected_dimensions = None
+    for label, data_temporal_map in data_temporal_map_dict.items():
+        if not isinstance(label, str):
+            raise TypeError('data_temporal_map_dict keys must be strings.')
+
+        if not type(data_temporal_map) == MultiVariateDataTemporalMap:
+            raise TypeError('data_temporal_map_dict values must be MultiVariateDataTemporalMap objects.')
+
+        _validate_temporal_map_date_range(data_temporal_map, start_date, end_date)
+
+        if data_temporal_map.multivariate_support is None or len(data_temporal_map.multivariate_support) == 0:
+            raise ValueError('Each MultiVariateDataTemporalMap must contain multivariate_support.')
+
+        dimensions = len(data_temporal_map.multivariate_support)
+        if expected_dimensions is None:
+            expected_dimensions = dimensions
+        elif dimensions != expected_dimensions:
+            raise ValueError('All MultiVariateDataTemporalMap objects must have the same number of dimensions.')
 
     labels = list(data_temporal_map_dict.keys())
     probability_map_dict = dict()
