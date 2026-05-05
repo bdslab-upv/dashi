@@ -50,7 +50,10 @@ def estimate_multibatch_models(
     period: Optional[str] = None,
     source_column_name: Optional[str] = None,
     learning_strategy: Optional[str] = "from_scratch",
-    model_type: Optional[str] = 'histogram_gradient_boosting'
+    model_type: Optional[str] = 'histogram_gradient_boosting',
+    max_iter: int = 100,
+    n_estimators: int = 450,
+    max_depth: int = 9,
 ) -> Dict[Tuple, Dict[str, float]]:
     """
     Estimates models across multiple batches, based on either time (temporal) or source.
@@ -106,6 +109,15 @@ def estimate_multibatch_models(
         (with native categorical support) and a
         ``HistGradientBoostingClassifier``/``HistGradientBoostingRegressor`` is used.
 
+    max_iter : int, default=100
+        Maximum number of boosting iterations. Used only when model_type='histogram_gradient_boosting'.
+
+    n_estimators : int, default=450
+        Number of trees. Used only when model_type='random_forest'.
+
+    max_depth : int, default=9
+        Maximum tree depth. Used only when model_type='random_forest'.
+
     Returns
     -------
     Dict[Tuple, Dict[str, float]]
@@ -151,6 +163,9 @@ def estimate_multibatch_models(
         source_column_name=source_column_name,
         learning_strategy=learning_strategy,
         model_type=model_type,
+        max_iter=max_iter,
+        n_estimators=n_estimators,
+        max_depth=max_depth,
     )
 
     # Modeling settings
@@ -307,7 +322,7 @@ def estimate_multibatch_models(
             y_train = train_sub[output_regression_column_name].to_numpy(copy=False)
             if use_hgb:
                 model = HistGradientBoostingRegressor(
-                    max_iter=100,
+                    max_iter=max_iter,
                     random_state=random_seed,
                     early_stopping=True,
                     scoring="loss",
@@ -315,8 +330,8 @@ def estimate_multibatch_models(
                 )
             else:
                 model = RandomForestRegressor(
-                    n_estimators=450,
-                    max_depth=9,
+                    n_estimators=n_estimators,
+                    max_depth=max_depth,
                     random_state=random_seed,
                     n_jobs=-1,
                 )
@@ -324,7 +339,7 @@ def estimate_multibatch_models(
             y_train = train_sub[output_classification_column_name].to_numpy(copy=False)
             if use_hgb:
                 model = HistGradientBoostingClassifier(
-                    max_iter=100,
+                    max_iter=max_iter,
                     random_state=random_seed,
                     class_weight="balanced",
                     early_stopping=True,
@@ -333,8 +348,8 @@ def estimate_multibatch_models(
                 )
             else:
                 model = RandomForestClassifier(
-                    n_estimators=450,
-                    max_depth=9,
+                    n_estimators=n_estimators,
+                    max_depth=max_depth,
                     random_state=random_seed,
                     class_weight="balanced",
                     n_jobs=-1,
@@ -402,7 +417,10 @@ def _check_inputs(
         period: Optional[str] = None,
         source_column_name: Optional[str] = None,
         learning_strategy: Optional[str] = 'from_scratch',
-        model_type: Optional[str]
+        model_type: Optional[str],
+        max_iter: int = 100,
+        n_estimators: int = 450,
+        max_depth: int = 9,
 ) -> None:
     """
     Validate the inputs provided for model estimation.
@@ -438,6 +456,15 @@ def _check_inputs(
 
     model_type : Optional[str], default='histogram_gradient_boosting'
         Defines the model family: 'random_forest' or 'histogram_gradient_boosting'.
+
+    max_iter : int, default=100
+        Maximum number of boosting iterations. Used only when model_type='histogram_gradient_boosting'.
+
+    n_estimators : int, default=450
+        Number of trees. Used only when model_type='random_forest'.
+
+    max_depth : int, default=9
+        Maximum tree depth. Used only when model_type='random_forest'.
 
     Raises
     ------
@@ -547,6 +574,27 @@ def _check_inputs(
     if model_type not in ('random_forest', 'histogram_gradient_boosting'):
         raise ValueError("Unrecognized model type. Supported values are 'random_forest' and "
                          "'histogram_gradient_boosting'.")
+
+    if type(max_iter) is not int:
+        raise TypeError('max_iter must be an integer.')
+    if max_iter <= 0:
+        raise ValueError('max_iter must be greater than 0.')
+
+    if type(n_estimators) is not int:
+        raise TypeError('n_estimators must be an integer.')
+    if n_estimators <= 0:
+        raise ValueError('n_estimators must be greater than 0.')
+
+    if type(max_depth) is not int:
+        raise TypeError('max_depth must be an integer.')
+    if max_depth <= 0:
+        raise ValueError('max_depth must be greater than 0.')
+
+    if model_type == 'histogram_gradient_boosting' and (n_estimators != 450 or max_depth != 9):
+        raise ValueError('n_estimators and max_depth are only valid when model_type is random_forest.')
+
+    if model_type == 'random_forest' and max_iter != 100:
+        raise ValueError('max_iter is only valid when model_type is histogram_gradient_boosting.')
 
 
 # SPLITTING INDEXES OBTAINING
