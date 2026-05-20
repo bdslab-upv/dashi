@@ -417,9 +417,6 @@ def plot_conditional_data_temporal_map(
 
     expected_dimensions = None
     for label, data_temporal_map in data_temporal_map_dict.items():
-        if not isinstance(label, str):
-            raise TypeError('data_temporal_map_dict keys must be strings.')
-
         if not type(data_temporal_map) == MultiVariateDataTemporalMap:
             raise TypeError('data_temporal_map_dict values must be MultiVariateDataTemporalMap objects.')
 
