@@ -38,6 +38,7 @@ __all__ = [
     'MultiVariateDataTemporalMap',
     'trim_data_temporal_map',
     'estimate_univariate_data_temporal_map',
+    'estimate_conditional_univariate_data_temporal_map',
     'estimate_multivariate_data_temporal_map',
     'estimate_conditional_data_temporal_map',
 ]
@@ -321,9 +322,33 @@ def estimate_univariate_data_temporal_map(
         raise ValueError(
             f'All the elements provided in the supports parameter must be of type {", ".join(VALID_TYPES_WITHOUT_DATE)}')
 
-    # Separate analysis data from analysis dates
-    dates = data[date_column_name]
-    data_without_date_column = data.drop(columns=[date_column_name])
+    return _estimate_univariate_temporal_maps(
+        data_without_date_column=data.drop(columns=[date_column_name]),
+        dates=data[date_column_name],
+        period=period,
+        start_date=start_date,
+        end_date=end_date,
+        supports=supports,
+        numeric_variables_bins=numeric_variables_bins,
+        numeric_smoothing=numeric_smoothing,
+        date_gaps_smoothing=date_gaps_smoothing,
+        verbose=verbose
+    )
+
+
+def _estimate_univariate_temporal_maps(
+        data_without_date_column: pd.DataFrame,
+        dates: pd.Series,
+        period: str,
+        start_date: pd.Timestamp = None,
+        end_date: pd.Timestamp = None,
+        supports: Union[Dict, None] = None,
+        numeric_variables_bins: int = 100,
+        numeric_smoothing: bool = True,
+        date_gaps_smoothing: bool = False,
+        verbose: bool = False,
+        supports_are_precomputed: bool = False
+) -> Union[DataTemporalMap, Dict[str, DataTemporalMap]]:
     number_of_columns = len(data_without_date_column.columns)
 
     freq_by_period = {
@@ -348,28 +373,29 @@ def estimate_univariate_data_temporal_map(
         # Adjust the dates to the beginning of the year
         dates = dates - pd.to_timedelta(dates.dt.dayofyear - 1, unit='D')
 
-    data_types, columns_by_type = _get_types(
-        data=data_without_date_column,
-        verbose=verbose
-    )
-
-    # Convert dates to numbers
-    if any(columns_by_type['date']):
-        data_without_date_column.iloc[:, columns_by_type['date']] = data_without_date_column.iloc[:, columns_by_type['date']].apply(
-            pd.to_numeric,
-            errors='coerce'
+    if not supports_are_precomputed:
+        data_types, columns_by_type = _get_types(
+            data=data_without_date_column,
+            verbose=verbose
         )
-        if verbose:
-            print('Converting date columns to numeric for distribution analysis')
 
-    data_without_date_column, supports = _create_supports(
-        data=data_without_date_column,
-        supports=supports,
-        columns_types=columns_by_type,
-        number_of_columns=number_of_columns,
-        numeric_variables_bins=numeric_variables_bins,
-        verbose=verbose
-    )
+        # Convert dates to numbers
+        if any(columns_by_type['date']):
+            data_without_date_column.iloc[:, columns_by_type['date']] = data_without_date_column.iloc[:, columns_by_type['date']].apply(
+                pd.to_numeric,
+                errors='coerce'
+            )
+            if verbose:
+                print('Converting date columns to numeric for distribution analysis')
+
+        data_without_date_column, supports = _create_supports(
+            data=data_without_date_column,
+            supports=supports,
+            columns_types=columns_by_type,
+            number_of_columns=number_of_columns,
+            numeric_variables_bins=numeric_variables_bins,
+            verbose=verbose
+        )
 
     # Estimate the Data Temporal Map
     posterior_data_classes = data_without_date_column.dtypes
@@ -467,6 +493,157 @@ def estimate_univariate_data_temporal_map(
         if verbose:
             print('Returning results as an individual DataTemporalMap object')
         return results[data_without_date_column.columns[0]]
+
+
+def estimate_conditional_univariate_data_temporal_map(
+        data: pd.DataFrame,
+        date_column_name: str,
+        label_column_name: str,
+        period: str = TEMPORAL_PERIOD_MONTH,
+        start_date: pd.Timestamp = None,
+        end_date: pd.Timestamp = None,
+        supports: Union[Dict, None] = None,
+        numeric_variables_bins: int = 100,
+        numeric_smoothing: bool = True,
+        date_gaps_smoothing: bool = False,
+        verbose: bool = False
+) -> Dict[str, Union[DataTemporalMap, Dict[str, DataTemporalMap]]]:
+    """
+    Estimates univariate DataTemporalMap objects for each label of a DataFrame over time.
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+        A DataFrame containing analysis variables, one date column, and one label column.
+
+    date_column_name: str
+        A string indicating the name of the column in data containing the analysis date variable.
+
+    label_column_name: str
+        The name of the column that contains the labels or class/category for each observation.
+
+    period: str
+        The period to batch the data for analysis. Options are 'week', 'month', or 'year'.
+
+    start_date: pd.Timestamp
+        A date object indicating the date at which to start the analysis.
+
+    end_date: pd.Timestamp
+        A date object indicating the date at which to end the analysis.
+
+    supports: Union[Dict, None], optional
+        A dictionary containing the support of the data distributions for each variable. If not provided,
+        supports are estimated from the full dataset and reused for every label.
+
+    numeric_variables_bins: int
+        The number of bins at which to define the histogram for numerical variables.
+
+    numeric_smoothing: bool
+        Whether Kernel Density Estimation smoothing is applied on numerical variables.
+
+    date_gaps_smoothing: bool
+        Whether linear smoothing is applied to temporal batches without data.
+
+    verbose: bool
+        If True, prints additional information about the estimation process.
+
+    Returns
+    -------
+    Dict[str, Union[DataTemporalMap, Dict[str, DataTemporalMap]]]
+        A dictionary where keys are labels and values are DataTemporalMap objects, or dictionaries of
+        DataTemporalMap objects when multiple variables are analyzed.
+    """
+    if data is None:
+        raise ValueError('An input data frame is required.')
+
+    if len(data.columns) < 3:
+        raise ValueError('An input data frame is required with at least 3 columns: dates, labels and data.')
+
+    if date_column_name is None:
+        raise ValueError('The name of the column including dates is required.')
+
+    if date_column_name not in data.columns:
+        raise ValueError(f'There is not a column named \'{date_column_name}\' in the input data.')
+
+    if label_column_name is None:
+        raise ValueError('The name of the column including labels is required.')
+
+    if label_column_name not in data.columns:
+        raise ValueError(f'There is not a column named \'{label_column_name}\' in the input data.')
+
+    if label_column_name == date_column_name:
+        raise ValueError('The date and label columns must be different.')
+
+    if not is_datetime64_any_dtype(data[date_column_name]):
+        raise ValueError('The specified date column must be of type pandas.Timestamp.')
+
+    if period not in VALID_TEMPORAL_PERIODS:
+        raise ValueError(f'Period must be one of the following: {", ".join(VALID_TEMPORAL_PERIODS)}')
+
+    if not all(data[column].dtype.name in VALID_TYPES for column in data.columns):
+        print(data.dtypes)
+        raise ValueError(f'The classes of input columns must be one of the following: {", ".join(VALID_TYPES)}')
+
+    if start_date is not None and not isinstance(start_date, pd.Timestamp):
+        raise ValueError('The specified start date must be of type pandas.Timestamp')
+
+    if end_date is not None and not isinstance(end_date, pd.Timestamp):
+        raise ValueError('The specified end date must be of type pandas.Timestamp')
+
+    if supports is not None and not all(support in VALID_TYPES_WITHOUT_DATE for support in supports):
+        raise ValueError(
+            f'All the elements provided in the supports parameter must be of type {", ".join(VALID_TYPES_WITHOUT_DATE)}')
+
+    labels = data[label_column_name]
+    dates = data[date_column_name]
+    data_without_date_and_label = data.drop(columns=[date_column_name, label_column_name])
+
+    data_types, columns_by_type = _get_types(
+        data=data_without_date_and_label,
+        verbose=verbose
+    )
+
+    if any(columns_by_type['date']):
+        data_without_date_and_label.iloc[:, columns_by_type['date']] = data_without_date_and_label.iloc[:, columns_by_type['date']].apply(
+            pd.to_numeric,
+            errors='coerce'
+        )
+        if verbose:
+            print('Converting date columns to numeric for distribution analysis')
+
+    data_without_date_and_label, common_supports = _create_supports(
+        data=data_without_date_and_label.copy(),
+        supports=supports,
+        columns_types=columns_by_type,
+        number_of_columns=len(data_without_date_and_label.columns),
+        numeric_variables_bins=numeric_variables_bins,
+        verbose=verbose
+    )
+
+    conditional_maps: dict = {}
+    for label in labels.drop_duplicates():
+        if verbose:
+            print(f'Label: {label}')
+
+        label_mask = labels == label
+        label_data = data_without_date_and_label.loc[label_mask]
+        label_dates = dates.loc[label_mask]
+
+        conditional_maps[label] = _estimate_univariate_temporal_maps(
+            data_without_date_column=label_data,
+            dates=label_dates,
+            period=period,
+            start_date=start_date,
+            end_date=end_date,
+            supports=common_supports,
+            numeric_variables_bins=numeric_variables_bins,
+            numeric_smoothing=numeric_smoothing,
+            date_gaps_smoothing=date_gaps_smoothing,
+            verbose=verbose,
+            supports_are_precomputed=True
+        )
+
+    return conditional_maps
 
 def estimate_multivariate_data_temporal_map(
         data: pd.DataFrame,
