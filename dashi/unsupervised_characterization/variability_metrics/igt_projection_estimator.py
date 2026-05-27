@@ -90,17 +90,130 @@ def _igt_projection_core(data_temporal_map=None, dimensions=3, embedding_type='c
     return igt_projection
 
 
+def _align_and_combine_conditional_temporal_maps(
+        conditional_maps: Dict[str, Union[DataTemporalMap, MultiVariateDataTemporalMap]]
+) -> DataTemporalMap:
+    probability_maps_list: list = []
+    periods = set()
+    variable_names = set()
+    dates_indexes = []
+    all_multivariate = all(isinstance(conditional_map, MultiVariateDataTemporalMap)
+                           for conditional_map in conditional_maps.values())
+
+    for conditional_map in conditional_maps.values():
+        probability_maps_list.append(conditional_map.probability_map)
+        dates_indexes.append(pd.DatetimeIndex(pd.to_datetime(conditional_map.dates)))
+        periods.add(conditional_map.period)
+        variable_names.add(conditional_map.variable_name)
+
+    if len(periods) > 1:
+        raise ValueError('All conditional temporal maps must have the same period.')
+
+    dates = pd.DatetimeIndex(np.unique(np.concatenate([dates_index.values for dates_index in dates_indexes])))
+    aligned_probability_maps = []
+    for probability_map, dates_index in zip(probability_maps_list, dates_indexes):
+        aligned_probability_maps.append(pd.DataFrame(probability_map, index=dates_index).reindex(dates).values)
+
+    concatenated_matrix = np.concatenate(aligned_probability_maps, axis=1)
+    row_sums = np.nansum(concatenated_matrix, axis=1, keepdims=True)
+    normalized_matrix = np.full_like(concatenated_matrix, np.nan, dtype=float)
+
+    valid_mask = np.isfinite(row_sums) & (row_sums > 0)
+    np.divide(concatenated_matrix, row_sums, out=normalized_matrix, where=valid_mask)
+
+    variable_name = 'Conditional DTM'
+    if not all_multivariate and len(variable_names) == 1:
+        variable_name = f'Conditional {next(iter(variable_names))}'
+
+    return DataTemporalMap(
+        probability_map=normalized_matrix,
+        counts_map=None,
+        dates=dates,
+        support=None,
+        variable_name=variable_name,
+        variable_type='float64',
+        period=next(iter(periods))
+    )
+
+
+def _resolve_temporal_map_for_igt(
+        data_temporal_map: Union[DataTemporalMap, MultiVariateDataTemporalMap, Dict],
+        variable_name: Optional[str] = None
+) -> Union[DataTemporalMap, MultiVariateDataTemporalMap]:
+    if isinstance(data_temporal_map, (DataTemporalMap, MultiVariateDataTemporalMap)):
+        if variable_name is not None and variable_name != data_temporal_map.variable_name:
+            raise ValueError('variable_name does not match the provided DataTemporalMap variable_name.')
+        return data_temporal_map
+
+    if not isinstance(data_temporal_map, dict):
+        raise TypeError('data_temporal_map must be a DataTemporalMap, MultiVariateDataTemporalMap, or dictionary.')
+
+    if len(data_temporal_map) == 0:
+        raise ValueError('data_temporal_map dictionary must contain at least one map.')
+
+    if variable_name is not None and variable_name in data_temporal_map:
+        selected_map = data_temporal_map[variable_name]
+        if not isinstance(selected_map, (DataTemporalMap, MultiVariateDataTemporalMap)):
+            raise TypeError('The selected variable_name entry must be a temporal map object.')
+        return selected_map
+
+    values = list(data_temporal_map.values())
+
+    if all(isinstance(value, MultiVariateDataTemporalMap) for value in values):
+        if variable_name is not None:
+            raise ValueError('variable_name is only valid for dictionaries of univariate DataTemporalMap objects.')
+        return _align_and_combine_conditional_temporal_maps(data_temporal_map)
+
+    if all(isinstance(value, DataTemporalMap) for value in values):
+        variable_names = {value.variable_name for value in values}
+        if variable_name is not None:
+            if variable_name not in variable_names:
+                raise ValueError('variable_name was not found as a dictionary key or DataTemporalMap variable_name.')
+            conditional_maps = {
+                label: conditional_map
+                for label, conditional_map in data_temporal_map.items()
+                if conditional_map.variable_name == variable_name
+            }
+            if len(conditional_maps) != len(data_temporal_map):
+                raise ValueError('All conditional DataTemporalMap objects must match variable_name.')
+            return _align_and_combine_conditional_temporal_maps(conditional_maps)
+
+        if len(variable_names) == 1:
+            return _align_and_combine_conditional_temporal_maps(data_temporal_map)
+
+        raise ValueError('variable_name must be provided when data_temporal_map is a dictionary of univariate maps.')
+
+    if all(isinstance(value, dict) for value in values):
+        if variable_name is None:
+            raise ValueError('variable_name must be provided for conditional maps with multiple variables per label.')
+
+        conditional_maps = dict()
+        for label, maps_by_variable in data_temporal_map.items():
+            if variable_name not in maps_by_variable:
+                raise ValueError(f'Variable {variable_name} not found for label {label}.')
+            selected_map = maps_by_variable[variable_name]
+            if not isinstance(selected_map, DataTemporalMap):
+                raise TypeError('Selected conditional univariate maps must be DataTemporalMap objects.')
+            conditional_maps[label] = selected_map
+
+        return _align_and_combine_conditional_temporal_maps(conditional_maps)
+
+    raise TypeError('data_temporal_map dictionary values must be all temporal maps or all dictionaries.')
+
+
 def estimate_igt_projection(data_temporal_map: Union[DataTemporalMap, MultiVariateDataTemporalMap,
-                            Dict[str, MultiVariateDataTemporalMap]],
+                            Dict[str, MultiVariateDataTemporalMap], Dict[str, DataTemporalMap], Dict],
                             dimensions: int = 2,
                             start_date: Optional[datetime] = None,
                             end_date: Optional[datetime] = None,
-                            embedding_type: str = 'classicalmds'
+                            embedding_type: str = 'classicalmds',
+                            variable_name: Optional[str] = None
                             ) -> IGTProjection:
     """
     Estimates the Information Geometric Temporal (IGT) projection of a temporal data map, either a
-    `DataTemporalMap`, `MultiVariateDataTemporalMap`, or a dictionary containing
-    `{label: MultiVariateDataTemporalMap}`.
+    `DataTemporalMap`, `MultiVariateDataTemporalMap`, a dictionary containing `{label: MultiVariateDataTemporalMap}`,
+    a dictionary containing `{variable_name: DataTemporalMap}`, or a conditional univariate dictionary containing
+    `{label: DataTemporalMap}` or `{label: {variable_name: DataTemporalMap}}`.
 
     The IGT projection is a technique to visualize the temporal relationships between data batches
     by projecting the data into a lower-dimensional space (e.g., 2D or 3D), with time batches represented
@@ -109,11 +222,14 @@ def estimate_igt_projection(data_temporal_map: Union[DataTemporalMap, MultiVaria
 
     Parameters
     ----------
-    data_temporal_map : Union[DataTemporalMap, MultiVariateDataTemporalMap, Dict[str, MultiVariateDataTemporalMap]]
+    data_temporal_map : Union[DataTemporalMap, MultiVariateDataTemporalMap, Dict]
         The data temporal map to project. This can either be a `DataTemporalMap` object
         (result of estimate_univariate_data_temporal_map), a `MultiVariateDataTemporalMap` object
-        (result of estimate_multivariate_data_temporal_map), or a dictionary of `MultiVariateDataTemporalMap` objects
-        where the keys are the selected labels (result of estimate_conditional_data_temporal_map).
+        (result of estimate_multivariate_data_temporal_map), a dictionary of `DataTemporalMap` objects
+        (result of estimate_univariate_data_temporal_map with multiple variables), a dictionary of
+        `MultiVariateDataTemporalMap` objects where the keys are labels (result of
+        estimate_conditional_data_temporal_map), or a dictionary of conditional univariate maps (result of
+        estimate_conditional_univariate_data_temporal_map).
 
     dimensions : int, optional
         The number of dimensions to use for the projection (2 or 3). Defaults to 2.
@@ -129,6 +245,10 @@ def estimate_igt_projection(data_temporal_map: Union[DataTemporalMap, MultiVaria
         'classicalmds' (Classical Multidimensional Scaling), 'pca' (Principal Component Analysis)
         and 'nonmetricmds' (Non Metric Multidimensional Scaling). Defaults to 'classicalmds'.
 
+    variable_name : Optional[str], optional
+        Variable to select when `data_temporal_map` is a dictionary returned by
+        estimate_univariate_data_temporal_map or estimate_conditional_univariate_data_temporal_map functions.
+
     Returns
     -------
     IGTProjection
@@ -137,34 +257,10 @@ def estimate_igt_projection(data_temporal_map: Union[DataTemporalMap, MultiVaria
     if data_temporal_map is None:
         raise ValueError('dataTemporalMap must be provided')
 
-    if isinstance(data_temporal_map, dict) and all(
-            isinstance(value, MultiVariateDataTemporalMap) for value in data_temporal_map.values()):
-        probability_maps_list: list = []
-        dates_list: list = []
-        for label, conditional_map in data_temporal_map.items():
-            probability_maps_list.append(conditional_map.probability_map)
-            dates_list.append(conditional_map.dates)
-            period = conditional_map.period
-        dates = pd.to_datetime(np.unique(dates_list))
-
-        # Concatenate the probability maps and normalize
-        concatenated_matrix = np.concatenate(probability_maps_list, axis=1)
-        row_sums = np.nansum(concatenated_matrix, axis=1, keepdims=True)
-        normalized_matrix = np.full_like(concatenated_matrix, np.nan, dtype=float)
-
-        # Divide safely in one step: only where row_sums > 0 and is finite
-        valid_mask = np.isfinite(row_sums) & (row_sums > 0)
-        np.divide(concatenated_matrix, row_sums, out=normalized_matrix, where=valid_mask)
-
-        data_temporal_map = DataTemporalMap(
-            probability_map=normalized_matrix,
-            counts_map=None,
-            dates=dates,
-            support=None,
-            variable_name='Conditional DTM',
-            variable_type='float64',
-            period=period
-        )
+    data_temporal_map = _resolve_temporal_map_for_igt(
+        data_temporal_map=data_temporal_map,
+        variable_name=variable_name
+    )
 
     if dimensions < 2 or dimensions > len(data_temporal_map.dates):
         raise ValueError('dimensions must be between 2 and len(dataTemporalMap.dates)')
