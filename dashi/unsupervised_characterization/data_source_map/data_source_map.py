@@ -33,6 +33,7 @@ __all__ = [
     'DataSourceMap',
     'MultiVariateDataSourceMap',
     'estimate_univariate_data_source_map',
+    'estimate_conditional_univariate_data_source_map',
     'estimate_multivariate_data_source_map',
     'estimate_conditional_data_source_map',
 ]
@@ -213,8 +214,26 @@ def estimate_univariate_data_source_map(
             f'All the elements provided in the supports parameter must be of type {", ".join(VALID_TYPES_WITHOUT_DATE)}')
 
 
-    sources = data[source_column]
-    data_without_sources = data.drop(columns=[source_column])
+    return _estimate_univariate_source_maps(
+        data_without_sources=data.drop(columns=[source_column]),
+        sources=data[source_column],
+        supports=supports,
+        numeric_smoothing=numeric_smoothing,
+        numeric_variables_bins=numeric_variables_bins,
+        verbose=verbose
+    )
+
+
+def _estimate_univariate_source_maps(
+    data_without_sources: pd.DataFrame,
+    sources: pd.Series,
+    supports: Union[Dict, None] = None,
+    numeric_smoothing: bool = True,
+    numeric_variables_bins: Optional[int] = 100,
+    verbose: bool = False,
+    supports_are_precomputed: bool = False,
+    source_values: Optional[np.ndarray] = None
+) -> Union[DataSourceMap, Dict[str, DataSourceMap]]:
     number_of_columns = len(data_without_sources.columns)
 
     if number_of_columns == 0:
@@ -224,41 +243,43 @@ def estimate_univariate_data_source_map(
         print(f'Total number of columns to analyze: {number_of_columns}')
         print(f'Number of sources: {len(sources.unique())}')
 
-    # Get VARIABLE types, others will not be allowed
-    data_types, columns_by_type = _get_types(
-        data=data_without_sources,
-        verbose=verbose
-    )
+    if not supports_are_precomputed:
+        # Get VARIABLE types, others will not be allowed
+        data_types, columns_by_type = _get_types(
+            data=data_without_sources,
+            verbose=verbose
+        )
 
-    data_without_sources = _date_to_numeric(
-        data=data_without_sources,
-        columns_by_type=columns_by_type,
-        verbose=verbose
-    )
+        data_without_sources = _date_to_numeric(
+            data=data_without_sources,
+            columns_by_type=columns_by_type,
+            verbose=verbose
+        )
 
-    # Implement the logic to fill supports based on the variable type
-    # Create supports
-    data_without_sources, supports = _create_supports(
-        data=data_without_sources,
-        supports=supports,
-        columns_types=columns_by_type,
-        number_of_columns=number_of_columns,
-        numeric_variables_bins=numeric_variables_bins,
-        verbose=verbose
-    )
+        # Implement the logic to fill supports based on the variable type
+        # Create supports
+        data_without_sources, supports = _create_supports(
+            data=data_without_sources,
+            supports=supports,
+            columns_types=columns_by_type,
+            number_of_columns=number_of_columns,
+            numeric_variables_bins=numeric_variables_bins,
+            verbose=verbose
+        )
 
     posterior_data_types = data_without_sources.dtypes
     results: dict = {}
+    if source_values is None:
+        source_values = np.unique(sources)
 
     for column in data_without_sources.columns:
         if verbose:
             print(f'Estimation of DataSourceMap for variable: {column}')
 
-        grouped = data_without_sources.groupby(sources, observed=False)[column]
-
         counts_map:list = []
 
-        for source_value, group in grouped:
+        for source_value in source_values:
+            group = data_without_sources.loc[sources == source_value, column]
             map_data = _estimate_absolute_frequencies(
                 group,
                 varclass=posterior_data_types[column],
@@ -283,7 +304,7 @@ def estimate_univariate_data_source_map(
         data_source_map = DataSourceMap(
             probability_map=probability_map,
             counts_map=counts_map,
-            sources=np.unique(sources),
+            sources=source_values,
             support=support,
             variable_name=column,
             variable_type=posterior_data_types[column]
@@ -299,6 +320,125 @@ def estimate_univariate_data_source_map(
         if verbose:
             print('Returning a single DataSourceMap object for the single column')
         return results[data_without_sources.columns[0]]
+
+
+def estimate_conditional_univariate_data_source_map(
+    data: pd.DataFrame,
+    source_column_name: str,
+    label_column_name: str,
+    supports: Union[Dict, None] = None,
+    numeric_smoothing: bool = True,
+    numeric_variables_bins: Optional[int] = 100,
+    verbose: bool = False
+) -> Dict[str, Union[DataSourceMap, Dict[str, DataSourceMap]]]:
+    """
+    Estimates univariate DataSourceMap objects for each label of a DataFrame over sources.
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+        DataFrame containing analysis variables, one source column, and one label column.
+
+    source_column_name: str
+        Name of the column in the DataFrame that contains the source of the data.
+
+    label_column_name: str
+        Name of the column that contains the labels or class/category for each observation.
+
+    supports: Union[Dict, None], optional
+        A dictionary containing the support of the data distributions for each variable. If not provided,
+        supports are estimated from the full dataset and reused for every label.
+
+    numeric_smoothing: bool, optional
+        Whether Kernel Density Estimation smoothing is applied on numerical variables.
+
+    numeric_variables_bins: int
+        The number of bins at which to define the histogram for numerical variables.
+
+    verbose: bool, optional
+        If True, prints additional information about the estimation process.
+
+    Returns
+    -------
+    Dict[str, Union[DataSourceMap, Dict[str, DataSourceMap]]]
+        A dictionary where keys are labels and values are DataSourceMap objects, or dictionaries of
+        DataSourceMap objects when multiple variables are analyzed.
+    """
+    if data is None:
+        raise ValueError('An input data frame is required')
+
+    if len(data.columns) < 3:
+        raise ValueError('An input data frame is required with at least 3 columns: sources, labels and data.')
+
+    if source_column_name is None:
+        raise ValueError('The name of the column including sources is required.')
+
+    if source_column_name not in data.columns:
+        raise ValueError(f'Source column "{source_column_name}" not found in the data frame')
+
+    if label_column_name is None:
+        raise ValueError('The name of the column including labels is required.')
+
+    if label_column_name not in data.columns:
+        raise ValueError(f'Label column "{label_column_name}" not found in the data frame')
+
+    if label_column_name == source_column_name:
+        raise ValueError('The source and label columns must be different.')
+
+    if not all(data[column].dtype.name in VALID_TYPES for column in data.columns):
+        print(data.dtypes)
+        raise ValueError(f'The classes of input columns must be one of the following: {", ".join(VALID_TYPES)}')
+
+    if supports is not None and not all(support in VALID_TYPES_WITHOUT_DATE for support in supports):
+        raise ValueError(
+            f'All the elements provided in the supports parameter must be of type {", ".join(VALID_TYPES_WITHOUT_DATE)}')
+
+    labels = data[label_column_name]
+    sources = data[source_column_name]
+    data_without_sources_and_label = data.drop(columns=[source_column_name, label_column_name])
+
+    data_types, columns_by_type = _get_types(
+        data=data_without_sources_and_label,
+        verbose=verbose
+    )
+
+    data_without_sources_and_label = _date_to_numeric(
+        data=data_without_sources_and_label,
+        columns_by_type=columns_by_type,
+        verbose=verbose
+    )
+
+    data_without_sources_and_label, common_supports = _create_supports(
+        data=data_without_sources_and_label,
+        supports=supports,
+        columns_types=columns_by_type,
+        number_of_columns=len(data_without_sources_and_label.columns),
+        numeric_variables_bins=numeric_variables_bins,
+        verbose=verbose
+    )
+
+    source_values = np.unique(sources)
+    conditional_maps: dict = {}
+    for label in labels.drop_duplicates():
+        if verbose:
+            print(f'Label: {label}')
+
+        label_mask = labels == label
+        label_data = data_without_sources_and_label.loc[label_mask]
+        label_sources = sources.loc[label_mask]
+
+        conditional_maps[label] = _estimate_univariate_source_maps(
+            data_without_sources=label_data,
+            sources=label_sources,
+            supports=common_supports,
+            numeric_smoothing=numeric_smoothing,
+            numeric_variables_bins=numeric_variables_bins,
+            verbose=verbose,
+            supports_are_precomputed=True,
+            source_values=source_values
+        )
+
+    return conditional_maps
 
 
 def estimate_multivariate_data_source_map(
@@ -643,6 +783,5 @@ def _generate_multivariate_dsm(
     )
 
     return dsm
-
 
 

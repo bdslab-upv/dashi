@@ -15,7 +15,7 @@
 """
 Data Source Map plotting main functions and classes
 """
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 
 import numpy as np
 import plotly.colors
@@ -28,9 +28,50 @@ from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sor
 
 __all__ = [
     'plot_univariate_data_source_map',
+    'plot_conditional_univariate_data_source_map',
     'plot_multivariate_data_source_map',
     'plot_conditional_data_source_map'
 ]
+
+
+def _prepare_univariate_source_plot_data(
+        data_source_map: DataSourceMap,
+        absolute: bool,
+        log_transform: bool,
+        start_value: Optional[int],
+        end_value: Optional[int],
+        sorting_method: str
+):
+    if absolute:
+        source_map = data_source_map.counts_map
+    else:
+        source_map = data_source_map.probability_map
+
+    sources = data_source_map.sources
+    support = np.array(data_source_map.support.iloc[:, 0].tolist())
+    variable_type = data_source_map.variable_type
+
+    support, source_map = _sort_support_and_map(
+        support=support,
+        data_map=source_map,
+        variable_type=variable_type,
+        sorting_method=sorting_method
+    )
+
+    if not end_value or end_value > source_map.shape[1]:
+        end_value = source_map.shape[1]
+
+    if start_value > source_map.shape[1]:
+        start_value = source_map.shape[1]
+
+    counts_subarray = _get_counts_array(
+        data_map=source_map,
+        start_value=start_value,
+        end_value=end_value,
+        log_transform=log_transform
+    )
+
+    return data_source_map, sources, support, counts_subarray, start_value, end_value
 
 
 def plot_univariate_data_source_map(
@@ -85,33 +126,13 @@ def plot_univariate_data_source_map(
         sorting_method=sorting_method
     )
 
-    if absolute:
-        source_map = data_source_map.counts_map
-    else:
-        source_map = data_source_map.probability_map
-
-    sources = data_source_map.sources
-    support = np.array(data_source_map.support.iloc[:, 0].tolist())
-    variable_type = data_source_map.variable_type
-
-    support, source_map = _sort_support_and_map(
-        support=support,
-        data_map=source_map,
-        variable_type=variable_type,
-        sorting_method=sorting_method
-    )
-
-    if not end_value or end_value > source_map.shape[1]:
-        end_value = source_map.shape[1]
-
-    if start_value > source_map.shape[1]:
-        start_value = source_map.shape[1]
-
-    counts_subarray = _get_counts_array(
-        data_map=source_map,
+    data_source_map, sources, support, counts_subarray, start_value, end_value = _prepare_univariate_source_plot_data(
+        data_source_map=data_source_map,
+        absolute=absolute,
+        log_transform=log_transform,
         start_value=start_value,
         end_value=end_value,
-        log_transform=log_transform
+        sorting_method=sorting_method
     )
 
     font = dict(size=20, color='#7f7f7f')
@@ -136,6 +157,174 @@ def plot_univariate_data_source_map(
         _range=range(len(data_source_map.sources))
     )
     return figure
+
+
+def plot_conditional_univariate_data_source_map(
+        data_source_map_dict: Dict[str, Union[DataSourceMap, Dict[str, DataSourceMap]]],
+        variable_name: Optional[str] = None,
+        absolute: bool = False,
+        log_transform: bool = False,
+        start_value: Optional[int] = 0,
+        end_value: Optional[int] = None,
+        sorting_method: str = 'alphabetical',
+        title: Optional[str] = None
+) -> go.Figure:
+    """
+    Plots conditional univariate Data Source Maps from a dictionary of labels.
+
+    Parameters
+    ----------
+    data_source_map_dict : Dict[str, DataSourceMap | Dict[str, DataSourceMap]]
+        A dictionary where keys are labels. Values can be DataSourceMap objects, or dictionaries of DataSourceMap
+        objects when multiple variables were estimated per label.
+
+    variable_name : str, optional
+        The variable to plot when each label maps to a dictionary of DataSourceMap objects.
+
+    absolute : bool
+        If True, plot absolute values; otherwise, relative probabilities are plotted. Default is False.
+
+    log_transform : bool
+        If True, applies a log transformation to the data. Default is False.
+
+    start_value : int, optional
+        The value at which to start the plot. Default is 0.
+
+    end_value : int, optional
+        The value at which to end the plot. If None, the plot extends to the last value.
+
+    sorting_method : str, optional
+        The method by which the support values will be sorted for display. Default is 'alphabetical'.
+
+    title : str, optional
+        The title of the plot. If None, a default title is used.
+
+    Returns
+    -------
+    Figure
+        The Plotly figure object representing the conditional univariate data source map.
+    """
+    if not type(data_source_map_dict) == dict:
+        raise TypeError('data_source_map_dict must be a dictionary.')
+
+    if len(data_source_map_dict) == 0:
+        raise ValueError('data_source_map_dict must contain at least one label.')
+
+    _validate_plot_args(
+        mode=None,
+        color_palette=None,
+        absolute=absolute,
+        log_transform=log_transform,
+        start_value=start_value,
+        sorting_method=sorting_method
+    )
+
+    selected_maps = dict()
+    values_are_maps = [type(value) == DataSourceMap for value in data_source_map_dict.values()]
+    values_are_dicts = [type(value) == dict for value in data_source_map_dict.values()]
+
+    if all(values_are_maps):
+        selected_maps = data_source_map_dict
+    elif all(values_are_dicts):
+        if variable_name is None:
+            raise ValueError('variable_name must be provided when each label maps to multiple DataSourceMap objects.')
+
+        for label, maps_by_variable in data_source_map_dict.items():
+            if variable_name not in maps_by_variable:
+                raise ValueError(f'Variable {variable_name} not found for label {label}.')
+
+            selected_maps[label] = maps_by_variable[variable_name]
+    else:
+        raise TypeError('data_source_map_dict values must be all DataSourceMap objects or all dictionaries.')
+
+    for data_source_map in selected_maps.values():
+        if not type(data_source_map) == DataSourceMap:
+            raise TypeError('Selected conditional maps must be DataSourceMap objects.')
+
+    labels = list(selected_maps.keys())
+    prepared_maps = dict()
+    all_sources = []
+    for label, data_source_map in selected_maps.items():
+        prepared_maps[label] = _prepare_univariate_source_plot_data(
+            data_source_map=data_source_map,
+            absolute=absolute,
+            log_transform=log_transform,
+            start_value=start_value,
+            end_value=end_value,
+            sorting_method=sorting_method
+        )
+
+        for source in data_source_map.sources:
+            if source not in all_sources:
+                all_sources.append(source)
+
+    palette = plotly.colors.qualitative.Plotly
+    colors = {source: palette[i % len(palette)] for i, source in enumerate(all_sources)}
+
+    subplot = sp.make_subplots(
+        rows=len(labels),
+        cols=1,
+        shared_xaxes=False,
+        vertical_spacing=0.06
+    )
+
+    font = dict(size=20, color='#7f7f7f')
+    for row, label in enumerate(labels, start=1):
+        data_source_map, sources, support, counts_subarray, row_start_value, row_end_value = prepared_maps[label]
+        support_slice = support[row_start_value:row_end_value]
+
+        for source_index, source in enumerate(sources):
+            subplot.add_trace(
+                go.Scatter(
+                    x=support_slice,
+                    y=counts_subarray[source_index],
+                    mode='lines',
+                    name=str(source),
+                    showlegend=row == 1,
+                    legendgroup=str(source),
+                    line=dict(color=colors[source])
+                ),
+                row=row,
+                col=1
+            )
+
+        subplot.update_yaxes(
+            title=str(label),
+            titlefont=font,
+            automargin=True,
+            row=row,
+            col=1,
+            ticks='outside',
+            tickcolor='black'
+        )
+
+        subplot.update_xaxes(
+            tickvals=support_slice,
+            tickfont={'size': 12},
+            tickangle=45,
+            title_text=data_source_map.variable_name if row == len(labels) else None,
+            title_font=font if row == len(labels) else None,
+            row=row,
+            col=1,
+            ticks='outside',
+            tickcolor='black'
+        )
+
+    if title is None:
+        title = f'{"Absolute frequencies" if absolute else "Probability distribution"} conditional data source map of {variable_name}'
+
+    subplot.update_layout(
+        autosize=True,
+        height=min(300 * len(labels), 800),
+        showlegend=True,
+        legend_title_text='Source',
+        template='plotly_white',
+        margin=dict(t=60, r=20, b=60, l=60),
+        title={'text': title, 'font': {'color': 'black'}}
+    )
+
+    return subplot
+
 
 def plot_multivariate_data_source_map(
         data_source_map: MultiVariateDataSourceMap,
