@@ -194,7 +194,8 @@ def plot_conditional_univariate_data_source_map(
         The value at which to end the plot. If None, the plot extends to the last value.
 
     sorting_method : str, optional
-        The method by which the support values will be sorted for display. Default is 'alphabetical'.
+        The method by which the support values will be sorted for display (e.g., 'frequency', 'alphabetical').
+        Default is 'alphabetical'.
 
     title : str, optional
         The title of the plot. If None, a default title is used.

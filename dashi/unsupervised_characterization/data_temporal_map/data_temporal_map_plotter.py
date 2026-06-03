@@ -297,10 +297,12 @@ def plot_conditional_univariate_data_temporal_map(
         The ending date for the plot. If None, uses the last date in the data.
 
     sorting_method : str, optional
-        The method by which the data will be sorted for display. Default is 'frequency'.
+        The method by which the data will be sorted for display (e.g., 'frequency', 'alphabetical').
+        Default is 'frequency'.
 
     color_palette : str, optional
-        The color palette to be used for the plot. Default is 'Spectral'.
+        The color palette to be used for the plot (e.g., 'Spectral', 'Spectral_r', 'viridis', 'viridis_r',
+        'magma', 'magma_r'). Default is 'Spectral'.
 
     mode : str, optional
         The mode of visualization ('heatmap' or 'series'). Default is 'heatmap'.
