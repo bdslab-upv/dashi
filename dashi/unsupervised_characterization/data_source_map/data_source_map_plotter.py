@@ -75,7 +75,8 @@ def _prepare_univariate_source_plot_data(
 
 
 def plot_univariate_data_source_map(
-        data_source_map: DataSourceMap,
+        data_source_map: Union[DataSourceMap, Dict[str, DataSourceMap]],
+        variable_name: Optional[str] = None,
         absolute: bool = False,
         log_transform: bool = False,
         start_value: Optional[int] = 0,
@@ -88,8 +89,12 @@ def plot_univariate_data_source_map(
 
     Parameters
     ----------
-    data_source_map : DataTemporalMap
-        The DataSourceMap object that contains data to be plotted.
+    data_source_map : DataSourceMap | Dict[str, DataSourceMap]
+        The DataSourceMap object that contains data to be plotted, or a dictionary of DataSourceMap objects returned by
+        estimate_univariate_data_source_map.
+
+    variable_name : str, optional
+        The variable to plot when data_source_map is a dictionary of DataSourceMap objects.
 
     absolute : bool
         If True, plot absolute values; otherwise, the relative probabilities are plotted. Default is False.
@@ -115,6 +120,21 @@ def plot_univariate_data_source_map(
     Figure
         The Plotly figure object representing the plot
     """
+    if type(data_source_map) == dict:
+        if len(data_source_map) == 0:
+            raise ValueError('data_source_map dictionary must contain at least one DataSourceMap.')
+
+        if not all(type(value) == DataSourceMap for value in data_source_map.values()):
+            raise TypeError('data_source_map dictionary values must be DataSourceMap objects.')
+
+        if variable_name is None:
+            raise ValueError('variable_name must be provided when data_source_map is a dictionary.')
+
+        if variable_name not in data_source_map:
+            raise ValueError(f'Variable {variable_name} not found in data_source_map.')
+
+        data_source_map = data_source_map[variable_name]
+
     if not type(data_source_map) == DataSourceMap:
         raise TypeError('data_source_map must be an instance of DataSourceMap.')
     _validate_plot_args(
@@ -577,7 +597,6 @@ def plot_conditional_data_source_map(
 
         conditional_plots_list.append(subplot)
     return conditional_plots_list
-
 
 
 
