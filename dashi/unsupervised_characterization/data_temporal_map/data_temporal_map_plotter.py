@@ -131,7 +131,8 @@ def _prepare_univariate_temporal_plot_data(
 
 
 def plot_univariate_data_temporal_map(
-        data_temporal_map: DataTemporalMap,
+        data_temporal_map: Union[DataTemporalMap, Dict[str, DataTemporalMap]],
+        variable_name: Optional[str] = None,
         absolute: bool = False,
         log_transform: bool = False,
         start_value: Optional[int] = 0,
@@ -148,8 +149,12 @@ def plot_univariate_data_temporal_map(
 
     Parameters
     ----------
-    data_temporal_map : DataTemporalMap
-        The DataTemporalMap object that contains the temporal data to be plotted.
+    data_temporal_map : DataTemporalMap | Dict[str, DataTemporalMap]
+        The DataTemporalMap object that contains the temporal data to be plotted, or a dictionary of
+        DataTemporalMap objects returned by estimate_univariate_data_temporal_map.
+
+    variable_name : str, optional
+        The variable to plot when data_temporal_map is a dictionary of DataTemporalMap objects.
 
     absolute : bool
         If True, plot absolute values; otherwise, the relative probabilities are plotted. Default is False.
@@ -189,6 +194,21 @@ def plot_univariate_data_temporal_map(
     Figure
         The Plotly figure object representing the plot
     """
+    if type(data_temporal_map) == dict:
+        if len(data_temporal_map) == 0:
+            raise ValueError('data_temporal_map dictionary must contain at least one DataTemporalMap.')
+
+        if not all(type(value) == DataTemporalMap for value in data_temporal_map.values()):
+            raise TypeError('data_temporal_map dictionary values must be DataTemporalMap objects.')
+
+        if variable_name is None:
+            raise ValueError('variable_name must be provided when data_temporal_map is a dictionary.')
+
+        if variable_name not in data_temporal_map:
+            raise ValueError(f'Variable {variable_name} not found in data_temporal_map.')
+
+        data_temporal_map = data_temporal_map[variable_name]
+
     if not type(data_temporal_map) == DataTemporalMap:
         raise TypeError('data_temporal_map must be of type DataTemporalMap. For multivariate plot'
                         ' use plot_multivariate_data_temporal_map function')
