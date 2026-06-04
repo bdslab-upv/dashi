@@ -699,6 +699,12 @@ def estimate_conditional_data_source_map(
         for label, group in reduced_data.groupby(label_column_name, observed=True)
     }
 
+    reduced_values = reduced_data.drop(columns=[label_column_name, source_column_name])
+    support_ranges = {
+        'xmin': reduced_values.min(axis=0),
+        'xmax': reduced_values.max(axis=0)
+    }
+
     concept_maps_dict: dict = {}
     for label, concept_data in reduced_data_by_label.items():
         if verbose:
@@ -715,7 +721,8 @@ def estimate_conditional_data_source_map(
             sources_info=sources_info,
             verbose=verbose,
             dimensions=dimensions,
-            kde_resolution=kde_resolution
+            kde_resolution=kde_resolution,
+            support_ranges=support_ranges
         )
 
         concept_maps_dict[label] = dsm
@@ -728,10 +735,15 @@ def _generate_multivariate_dsm(
         sources_info,
         verbose,
         dimensions,
-        kde_resolution
+        kde_resolution,
+        support_ranges=None
 ):
-    xmin = reduced_data.drop(columns=[sources_info['source_column_name']]).min(axis=0)
-    xmax = reduced_data.drop(columns=[sources_info['source_column_name']]).max(axis=0)
+    if support_ranges is None:
+        xmin = reduced_data.drop(columns=[sources_info['source_column_name']]).min(axis=0)
+        xmax = reduced_data.drop(columns=[sources_info['source_column_name']]).max(axis=0)
+    else:
+        xmin = support_ranges['xmin']
+        xmax = support_ranges['xmax']
 
     if verbose:
         print('Estimating the data source maps')
@@ -783,5 +795,4 @@ def _generate_multivariate_dsm(
     )
 
     return dsm
-
 

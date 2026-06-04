@@ -1008,6 +1008,12 @@ def estimate_conditional_data_temporal_map(
         for label, group in reduced_data.groupby(label_column_name, observed=True)
     }
 
+    reduced_values = reduced_data.drop(columns=[label_column_name, date_column_name])
+    support_ranges = {
+        'xmin': reduced_values.min(axis=0),
+        'xmax': reduced_values.max(axis=0)
+    }
+
     # Generate DTMs
     concept_maps_dict: dict = {}
     for label, concept_data in reduced_data_by_label.items():
@@ -1022,21 +1028,26 @@ def estimate_conditional_data_temporal_map(
             'date_column_name': date_column_name
         }
         dtm = _generate_multivariate_dtm(reduced_data=concept_data, dates_info=dates_info,
-                                         verbose=verbose, dimensions=dimensions, kde_resolution=kde_resolution)
+                                         verbose=verbose, dimensions=dimensions, kde_resolution=kde_resolution,
+                                         support_ranges=support_ranges)
         concept_maps_dict[label] = dtm
 
     return concept_maps_dict
 
 
-def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kde_resolution):
+def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kde_resolution, support_ranges=None):
     """
     Generates a MultiVariateDataTemporalMap object from the reduced multivariate data by applying Kernel
     Density Estimation (KDE) of the data over time. This function processes the data in
     the specified temporal period (e.g., weekly, monthly, yearly) and computes the joint probability distribution
     of the multivariate time series.
     """
-    xmin = reduced_data.drop(columns=dates_info['date_column_name']).min(axis=0)
-    xmax = reduced_data.drop(columns=dates_info['date_column_name']).max(axis=0)
+    if support_ranges is None:
+        xmin = reduced_data.drop(columns=dates_info['date_column_name']).min(axis=0)
+        xmax = reduced_data.drop(columns=dates_info['date_column_name']).max(axis=0)
+    else:
+        xmin = support_ranges['xmin']
+        xmax = support_ranges['xmax']
 
     if verbose:
         print('Estimating the data temporal maps')
@@ -1153,4 +1164,3 @@ def _prepare_dates_for_batching(dates, period):
     unique_dates = pd.to_datetime(full_range)
 
     return dates_for_batching, unique_dates
-
