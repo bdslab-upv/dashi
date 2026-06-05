@@ -390,7 +390,7 @@ def plot_conditional_univariate_data_temporal_map(
         rows=len(labels),
         cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.04
+        vertical_spacing=0.07
     )
 
     font = dict(size=20, color='#7f7f7f')
@@ -449,10 +449,10 @@ def plot_conditional_univariate_data_temporal_map(
 
     subplot.update_layout(
         autosize=True,
-        height=min(300 * len(labels), 800),
+        height=max(450, min(380 * len(labels), 1200)),
         showlegend=mode == 'series',
         template='plotly_white',
-        margin=dict(t=60, r=20, b=60, l=60)
+        margin=dict(t=80, r=30, b=80, l=80)
     )
 
     if mode == 'heatmap':
@@ -546,7 +546,7 @@ def plot_multivariate_data_temporal_map(
     subplot = sp.make_subplots(rows=dimensions,
                                cols=1,
                                shared_xaxes=True,
-                               vertical_spacing=0.02
+                               vertical_spacing=0.06
                                )
 
     font = dict(size=20, color='#7f7f7f')
@@ -592,10 +592,10 @@ def plot_multivariate_data_temporal_map(
 
     subplot.update_layout(
         autosize=True,
-        height=min(300 * dimensions, 800),
+        height=max(450, min(380 * dimensions, 1200)),
         showlegend=False,
         template='plotly_white',
-        margin=dict(t=60, r=20, b=60, l=60),
+        margin=dict(t=80, r=30, b=80, l=80),
         coloraxis=dict(
             colorscale=color_palette,
             reversescale=True
@@ -710,7 +710,7 @@ def plot_conditional_data_temporal_map(
         subplot = sp.make_subplots(rows=len(labels),
                                    cols=1,
                                    shared_xaxes=True,
-                                   vertical_spacing=0.04
+                                   vertical_spacing=0.07
                                    )
 
         font = dict(size=20, color='#7f7f7f')
@@ -758,10 +758,10 @@ def plot_conditional_data_temporal_map(
 
         subplot.update_layout(
             autosize=True,
-            height=min(300 * len(labels), 800),
+            height=max(450, min(380 * len(labels), 1200)),
             showlegend=False,
             template='plotly_white',
-            margin=dict(t=60, r=20, b=60, l=60),
+            margin=dict(t=80, r=30, b=80, l=80),
             coloraxis=dict(
                 colorscale=color_palette,
                 reversescale=True

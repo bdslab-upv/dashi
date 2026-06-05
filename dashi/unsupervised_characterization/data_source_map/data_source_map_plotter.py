@@ -286,7 +286,7 @@ def plot_conditional_univariate_data_source_map(
         rows=len(labels),
         cols=1,
         shared_xaxes=False,
-        vertical_spacing=0.06
+        vertical_spacing=0.09
     )
 
     font = dict(size=20, color='#7f7f7f')
@@ -336,11 +336,11 @@ def plot_conditional_univariate_data_source_map(
 
     subplot.update_layout(
         autosize=True,
-        height=min(300 * len(labels), 800),
+        height=max(450, min(380 * len(labels), 1200)),
         showlegend=True,
         legend_title_text='Source',
         template='plotly_white',
-        margin=dict(t=60, r=20, b=60, l=60),
+        margin=dict(t=80, r=30, b=100, l=80),
         title={'text': title, 'font': {'color': 'black'}}
     )
 
@@ -396,7 +396,7 @@ def plot_multivariate_data_source_map(
         rows=dimensions,
         cols=1,
         shared_xaxes=False,
-        vertical_spacing=0.05
+        vertical_spacing=0.07
     )
     font = dict(size=20, color='#7f7f7f')
 
@@ -442,11 +442,11 @@ def plot_multivariate_data_source_map(
 
     subplot.update_layout(
         autosize=True,
-        height=min(300 * dimensions, 800),
+        height=max(450, min(380 * dimensions, 1200)),
         showlegend=True,
         legend_title_text='Source',
         template='plotly_white',
-        margin=dict(t=60, r=20, b=60, l=60),
+        margin=dict(t=80, r=30, b=100, l=80),
         coloraxis=dict(colorscale='Spectral_r'),
         title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
               f'data source map'
@@ -533,7 +533,7 @@ def plot_conditional_data_source_map(
             rows=len(labels),
             cols=1,
             shared_xaxes=False,
-            vertical_spacing=0.06
+            vertical_spacing=0.08
         )
 
         font = dict(size=20, color='#7f7f7f')
@@ -585,11 +585,11 @@ def plot_conditional_data_source_map(
 
         subplot.update_layout(
             autosize=True,
-            height=min(300 * len(labels), 800),
+            height=max(450, min(380 * len(labels), 1200)),
             showlegend=True,
             legend_title_text='Source',
             template='plotly_white',
-            margin=dict(t=60, r=20, b=60, l=60),
+            margin=dict(t=80, r=30, b=100, l=80),
             coloraxis=dict(colorscale='Spectral_r'),
             title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
                   f'conditional data source map of Principal Component {dim + 1}'
@@ -597,7 +597,6 @@ def plot_conditional_data_source_map(
 
         conditional_plots_list.append(subplot)
     return conditional_plots_list
-
 
 
 
