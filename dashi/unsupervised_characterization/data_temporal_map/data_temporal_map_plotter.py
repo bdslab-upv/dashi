@@ -28,8 +28,10 @@ from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map imp
                                                                                       MultiVariateDataTemporalMap,
                                                                                       trim_data_temporal_map)
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
-                                                       _create_heatmap_figure, _create_series_figure,
-                                                       _marginalize_multivariate_map)
+                                                        _create_heatmap_figure, _create_series_figure,
+                                                        _marginalize_multivariate_map,
+                                                        _get_joint_frequency_support,
+                                                        _sort_support_and_map_by_reference)
 
 __all__ = [
     'plot_univariate_data_temporal_map',
@@ -90,7 +92,8 @@ def _prepare_univariate_temporal_plot_data(
         end_value: Optional[int],
         start_date: Optional[datetime],
         end_date: Optional[datetime],
-        sorting_method: str
+        sorting_method: str,
+        reference_support=None
 ):
     _validate_temporal_map_date_range(data_temporal_map, start_date, end_date)
 
@@ -106,12 +109,20 @@ def _prepare_univariate_temporal_plot_data(
     support = np.array(data_temporal_map.support.iloc[:, 0].tolist())
     variable_type = data_temporal_map.variable_type
 
-    support, temporal_map = _sort_support_and_map(
-        support=support,
-        data_map=temporal_map,
-        variable_type=variable_type,
-        sorting_method=sorting_method
-    )
+    if reference_support is None:
+        support, temporal_map = _sort_support_and_map(
+            support=support,
+            data_map=temporal_map,
+            variable_type=variable_type,
+            sorting_method=sorting_method
+        )
+    else:
+        support, temporal_map = _sort_support_and_map_by_reference(
+            support=support,
+            data_map=temporal_map,
+            variable_type=variable_type,
+            reference_support=reference_support
+        )
 
     if not end_value or end_value > temporal_map.shape[1]:
         end_value = temporal_map.shape[1]
@@ -218,7 +229,8 @@ def plot_univariate_data_temporal_map(
         absolute=absolute,
         log_transform=log_transform,
         start_value=start_value,
-        sorting_method=sorting_method
+        sorting_method=sorting_method,
+        valid_sorting_methods=['frequency', 'alphabetical']
     )
 
     data_temporal_map, dates, support, counts_subarray, start_value, end_value = _prepare_univariate_temporal_plot_data(
@@ -317,7 +329,9 @@ def plot_conditional_univariate_data_temporal_map(
         The ending date for the plot. If None, uses the last date in the data.
 
     sorting_method : str, optional
-        The method by which the data will be sorted for display (e.g., 'frequency', 'alphabetical').
+        The method by which the data will be sorted for display (e.g., 'frequency', 'alphabetical',
+        'joint_frequency'). The 'frequency' methods shorts each label independently, while the 'joint_frequency'
+        applys the same category order across all conditional labels based on their joint frequency.
         Default is 'frequency'.
 
     color_palette : str, optional
@@ -373,6 +387,22 @@ def plot_conditional_univariate_data_temporal_map(
             raise TypeError('Selected conditional maps must be DataTemporalMap objects.')
 
     labels = list(selected_maps.keys())
+    reference_support = None
+    if sorting_method == 'joint_frequency':
+        supports = list()
+        data_maps = list()
+        for data_temporal_map in selected_maps.values():
+            _validate_temporal_map_date_range(data_temporal_map, start_date, end_date)
+            data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date, end_date)
+            supports.append(np.array(data_temporal_map.support.iloc[:, 0].tolist()))
+            data_maps.append(data_temporal_map.counts_map if absolute else data_temporal_map.probability_map)
+
+        reference_support = _get_joint_frequency_support(
+            supports=supports,
+            data_maps=data_maps,
+            variable_type=next(iter(selected_maps.values())).variable_type
+        )
+
     prepared_maps = dict()
     for label, data_temporal_map in selected_maps.items():
         prepared_maps[label] = _prepare_univariate_temporal_plot_data(
@@ -383,7 +413,8 @@ def plot_conditional_univariate_data_temporal_map(
             end_value=end_value,
             start_date=start_date,
             end_date=end_date,
-            sorting_method=sorting_method
+            sorting_method=sorting_method,
+            reference_support=reference_support
         )
 
     subplot = sp.make_subplots(

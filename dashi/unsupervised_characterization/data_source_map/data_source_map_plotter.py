@@ -24,7 +24,9 @@ import plotly.subplots as sp
 
 from dashi.unsupervised_characterization.data_source_map.data_source_map import DataSourceMap, MultiVariateDataSourceMap
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
-                                                       _marginalize_multivariate_map, _create_series_figure)
+                                                       _marginalize_multivariate_map, _create_series_figure,
+                                                       _get_joint_frequency_support,
+                                                       _sort_support_and_map_by_reference)
 
 __all__ = [
     'plot_univariate_data_source_map',
@@ -40,7 +42,8 @@ def _prepare_univariate_source_plot_data(
         log_transform: bool,
         start_value: Optional[int],
         end_value: Optional[int],
-        sorting_method: str
+        sorting_method: str,
+        reference_support=None
 ):
     if absolute:
         source_map = data_source_map.counts_map
@@ -51,12 +54,20 @@ def _prepare_univariate_source_plot_data(
     support = np.array(data_source_map.support.iloc[:, 0].tolist())
     variable_type = data_source_map.variable_type
 
-    support, source_map = _sort_support_and_map(
-        support=support,
-        data_map=source_map,
-        variable_type=variable_type,
-        sorting_method=sorting_method
-    )
+    if reference_support is None:
+        support, source_map = _sort_support_and_map(
+            support=support,
+            data_map=source_map,
+            variable_type=variable_type,
+            sorting_method=sorting_method
+        )
+    else:
+        support, source_map = _sort_support_and_map_by_reference(
+            support=support,
+            data_map=source_map,
+            variable_type=variable_type,
+            reference_support=reference_support
+        )
 
     if not end_value or end_value > source_map.shape[1]:
         end_value = source_map.shape[1]
@@ -143,7 +154,8 @@ def plot_univariate_data_source_map(
         absolute=absolute,
         log_transform=log_transform,
         start_value=start_value,
-        sorting_method=sorting_method
+        sorting_method=sorting_method,
+        valid_sorting_methods=['frequency', 'alphabetical']
     )
 
     data_source_map, sources, support, counts_subarray, start_value, end_value = _prepare_univariate_source_plot_data(
@@ -214,7 +226,9 @@ def plot_conditional_univariate_data_source_map(
         The value at which to end the plot. If None, the plot extends to the last value.
 
     sorting_method : str, optional
-        The method by which the support values will be sorted for display (e.g., 'frequency', 'alphabetical').
+        The method by which the support values will be sorted for display (e.g., 'frequency', 'alphabetical',
+        'joint_frequency'). The 'frequency' methods shorts each label independently, while the 'joint_frequency'
+        applys the same category order across all conditional labels based on their joint frequency.
         Default is 'alphabetical'.
 
     title : str, optional
@@ -263,6 +277,20 @@ def plot_conditional_univariate_data_source_map(
             raise TypeError('Selected conditional maps must be DataSourceMap objects.')
 
     labels = list(selected_maps.keys())
+    reference_support = None
+    if sorting_method == 'joint_frequency':
+        supports = list()
+        data_maps = list()
+        for data_source_map in selected_maps.values():
+            supports.append(np.array(data_source_map.support.iloc[:, 0].tolist()))
+            data_maps.append(data_source_map.counts_map if absolute else data_source_map.probability_map)
+
+        reference_support = _get_joint_frequency_support(
+            supports=supports,
+            data_maps=data_maps,
+            variable_type=next(iter(selected_maps.values())).variable_type
+        )
+
     prepared_maps = dict()
     all_sources = []
     for label, data_source_map in selected_maps.items():
@@ -272,7 +300,8 @@ def plot_conditional_univariate_data_source_map(
             log_transform=log_transform,
             start_value=start_value,
             end_value=end_value,
-            sorting_method=sorting_method
+            sorting_method=sorting_method,
+            reference_support=reference_support
         )
 
         for source in data_source_map.sources:
@@ -584,7 +613,4 @@ def plot_conditional_data_source_map(
 
         conditional_plots_list.append(subplot)
     return conditional_plots_list
-
-
-
 
