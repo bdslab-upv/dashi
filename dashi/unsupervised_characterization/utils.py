@@ -239,6 +239,13 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
                     maximums)
             }
         )
+        is_constant = minimums == maximums
+        if is_constant.any():
+            constant_cols = is_constant[is_constant].index
+            supports.update({
+                col: [supports[col][0]]
+                for col in constant_cols
+            })
 
     str_mask = columns_types['string'] & supports_to_estimate_columns.notna()
     if str_mask.any():
@@ -262,6 +269,13 @@ def _create_supports(data, supports, columns_types, number_of_columns, numeric_v
                        maximums)
             }
         )
+        is_constant = minimums == maximums
+        if is_constant.any():
+            constant_cols = is_constant[is_constant].index
+            supports.update({
+                col: [supports[col][0]]
+                for col in constant_cols
+            })
 
     # Convert factor variables to characters, as used by the xts Objects
     if np.any(columns_types['categorical']):
@@ -644,10 +658,16 @@ class BaseMultiVariateMap:
                    for prob_row, count_row in zip(self.multivariate_probability_map, self.multivariate_counts_map)):
                 errors.append("The dimensions of multivariate_probability_map and multivariate_counts_map do not match.")
         if self.multivariate_support is not None and self.multivariate_probability_map is not None:
-            if len(self.multivariate_support) != len(self.multivariate_probability_map[0]):
+            prob_shape = np.shape(self.multivariate_probability_map[0])
+            if len(self.multivariate_support) != len(prob_shape) or \
+               any(len(support_axis) != axis_length
+                   for support_axis, axis_length in zip(self.multivariate_support, prob_shape)):
                 errors.append("The length of multivariate_support must match the columns of multivariate_probability_map.")
         if self.multivariate_support is not None and self.multivariate_counts_map is not None:
-            if len(self.multivariate_support) != len(self.multivariate_counts_map[0]):
+            counts_shape = np.shape(self.multivariate_counts_map[0])
+            if len(self.multivariate_support) != len(counts_shape) or \
+               any(len(support_axis) != axis_length
+                   for support_axis, axis_length in zip(self.multivariate_support, counts_shape)):
                 errors.append("The length of multivariate_support must match the columns of multivariate_counts_map.")
         return errors if errors else True
 

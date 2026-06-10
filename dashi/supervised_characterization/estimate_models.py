@@ -188,6 +188,7 @@ def estimate_multibatch_models(
         batching_column_name = source_column_name
     elif date_column_name is not None and source_column_name is None:
         df_work[date_column_name] = pd.to_datetime(df_work[date_column_name], errors="coerce")
+        df_work = df_work.dropna(subset=[date_column_name])
         df_work = df_work.sort_values(by=date_column_name)
 
         if period == "month":
@@ -379,20 +380,20 @@ def estimate_multibatch_models(
                 probs_hat = model.predict_proba(X_test)
                 labels_hat = model.predict(X_test)
 
-                index2index_map = dict(enumerate(model.classes_))
-                index2class_map_batch = {
-                    i: index2class_map[index2index_map[i]] for i in index2index_map
-                }
+                # Pad probabilities for missing classes
+                probs_hat_full = np.zeros((len(y_test), len(index2class_map)), dtype=np.float32)
+                for col_idx, cls_val in enumerate(model.classes_):
+                    probs_hat_full[:, cls_val] = probs_hat[:, col_idx]
 
                 metrics_pre = _get_presaturation_classification_metrics(
                     label_true=y_test,
-                    label_scores=probs_hat,
-                    index2class_map=index2class_map_batch,
+                    label_scores=probs_hat_full,
+                    index2class_map=index2class_map,
                 )
                 metrics_post = _get_postsaturation_classification_metrics(
                     label_true=y_test,
                     label_predicted=labels_hat,
-                    index2class_map=index2class_map_batch,
+                    index2class_map=index2class_map,
                 )
                 metrics[test_key] = {**metrics_pre, **metrics_post}
 
@@ -743,7 +744,7 @@ def _get_presaturation_classification_metrics(*, label_true: ndarray, label_scor
         metrics['PR-AUC_MACRO'] = sum(pr_auc_classes) / len(pr_auc_classes)
         # cross-entropy loss
         try:
-            metrics['LOGLOSS'] = skmet.log_loss(label_true, label_scores)
+            metrics['LOGLOSS'] = skmet.log_loss(label_true, label_scores, labels=list(index2class_map.keys()))
         except Exception:
             metrics['LOGLOSS'] = 1
             # print('Problem calculating logloss.')
