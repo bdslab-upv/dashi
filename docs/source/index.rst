@@ -51,6 +51,7 @@ Getting Started
    api/unsupervised_source
    api/unsupervised_variability
    api/supervised
+   api/serialization
 
 .. toctree::
    :maxdepth: 1
