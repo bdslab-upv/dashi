@@ -28,8 +28,10 @@ from dashi.unsupervised_characterization.data_temporal_map.data_temporal_map imp
                                                                                       MultiVariateDataTemporalMap,
                                                                                       trim_data_temporal_map)
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
-                                                       _create_heatmap_figure, _create_series_figure,
-                                                       _marginalize_multivariate_map)
+                                                        _create_heatmap_figure, _create_series_figure,
+                                                        _marginalize_multivariate_map,
+                                                        _get_joint_frequency_support,
+                                                        _sort_support_and_map_by_reference)
 
 __all__ = [
     'plot_univariate_data_temporal_map',
@@ -90,7 +92,8 @@ def _prepare_univariate_temporal_plot_data(
         end_value: Optional[int],
         start_date: Optional[datetime],
         end_date: Optional[datetime],
-        sorting_method: str
+        sorting_method: str,
+        reference_support=None
 ):
     _validate_temporal_map_date_range(data_temporal_map, start_date, end_date)
 
@@ -106,12 +109,20 @@ def _prepare_univariate_temporal_plot_data(
     support = np.array(data_temporal_map.support.iloc[:, 0].tolist())
     variable_type = data_temporal_map.variable_type
 
-    support, temporal_map = _sort_support_and_map(
-        support=support,
-        data_map=temporal_map,
-        variable_type=variable_type,
-        sorting_method=sorting_method
-    )
+    if reference_support is None:
+        support, temporal_map = _sort_support_and_map(
+            support=support,
+            data_map=temporal_map,
+            variable_type=variable_type,
+            sorting_method=sorting_method
+        )
+    else:
+        support, temporal_map = _sort_support_and_map_by_reference(
+            support=support,
+            data_map=temporal_map,
+            variable_type=variable_type,
+            reference_support=reference_support
+        )
 
     if not end_value or end_value > temporal_map.shape[1]:
         end_value = temporal_map.shape[1]
@@ -131,7 +142,8 @@ def _prepare_univariate_temporal_plot_data(
 
 
 def plot_univariate_data_temporal_map(
-        data_temporal_map: DataTemporalMap,
+        data_temporal_map: Union[DataTemporalMap, Dict[str, DataTemporalMap]],
+        variable_name: Optional[str] = None,
         absolute: bool = False,
         log_transform: bool = False,
         start_value: Optional[int] = 0,
@@ -148,8 +160,12 @@ def plot_univariate_data_temporal_map(
 
     Parameters
     ----------
-    data_temporal_map : DataTemporalMap
-        The DataTemporalMap object that contains the temporal data to be plotted.
+    data_temporal_map : DataTemporalMap | Dict[str, DataTemporalMap]
+        The DataTemporalMap object that contains the temporal data to be plotted, or a dictionary of
+        DataTemporalMap objects returned by estimate_univariate_data_temporal_map.
+
+    variable_name : str, optional
+        The variable to plot when data_temporal_map is a dictionary of DataTemporalMap objects.
 
     absolute : bool
         If True, plot absolute values; otherwise, the relative probabilities are plotted. Default is False.
@@ -189,6 +205,21 @@ def plot_univariate_data_temporal_map(
     Figure
         The Plotly figure object representing the plot
     """
+    if type(data_temporal_map) == dict:
+        if len(data_temporal_map) == 0:
+            raise ValueError('data_temporal_map dictionary must contain at least one DataTemporalMap.')
+
+        if not all(type(value) == DataTemporalMap for value in data_temporal_map.values()):
+            raise TypeError('data_temporal_map dictionary values must be DataTemporalMap objects.')
+
+        if variable_name is None:
+            raise ValueError('variable_name must be provided when data_temporal_map is a dictionary.')
+
+        if variable_name not in data_temporal_map:
+            raise ValueError(f'Variable {variable_name} not found in data_temporal_map.')
+
+        data_temporal_map = data_temporal_map[variable_name]
+
     if not type(data_temporal_map) == DataTemporalMap:
         raise TypeError('data_temporal_map must be of type DataTemporalMap. For multivariate plot'
                         ' use plot_multivariate_data_temporal_map function')
@@ -198,7 +229,8 @@ def plot_univariate_data_temporal_map(
         absolute=absolute,
         log_transform=log_transform,
         start_value=start_value,
-        sorting_method=sorting_method
+        sorting_method=sorting_method,
+        valid_sorting_methods=['frequency', 'alphabetical']
     )
 
     data_temporal_map, dates, support, counts_subarray, start_value, end_value = _prepare_univariate_temporal_plot_data(
@@ -297,10 +329,14 @@ def plot_conditional_univariate_data_temporal_map(
         The ending date for the plot. If None, uses the last date in the data.
 
     sorting_method : str, optional
-        The method by which the data will be sorted for display. Default is 'frequency'.
+        The method by which the data will be sorted for display (e.g., 'frequency', 'alphabetical',
+        'joint_frequency'). The 'frequency' methods shorts each label independently, while the 'joint_frequency'
+        applys the same category order across all conditional labels based on their joint frequency.
+        Default is 'frequency'.
 
     color_palette : str, optional
-        The color palette to be used for the plot. Default is 'Spectral'.
+        The color palette to be used for the plot (e.g., 'Spectral', 'Spectral_r', 'viridis', 'viridis_r',
+        'magma', 'magma_r'). Default is 'Spectral'.
 
     mode : str, optional
         The mode of visualization ('heatmap' or 'series'). Default is 'heatmap'.
@@ -351,6 +387,22 @@ def plot_conditional_univariate_data_temporal_map(
             raise TypeError('Selected conditional maps must be DataTemporalMap objects.')
 
     labels = list(selected_maps.keys())
+    reference_support = None
+    if sorting_method == 'joint_frequency':
+        supports = list()
+        data_maps = list()
+        for data_temporal_map in selected_maps.values():
+            _validate_temporal_map_date_range(data_temporal_map, start_date, end_date)
+            data_temporal_map = trim_data_temporal_map(data_temporal_map, start_date, end_date)
+            supports.append(np.array(data_temporal_map.support.iloc[:, 0].tolist()))
+            data_maps.append(data_temporal_map.counts_map if absolute else data_temporal_map.probability_map)
+
+        reference_support = _get_joint_frequency_support(
+            supports=supports,
+            data_maps=data_maps,
+            variable_type=next(iter(selected_maps.values())).variable_type
+        )
+
     prepared_maps = dict()
     for label, data_temporal_map in selected_maps.items():
         prepared_maps[label] = _prepare_univariate_temporal_plot_data(
@@ -361,14 +413,15 @@ def plot_conditional_univariate_data_temporal_map(
             end_value=end_value,
             start_date=start_date,
             end_date=end_date,
-            sorting_method=sorting_method
+            sorting_method=sorting_method,
+            reference_support=reference_support
         )
 
     subplot = sp.make_subplots(
         rows=len(labels),
         cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.04
+        vertical_spacing=0.07
     )
 
     font = dict(size=20, color='#7f7f7f')
@@ -427,10 +480,10 @@ def plot_conditional_univariate_data_temporal_map(
 
     subplot.update_layout(
         autosize=True,
-        height=min(300 * len(labels), 800),
+        height=max(450, min(380 * len(labels), 1200)),
         showlegend=mode == 'series',
         template='plotly_white',
-        margin=dict(t=60, r=20, b=60, l=60)
+        margin=dict(t=80, r=30, b=80, l=80)
     )
 
     if mode == 'heatmap':
@@ -524,7 +577,7 @@ def plot_multivariate_data_temporal_map(
     subplot = sp.make_subplots(rows=dimensions,
                                cols=1,
                                shared_xaxes=True,
-                               vertical_spacing=0.02
+                               vertical_spacing=0.06
                                )
 
     font = dict(size=20, color='#7f7f7f')
@@ -570,10 +623,10 @@ def plot_multivariate_data_temporal_map(
 
     subplot.update_layout(
         autosize=True,
-        height=min(300 * dimensions, 800),
+        height=max(450, min(380 * dimensions, 1200)),
         showlegend=False,
         template='plotly_white',
-        margin=dict(t=60, r=20, b=60, l=60),
+        margin=dict(t=80, r=30, b=80, l=80),
         coloraxis=dict(
             colorscale=color_palette,
             reversescale=True
@@ -688,7 +741,7 @@ def plot_conditional_data_temporal_map(
         subplot = sp.make_subplots(rows=len(labels),
                                    cols=1,
                                    shared_xaxes=True,
-                                   vertical_spacing=0.04
+                                   vertical_spacing=0.07
                                    )
 
         font = dict(size=20, color='#7f7f7f')
@@ -736,10 +789,10 @@ def plot_conditional_data_temporal_map(
 
         subplot.update_layout(
             autosize=True,
-            height=min(300 * len(labels), 800),
+            height=max(450, min(380 * len(labels), 1200)),
             showlegend=False,
             template='plotly_white',
-            margin=dict(t=60, r=20, b=60, l=60),
+            margin=dict(t=80, r=30, b=80, l=80),
             coloraxis=dict(
                 colorscale=color_palette,
                 reversescale=True

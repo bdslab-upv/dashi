@@ -48,7 +48,8 @@ VALID_DIM_REDUCTION_TYPES = [FAMD, PCA, MCA, SVD]
 # Sorting method
 Frequency = 'frequency'
 Alphabetical = 'alphabetical'
-VALID_SORTING_METHODS = [Frequency, Alphabetical]
+JointFrequency = 'joint_frequency'
+VALID_SORTING_METHODS = [Frequency, Alphabetical, JointFrequency]
 
 # Plot mode
 Heatmap = 'heatmap'
