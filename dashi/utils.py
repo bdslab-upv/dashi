@@ -143,16 +143,17 @@ def format_data(input_dataframe: pd.DataFrame,
         output_dataframe[categorical_column_names] = output_dataframe[categorical_column_names].astype(str).astype('category')
 
 
+    if date_column_name is None and source_column_name is None:
+        raise ValueError('Please specify the date column or source column.')
+
     if date_column_name is not None:
-        if is_datetime64_any_dtype(output_dataframe[date_column_name]):
-            return output_dataframe
+        if not is_datetime64_any_dtype(output_dataframe[date_column_name]):
+            if verbose:
+                print(f'Formatting the {date_column_name} column')
 
-        if verbose:
-            print(f'Formatting the {date_column_name} column')
+            _validate_date_format(date_format, verbose)
 
-        _validate_date_format(date_format, verbose)
-
-        output_dataframe[date_column_name] = pd.to_datetime(output_dataframe[date_column_name], format=date_format).dt.as_unit("us")
+            output_dataframe[date_column_name] = pd.to_datetime(output_dataframe[date_column_name], format=date_format).dt.as_unit("us")
 
         rows_to_drop = output_dataframe[output_dataframe[date_column_name].isna()].index
         removed_rows = len(rows_to_drop)
@@ -160,21 +161,18 @@ def format_data(input_dataframe: pd.DataFrame,
             output_dataframe.drop(index=rows_to_drop, inplace=True)
             output_dataframe.reset_index(drop=True, inplace=True)
             print(f'There are {removed_rows} rows that do not contain date information. They have been removed.')
-        return output_dataframe
 
-    elif source_column_name is not None:
+    if source_column_name is not None:
         rows_to_drop = output_dataframe[output_dataframe[source_column_name].isna()].index
         removed_rows = len(rows_to_drop)
         if removed_rows > 0:
             output_dataframe.drop(index=rows_to_drop, inplace=True)
             output_dataframe.reset_index(drop=True, inplace=True)
             print(f'There are {removed_rows} rows that do not contain source information. They have been removed.')
-        return output_dataframe
 
-    else:
-        raise ValueError('Please specify the date column or source column.')
+    return output_dataframe
 
 
 def _is_letter_in_date_format(date_format, date_pattern):
     # Check if any of the pattern elements is on the date_format string
-    return any(any(element in character_to_check for element in date_pattern) for character_to_check in date_format)
+    return any(char in date_format for char in date_pattern)

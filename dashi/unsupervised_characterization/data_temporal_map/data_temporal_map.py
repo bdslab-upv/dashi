@@ -113,12 +113,12 @@ class DataTemporalMap:
 
         # Check if the length of support matches the columns of probability_map
         if self.support is not None and self.probability_map is not None:
-            if len(self.support) != len(self.probability_map[1]):
+            if len(self.support) != len(self.probability_map[0]):
                 errors.append("the length of support must match the columns of probability_map")
 
         # Check if the length of support matches the columns of counts_map
         if self.support is not None and self.counts_map is not None:
-            if len(self.support) != len(self.counts_map[1]):
+            if len(self.support) != len(self.counts_map[0]):
                 errors.append("the length of support must match the columns of counts_map")
 
         # Check if period is one of the valid periods
@@ -1075,19 +1075,22 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
     probability_map = np.row_stack([_normalize_kde(kde).flatten() for kde in kde_list])
     multivariate_probability_map = [_normalize_kde(kde) for kde in kde_list]
     multivariate_support = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin[:dimensions], xmax[:dimensions])]
+    # Align the per-batch counts to the chronological order used to build the maps
+    # (kde_list iterates over dates_info['unique_dates']), since value_counts(sort=False)
+    # is in first-appearance order and would otherwise be assigned to the wrong date.
+    ordered_counts = dates_info['value_counts'].reindex(dates_info['unique_dates'])
+
     non_nan_mask = ~np.isnan(probability_map).any(axis=1)
     non_nan_probability_map = probability_map[non_nan_mask]
-    non_nan_counts_map = np.round(non_nan_probability_map * dates_info['value_counts'].values[:, np.newaxis])
+    non_nan_counts_map = np.round(non_nan_probability_map * ordered_counts.dropna().values[:, np.newaxis])
     counts_map = np.full(probability_map.shape, np.nan)
     counts_map[non_nan_mask] = non_nan_counts_map
     multivariate_counts_map: list = []
-    index = 0
-    for prob_map in multivariate_probability_map:
+    for prob_map, date_count in zip(multivariate_probability_map, ordered_counts.values):
         if np.isnan(prob_map).any():
             multivariate_counts_map.append(prob_map)
         else:
-            multivariate_counts_map.append(np.round(prob_map * dates_info['value_counts'].iloc[index]))
-            index += 1
+            multivariate_counts_map.append(np.round(prob_map * date_count))
 
     dtm = MultiVariateDataTemporalMap(
         probability_map=probability_map,
