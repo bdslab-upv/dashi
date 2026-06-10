@@ -467,6 +467,16 @@ def plot_conditional_data_source_map(
     if not isinstance(absolute, bool):
         raise TypeError('absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.')
 
+    expected_dimensions = None
+    for label, data_source_map in data_source_map_dict.items():
+        if data_source_map.multivariate_support is None or len(data_source_map.multivariate_support) == 0:
+            raise ValueError('Each MultiVariateDataSourceMap must contain multivariate_support.')
+
+        dimensions = len(data_source_map.multivariate_support)
+        if expected_dimensions is None:
+            expected_dimensions = dimensions
+        elif dimensions != expected_dimensions:
+            raise ValueError('All MultiVariateDataSourceMap objects must have the same number of dimensions.')
 
     labels = list(data_source_map_dict.keys())
     probability_map_dict: dict = {}
