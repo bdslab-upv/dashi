@@ -343,6 +343,7 @@ def _validate_plot_args(
         log_transform,
         start_value,
         sorting_method,
+        valid_sorting_methods=None,
 ) -> None:
     if mode is not None and mode not in VALID_PLOT_MODES:
         raise ValueError(f'mode must be one of the defined in {VALID_PLOT_MODES}')
@@ -359,8 +360,11 @@ def _validate_plot_args(
     if not isinstance(start_value, int) and start_value < 1:
         raise ValueError('start_value must be greater or equal than 1')
 
-    if sorting_method not in VALID_SORTING_METHODS:
-        raise ValueError(f'sorting_method must be one of the defined in {VALID_SORTING_METHODS}')
+    if valid_sorting_methods is None:
+        valid_sorting_methods = VALID_SORTING_METHODS
+
+    if sorting_method not in valid_sorting_methods:
+        raise ValueError(f'sorting_method must be one of the defined in {valid_sorting_methods}')
 
 def _sort_support_and_map(
         support,
@@ -369,7 +373,7 @@ def _sort_support_and_map(
         sorting_method
 ):
     if variable_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
-        if sorting_method == 'frequency':
+        if sorting_method in ['frequency', 'joint_frequency']:
             support_order = np.argsort(np.sum(data_map, axis=0))[::-1]
         else:
             support_order = np.argsort(support)
@@ -384,6 +388,56 @@ def _sort_support_and_map(
             support[any_supp_na] = '<NA>'
 
     return support, data_map
+
+
+def _sort_support_and_map_by_reference(
+        support,
+        data_map,
+        variable_type,
+        reference_support
+):
+    if variable_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
+        reference_order = {value: index for index, value in enumerate(reference_support)}
+        support_order = sorted(
+            range(len(support)),
+            key=lambda index: reference_order.get(support[index], len(reference_order) + index)
+        )
+
+        support = support[support_order]
+
+        # Resort temporal/source map by support_order
+        data_map = np.array([row[support_order] for row in data_map])
+
+        any_supp_na = pd.isnull(support)
+        if any_supp_na.any():
+            support[any_supp_na] = '<NA>'
+
+    return support, data_map
+
+
+def _get_joint_frequency_support(
+        supports,
+        data_maps,
+        variable_type
+):
+    if variable_type not in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
+        return None
+
+    frequencies = dict()
+    first_seen = dict()
+    next_index = 0
+    for support, data_map in zip(supports, data_maps):
+        support_frequencies = np.sum(data_map, axis=0)
+        for support_value, frequency in zip(support, support_frequencies):
+            if support_value not in frequencies:
+                frequencies[support_value] = 0
+                first_seen[support_value] = next_index
+                next_index += 1
+
+            frequencies[support_value] += frequency
+
+    return np.array(sorted(frequencies, key=lambda value: (-frequencies[value], first_seen[value])))
+
 
 def _get_counts_array(
         data_map,
@@ -820,4 +874,3 @@ def _date_to_numeric(data, columns_by_type, verbose):
         if verbose:
             print('Converting date columns to numeric for distribution analysis')
     return data
-

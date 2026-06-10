@@ -22,9 +22,12 @@ import plotly.colors
 import plotly.graph_objs as go
 import plotly.subplots as sp
 
+from dashi._constants import VALID_CATEGORICAL_TYPE, VALID_STRING_TYPE
 from dashi.unsupervised_characterization.data_source_map.data_source_map import DataSourceMap, MultiVariateDataSourceMap
 from dashi.unsupervised_characterization.utils import (_validate_plot_args, _sort_support_and_map, _get_counts_array,
-                                                       _marginalize_multivariate_map, _create_series_figure)
+                                                       _marginalize_multivariate_map, _create_series_figure,
+                                                       _get_joint_frequency_support,
+                                                       _sort_support_and_map_by_reference)
 
 __all__ = [
     'plot_univariate_data_source_map',
@@ -34,13 +37,83 @@ __all__ = [
 ]
 
 
+def _is_categorical_source_map(data_source_map: DataSourceMap) -> bool:
+    return data_source_map.variable_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]
+
+
+def _get_shared_yaxis_range(counts_subarrays) -> List[float]:
+    max_value = 0
+    for counts_subarray in counts_subarrays:
+        if np.size(counts_subarray) > 0:
+            max_value = max(max_value, np.nanmax(counts_subarray))
+
+    if max_value <= 0 or np.isnan(max_value):
+        return [0, 1]
+
+    return [0, max_value * 1.05]
+
+
+def _create_source_bar_figure(
+        data_source_map: DataSourceMap,
+        x,
+        y,
+        sources,
+        absolute: bool,
+        title: Optional[str]
+) -> go.Figure:
+    figure = go.Figure()
+    for source_index, source in enumerate(sources):
+        figure.add_trace(
+            go.Bar(
+                x=x,
+                y=y[source_index],
+                name=str(source)
+            )
+        )
+
+    y_axis_title = 'Absolute frequency' if absolute else 'Relative frequency'
+    figure.update_layout(
+        autosize=True,
+        barmode='group',
+        yaxis=dict(
+            title=y_axis_title,
+            titlefont=dict(size=20, color='#7f7f7f'),
+            automargin=True,
+            tickfont={'color': 'black'},
+            ticks='outside',
+            tickcolor='black'
+        ),
+        xaxis=dict(
+            title=data_source_map.variable_name,
+            titlefont=dict(size=20, color='#7f7f7f'),
+            tickvals=x,
+            tickfont={'color': 'black'},
+            ticks='outside',
+            tickcolor='black',
+            tickangle=45,
+            type='category'
+        ),
+        template='plotly_white',
+        paper_bgcolor='white',
+        plot_bgcolor='white',
+        legend_title_text='Source'
+    )
+
+    if title is None:
+        title = f'{"Absolute frequencies" if absolute else "Probability distribution"} data source map'
+
+    figure.update_layout(title={'text': title, 'font': {'color': 'black'}})
+    return figure
+
+
 def _prepare_univariate_source_plot_data(
         data_source_map: DataSourceMap,
         absolute: bool,
         log_transform: bool,
         start_value: Optional[int],
         end_value: Optional[int],
-        sorting_method: str
+        sorting_method: str,
+        reference_support=None
 ):
     if absolute:
         source_map = data_source_map.counts_map
@@ -51,12 +124,20 @@ def _prepare_univariate_source_plot_data(
     support = np.array(data_source_map.support.iloc[:, 0].tolist())
     variable_type = data_source_map.variable_type
 
-    support, source_map = _sort_support_and_map(
-        support=support,
-        data_map=source_map,
-        variable_type=variable_type,
-        sorting_method=sorting_method
-    )
+    if reference_support is None:
+        support, source_map = _sort_support_and_map(
+            support=support,
+            data_map=source_map,
+            variable_type=variable_type,
+            sorting_method=sorting_method
+        )
+    else:
+        support, source_map = _sort_support_and_map_by_reference(
+            support=support,
+            data_map=source_map,
+            variable_type=variable_type,
+            reference_support=reference_support
+        )
 
     if not end_value or end_value > source_map.shape[1]:
         end_value = source_map.shape[1]
@@ -75,21 +156,29 @@ def _prepare_univariate_source_plot_data(
 
 
 def plot_univariate_data_source_map(
-        data_source_map: DataSourceMap,
+        data_source_map: Union[DataSourceMap, Dict[str, DataSourceMap]],
+        variable_name: Optional[str] = None,
         absolute: bool = False,
         log_transform: bool = False,
         start_value: Optional[int] = 0,
         end_value: Optional[int] = None,
         sorting_method: str = 'alphabetical',
+        shared_yaxis: bool = True,
         title: Optional[str] = None
 ) -> go.Figure:
     """
-    Plots a Data Source heatmap or series from a DataSourceMap object.
+    Plots a Data Source map from a DataSourceMap object.
+
+    Categorical variables are plotted as grouped bars by source. Numerical variables are plotted as series.
 
     Parameters
     ----------
-    data_source_map : DataTemporalMap
-        The DataSourceMap object that contains data to be plotted.
+    data_source_map : DataSourceMap | Dict[str, DataSourceMap]
+        The DataSourceMap object that contains data to be plotted, or a dictionary of DataSourceMap objects returned by
+        estimate_univariate_data_source_map.
+
+    variable_name : str, optional
+        The variable to plot when data_source_map is a dictionary of DataSourceMap objects.
 
     absolute : bool
         If True, plot absolute values; otherwise, the relative probabilities are plotted. Default is False.
@@ -115,6 +204,21 @@ def plot_univariate_data_source_map(
     Figure
         The Plotly figure object representing the plot
     """
+    if type(data_source_map) == dict:
+        if len(data_source_map) == 0:
+            raise ValueError('data_source_map dictionary must contain at least one DataSourceMap.')
+
+        if not all(type(value) == DataSourceMap for value in data_source_map.values()):
+            raise TypeError('data_source_map dictionary values must be DataSourceMap objects.')
+
+        if variable_name is None:
+            raise ValueError('variable_name must be provided when data_source_map is a dictionary.')
+
+        if variable_name not in data_source_map:
+            raise ValueError(f'Variable {variable_name} not found in data_source_map.')
+
+        data_source_map = data_source_map[variable_name]
+
     if not type(data_source_map) == DataSourceMap:
         raise TypeError('data_source_map must be an instance of DataSourceMap.')
     _validate_plot_args(
@@ -123,7 +227,8 @@ def plot_univariate_data_source_map(
         absolute=absolute,
         log_transform=log_transform,
         start_value=start_value,
-        sorting_method=sorting_method
+        sorting_method=sorting_method,
+        valid_sorting_methods=['frequency', 'alphabetical']
     )
 
     data_source_map, sources, support, counts_subarray, start_value, end_value = _prepare_univariate_source_plot_data(
@@ -134,6 +239,16 @@ def plot_univariate_data_source_map(
         end_value=end_value,
         sorting_method=sorting_method
     )
+
+    if _is_categorical_source_map(data_source_map):
+        return _create_source_bar_figure(
+            data_source_map=data_source_map,
+            x=support[start_value:end_value],
+            y=counts_subarray,
+            sources=sources,
+            absolute=absolute,
+            title=title
+        )
 
     font = dict(size=20, color='#7f7f7f')
     x_axis = dict(title=data_source_map.variable_name,
@@ -167,10 +282,13 @@ def plot_conditional_univariate_data_source_map(
         start_value: Optional[int] = 0,
         end_value: Optional[int] = None,
         sorting_method: str = 'alphabetical',
+        shared_yaxis: bool = True,
         title: Optional[str] = None
 ) -> go.Figure:
     """
     Plots conditional univariate Data Source Maps from a dictionary of labels.
+
+    Categorical variables are plotted as grouped bars by source. Numerical variables are plotted as series.
 
     Parameters
     ----------
@@ -194,7 +312,14 @@ def plot_conditional_univariate_data_source_map(
         The value at which to end the plot. If None, the plot extends to the last value.
 
     sorting_method : str, optional
-        The method by which the support values will be sorted for display. Default is 'alphabetical'.
+        The method by which the support values will be sorted for display (e.g., 'frequency', 'alphabetical',
+        'joint_frequency'). The 'frequency' methods shorts each label independently, while the 'joint_frequency'
+        applys the same category order across all conditional labels based on their joint frequency.
+        Default is 'alphabetical'.
+
+    shared_yaxis : bool, optional
+        If True, all class subplots use the same y-axis range. If False, each subplot is autoscaled independently.
+        Default is True.
 
     title : str, optional
         The title of the plot. If None, a default title is used.
@@ -209,6 +334,9 @@ def plot_conditional_univariate_data_source_map(
 
     if len(data_source_map_dict) == 0:
         raise ValueError('data_source_map_dict must contain at least one label.')
+
+    if not isinstance(shared_yaxis, bool):
+        raise TypeError('shared_yaxis must be a boolean value.')
 
     _validate_plot_args(
         mode=None,
@@ -242,6 +370,20 @@ def plot_conditional_univariate_data_source_map(
             raise TypeError('Selected conditional maps must be DataSourceMap objects.')
 
     labels = list(selected_maps.keys())
+    reference_support = None
+    if sorting_method == 'joint_frequency':
+        supports = list()
+        data_maps = list()
+        for data_source_map in selected_maps.values():
+            supports.append(np.array(data_source_map.support.iloc[:, 0].tolist()))
+            data_maps.append(data_source_map.counts_map if absolute else data_source_map.probability_map)
+
+        reference_support = _get_joint_frequency_support(
+            supports=supports,
+            data_maps=data_maps,
+            variable_type=next(iter(selected_maps.values())).variable_type
+        )
+
     prepared_maps = dict()
     all_sources = []
     for label, data_source_map in selected_maps.items():
@@ -251,7 +393,8 @@ def plot_conditional_univariate_data_source_map(
             log_transform=log_transform,
             start_value=start_value,
             end_value=end_value,
-            sorting_method=sorting_method
+            sorting_method=sorting_method,
+            reference_support=reference_support
         )
 
         for source in data_source_map.sources:
@@ -260,22 +403,37 @@ def plot_conditional_univariate_data_source_map(
 
     palette = plotly.colors.qualitative.Plotly
     colors = {source: palette[i % len(palette)] for i, source in enumerate(all_sources)}
+    shared_yaxis_range = None
+    if shared_yaxis:
+        shared_yaxis_range = _get_shared_yaxis_range(
+            [prepared_map[3] for prepared_map in prepared_maps.values()]
+        )
 
     subplot = sp.make_subplots(
         rows=len(labels),
         cols=1,
         shared_xaxes=False,
-        vertical_spacing=0.06
+        vertical_spacing=0.09
     )
 
     font = dict(size=20, color='#7f7f7f')
     for row, label in enumerate(labels, start=1):
         data_source_map, sources, support, counts_subarray, row_start_value, row_end_value = prepared_maps[label]
         support_slice = support[row_start_value:row_end_value]
+        is_categorical = _is_categorical_source_map(data_source_map)
 
         for source_index, source in enumerate(sources):
-            subplot.add_trace(
-                go.Scatter(
+            if is_categorical:
+                trace = go.Bar(
+                    x=support_slice,
+                    y=counts_subarray[source_index],
+                    name=str(source),
+                    showlegend=row == 1,
+                    legendgroup=str(source),
+                    marker=dict(color=colors[source])
+                )
+            else:
+                trace = go.Scatter(
                     x=support_slice,
                     y=counts_subarray[source_index],
                     mode='lines',
@@ -283,12 +441,15 @@ def plot_conditional_univariate_data_source_map(
                     showlegend=row == 1,
                     legendgroup=str(source),
                     line=dict(color=colors[source])
-                ),
+                )
+
+            subplot.add_trace(
+                trace,
                 row=row,
                 col=1
             )
 
-        subplot.update_yaxes(
+        yaxis_kwargs = dict(
             title=str(label),
             titlefont=font,
             automargin=True,
@@ -297,8 +458,12 @@ def plot_conditional_univariate_data_source_map(
             ticks='outside',
             tickcolor='black'
         )
+        if shared_yaxis:
+            yaxis_kwargs['range'] = shared_yaxis_range
 
-        subplot.update_xaxes(
+        subplot.update_yaxes(**yaxis_kwargs)
+
+        xaxis_kwargs = dict(
             tickvals=support_slice,
             tickfont={'size': 12},
             tickangle=45,
@@ -309,17 +474,22 @@ def plot_conditional_univariate_data_source_map(
             ticks='outside',
             tickcolor='black'
         )
+        if is_categorical:
+            xaxis_kwargs['type'] = 'category'
+
+        subplot.update_xaxes(**xaxis_kwargs)
 
     if title is None:
         title = f'{"Absolute frequencies" if absolute else "Probability distribution"} conditional data source map of {variable_name}'
 
     subplot.update_layout(
         autosize=True,
-        height=min(300 * len(labels), 800),
+        barmode='group',
+        height=max(450, min(380 * len(labels), 1200)),
         showlegend=True,
         legend_title_text='Source',
         template='plotly_white',
-        margin=dict(t=60, r=20, b=60, l=60),
+        margin=dict(t=80, r=30, b=100, l=80),
         title={'text': title, 'font': {'color': 'black'}}
     )
 
@@ -375,7 +545,7 @@ def plot_multivariate_data_source_map(
         rows=dimensions,
         cols=1,
         shared_xaxes=False,
-        vertical_spacing=0.05
+        vertical_spacing=0.07
     )
     font = dict(size=20, color='#7f7f7f')
 
@@ -421,11 +591,11 @@ def plot_multivariate_data_source_map(
 
     subplot.update_layout(
         autosize=True,
-        height=min(300 * dimensions, 800),
+        height=max(450, min(380 * dimensions, 1200)),
         showlegend=True,
         legend_title_text='Source',
         template='plotly_white',
-        margin=dict(t=60, r=20, b=60, l=60),
+        margin=dict(t=80, r=30, b=100, l=80),
         coloraxis=dict(colorscale='Spectral_r'),
         title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
               f'data source map'
@@ -434,7 +604,8 @@ def plot_multivariate_data_source_map(
 
 def plot_conditional_data_source_map(
         data_source_map_dict: Dict[str, MultiVariateDataSourceMap],
-        absolute: bool = False
+        absolute: bool = False,
+        shared_yaxis: bool = True
 ) -> List[go.Figure]:
     """
     Plots a Figure for each dimension selected in the data_temporal_map_dict. Each Figure represents the
@@ -448,6 +619,10 @@ def plot_conditional_data_source_map(
 
     absolute : bool, optional
         If True, plot absolute values; otherwise, relative probabilities are plotted. Default is False.
+
+    shared_yaxis : bool, optional
+        If True, all class subplots in each figure use the same y-axis range. If False, each subplot is autoscaled
+        independently. Default is True.
 
     Returns
     -------
@@ -477,6 +652,9 @@ def plot_conditional_data_source_map(
             expected_dimensions = dimensions
         elif dimensions != expected_dimensions:
             raise ValueError('All MultiVariateDataSourceMap objects must have the same number of dimensions.')
+
+    if not isinstance(shared_yaxis, bool):
+        raise TypeError('shared_yaxis must be a boolean value.')
 
     labels = list(data_source_map_dict.keys())
     probability_map_dict: dict = {}
@@ -508,11 +686,19 @@ def plot_conditional_data_source_map(
 
     conditional_plots_list = list()
     for dim in range(dimensions):
+        shared_yaxis_range = None
+        if shared_yaxis:
+            dim_counts_subarrays = [
+                [row for row in probability_map_list[dim].values]
+                for probability_map_list in probability_map_dict.values()
+            ]
+            shared_yaxis_range = _get_shared_yaxis_range(dim_counts_subarrays)
+
         subplot = sp.make_subplots(
             rows=len(labels),
             cols=1,
             shared_xaxes=False,
-            vertical_spacing=0.06
+            vertical_spacing=0.08
         )
 
         font = dict(size=20, color='#7f7f7f')
@@ -539,7 +725,7 @@ def plot_conditional_data_source_map(
                 )
                 subplot.add_trace(trace, row=labels.index(label) + 1, col=1)
 
-            subplot.update_yaxes(
+            yaxis_kwargs = dict(
                 title=f'{label}',
                 titlefont=font,
                 automargin=True,
@@ -548,6 +734,10 @@ def plot_conditional_data_source_map(
                 ticks='outside',
                 tickcolor='black'
             )
+            if shared_yaxis:
+                yaxis_kwargs['range'] = shared_yaxis_range
+
+            subplot.update_yaxes(**yaxis_kwargs)
 
             subplot.update_xaxes(
                 tickvals=support,
@@ -564,11 +754,11 @@ def plot_conditional_data_source_map(
 
         subplot.update_layout(
             autosize=True,
-            height=min(300 * len(labels), 800),
+            height=max(450, min(380 * len(labels), 1200)),
             showlegend=True,
             legend_title_text='Source',
             template='plotly_white',
-            margin=dict(t=60, r=20, b=60, l=60),
+            margin=dict(t=80, r=30, b=100, l=80),
             coloraxis=dict(colorscale='Spectral_r'),
             title=f'{"Absolute frequencies" if absolute else "Probability distribution"} '
                   f'conditional data source map of Principal Component {dim + 1}'
@@ -576,9 +766,3 @@ def plot_conditional_data_source_map(
 
         conditional_plots_list.append(subplot)
     return conditional_plots_list
-
-
-
-
-
-

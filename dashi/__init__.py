@@ -10,3 +10,4 @@ from .supervised_characterization.arrange_metrics import *
 from .supervised_characterization.estimate_models import *
 from .supervised_characterization.plot_performance import *
 from .utils import *
+from .serialization import *
