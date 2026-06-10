@@ -38,6 +38,34 @@ from tqdm.auto import tqdm
 __all__ = ['estimate_multibatch_models']
 
 
+def _hgb_early_stopping_is_safe(y_train: ndarray, *, is_classification: bool,
+                                validation_fraction: float = 0.1) -> bool:
+    """
+    Decide whether HistGradientBoosting early stopping can be used on a batch.
+
+    Early stopping performs an internal validation split (stratified for
+    classification). On very small batches this split is invalid and sklearn
+    raises at fit time, so early stopping is disabled in those cases.
+    """
+    n_samples = len(y_train)
+    if n_samples < 2:
+        return False
+
+    # sklearn draws a validation set of ceil(validation_fraction * n_samples)
+    n_validation = int(np.ceil(validation_fraction * n_samples))
+    if n_validation < 1 or n_samples - n_validation < 1:
+        return False
+
+    if is_classification:
+        _, counts = np.unique(y_train, return_counts=True)
+        # The validation set must be able to hold every class, and the stratified
+        # split needs at least two samples per class to populate train and validation.
+        if n_validation < len(counts) or counts.min() < 2:
+            return False
+
+    return True
+
+
 # FUNCTION DEFINITION
 def estimate_multibatch_models(
     *,
@@ -322,10 +350,15 @@ def estimate_multibatch_models(
         if output_regression_column_name is not None:
             y_train = train_sub[output_regression_column_name].to_numpy(copy=False)
             if use_hgb:
+                early_stopping = _hgb_early_stopping_is_safe(y_train, is_classification=False)
+                if not early_stopping:
+                    warnings.warn(
+                        f"Disabling early stopping for batch '{batch_idf_train}' because it is too "
+                        "small to form a valid internal validation split.")
                 model = HistGradientBoostingRegressor(
                     max_iter=max_iter,
                     random_state=random_seed,
-                    early_stopping=True,
+                    early_stopping=early_stopping,
                     scoring="loss",
                     categorical_features=categorical_features,
                 )
@@ -339,11 +372,16 @@ def estimate_multibatch_models(
         else:
             y_train = train_sub[output_classification_column_name].to_numpy(copy=False)
             if use_hgb:
+                early_stopping = _hgb_early_stopping_is_safe(y_train, is_classification=True)
+                if not early_stopping:
+                    warnings.warn(
+                        f"Disabling early stopping for batch '{batch_idf_train}' because it is too "
+                        "small to form a valid stratified validation split.")
                 model = HistGradientBoostingClassifier(
                     max_iter=max_iter,
                     random_state=random_seed,
                     class_weight="balanced",
-                    early_stopping=True,
+                    early_stopping=early_stopping,
                     scoring="loss",
                     categorical_features=categorical_features,
                 )
