@@ -455,11 +455,14 @@ def plot_conditional_data_source_map(
         A list of Plotly figure objects representing the conditional data source maps for each dimension.
     """
 
-    if not isinstance(data_source_map_dict, dict) and not all(
+    if not isinstance(data_source_map_dict, dict) or not all(
             isinstance(value, MultiVariateDataSourceMap) for value in data_source_map_dict.values()
     ):
         raise TypeError('data_source_map_dict must be a dictionary with MultiVariateDataSourceMap instances, resultant'
                         'of the estimate_conditional_data_source_map function.')
+
+    if len(data_source_map_dict) == 0:
+        raise ValueError('data_source_map_dict must contain at least one MultiVariateDataSourceMap.')
 
     if not isinstance(absolute, bool):
         raise TypeError('absolute must be a boolean value, indicating whether to plot absolute counts or probabilities.')

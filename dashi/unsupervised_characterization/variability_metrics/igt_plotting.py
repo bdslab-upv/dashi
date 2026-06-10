@@ -184,11 +184,11 @@ def plot_IGT_projection(
                         mode='text',
                         hoverinfo='text',
                         marker=dict(
-                            color=period_colors[dates[i].isoweekday() - 1]
+                            color=period_colors[dates[i].isocalendar().week - 1]
                         ),
                         text=_format_date_for_week(dates[i]),
                         textposition="top center",
-                        textfont_color=period_colors[dates[i].isoweekday() - 1]
+                        textfont_color=period_colors[dates[i].isocalendar().week - 1]
                     )
                 )
 
@@ -253,11 +253,11 @@ def plot_IGT_projection(
                         mode='text',
                         hoverinfo='text',
                         marker=dict(
-                            color=period_colors[dates[i].isoweekday() - 1]
+                            color=period_colors[dates[i].isocalendar().week - 1]
                         ),
                         text=_format_date_for_week(dates[i]),
                         textposition="top center",
-                        textfont_color=period_colors[dates[i].isoweekday() - 1]
+                        textfont_color=period_colors[dates[i].isocalendar().week - 1]
                     )
                 )
         # Add trajectory if necessary

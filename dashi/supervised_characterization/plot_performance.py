@@ -188,10 +188,11 @@ def plot_multibatch_performance(
             random_state=random_state,
         )
 
-    # Color scale definition
+    # Color scale definition. For error/loss metrics lower is better, so reverse the scale
+    # (green=low, red=high). Use Plotly's reversescale rather than reversing the colorscale
+    # list, which would leave the stop positions descending and malformed.
     colorscale = get_colorscale('RdYlGn')
-    if metric_name in ('MEAN_ABSOLUTE_ERROR', 'MEAN_SQUARED_ERROR', 'ROOT_MEAN_SQUARED_ERROR', 'LOGLOSS'):
-        colorscale = colorscale[::-1]
+    reverse_scale = metric_name in ('MEAN_ABSOLUTE_ERROR', 'MEAN_SQUARED_ERROR', 'ROOT_MEAN_SQUARED_ERROR', 'LOGLOSS')
 
     # Plotting using Plotly
     heatmap_data = go.Heatmap(
@@ -199,6 +200,7 @@ def plot_multibatch_performance(
         x=metrics_test_frame.columns,
         y=metrics_test_frame.index,
         colorscale=colorscale,
+        reversescale=reverse_scale,
         colorbar=dict(title=metric_name),
         hovertemplate="%{y}<br>%{x}: %{z:.3f}",
         showscale=True
