@@ -790,7 +790,7 @@ def _marginalize_multivariate_map(multivariate_map, supports, dimensions) -> lis
     probability_map_list: list = []
 
     if dimensions == 1:
-        probability_map_dim1 = pd.DataFrame(multivariate_map)
+        probability_map_dim1 = pd.DataFrame(multivariate_map, columns=supports[0])
         probability_map_list.append(probability_map_dim1)
 
     elif dimensions == 2:

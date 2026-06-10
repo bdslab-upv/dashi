@@ -32,6 +32,13 @@ def _estimate_igt_trajectory(igt_projection: IGTProjection, number_of_points=Non
     dimensions = igt_projection.projection.shape[1]
     batches = igt_projection.projection.shape[0]
 
+    if batches < 2:
+        raise ValueError("At least two temporal batches are required to estimate a trajectory.")
+
+    # UnivariateSpline requires the number of points to exceed the spline degree (m > k).
+    # Clamp the cubic degree down when there are too few batches to keep the fit valid.
+    spline_degree = min(3, batches - 1)
+
     t = np.arange(1, batches + 1)
     tt = np.linspace(1, batches, num=number_of_points)
 
@@ -47,7 +54,7 @@ def _estimate_igt_trajectory(igt_projection: IGTProjection, number_of_points=Non
     )
 
     for i in range(dimensions):
-        spline = UnivariateSpline(x=t, y=igt_projection.projection[:, i], s=0.008, k=3)
+        spline = UnivariateSpline(x=t, y=igt_projection.projection[:, i], s=0.008, k=spline_degree)
         trajectory_function[f"D{i + 1}"] = spline
         points.iloc[:, i] = spline(tt)
 
