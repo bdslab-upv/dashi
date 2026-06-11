@@ -1,0 +1,105 @@
+# Kinemai Library: Branch Comparison Report (`main` vs `bugfix/pablo`)
+
+## Executive Summary
+This report details the modifications, bug fixes, and improvements introduced in the `bugfix/pablo` branch relative to the `main` branch. Since `bugfix/pablo` is fully synced and merged with the latest `main`, the only remaining differences between the branches are the robustness improvements specifically developed in this branch.
+
+The changes span across 9 files in the library, primarily addressing robustness in data characterization, correcting plotting and performance metrics calculation on edge cases (such as small batches or missing classes), and improving multi-batch alignment.
+
+Total changes unique to `bugfix/pablo`: **135 additions, 49 deletions.**
+
+---
+
+## Detailed File-by-File Analysis
+
+### 1. `dashi/supervised_characterization/estimate_models.py`
+**Lines Edited**: `9-34` (Additions), `216` (Addition), `350-382` (Modifications), `418-428` (Modifications), `782` (Modification)
+
+**Bugs and Fixes**:
+* **Early Stopping Crash for Small Batches**: Added a new helper function `_hgb_early_stopping_is_safe` which checks if a batch is large enough to support the internal stratified validation split required by `HistGradientBoosting`.
+    * **Before**: Training on a temporal batch with very few samples (e.g., 2 records) triggered an internal split inside `scikit-learn` that failed, outputting a fatal `ValueError` and crashing the pipeline.
+    * **Now**: The code dynamically detects insufficient sample sizes, sets `early_stopping=False`, and safely outputs a warning: *"Disabling early stopping for batch '...' because it is too small to form a valid internal validation split"*, completing the training.
+* **Missing Value Handling**: Added explicit row dropping for `date_column_name` missing values.
+    * **Before**: Rows where the date parser failed yielded `NaT` (Not a Time), creating 'garbage' temporal batches or crashing grouping logic later on.
+    * **Now**: Erroneous rows are pruned entirely via `df_work.dropna(subset=[date_column_name])`.
+* **Missing Class Prediction Probabilities**: Fixed classification metrics crashing when some classes were totally absent in a given batch.
+    * **Before**: If a 3-class problem (A, B, C) had a batch containing only instances of 'A' and 'B', the prediction probabilities shape would be `(N, 2)`. Metrics functions expecting 3 columns threw an `IndexError` or misaligned indices.
+    * **Now**: The shape is artificially maintained by inserting zeros for missing classes (`probs_hat_full`). Output shape is safely preserved at `(N, 3)`, yielding valid evaluation metrics without crashes.
+* **Log Loss Calculation**: 
+    * **Before**: `skmet.log_loss` was unaware of missing labels in small batches. Output was often an incorrect scale or a runtime exception.
+    * **Now**: Explicitly passes `labels=list(index2class_map.keys())` anchoring the metric to the global set of classes. 
+
+### 2. `dashi/supervised_characterization/plot_performance.py`
+**Lines Edited**: `188-207` (Modifications)
+
+**Bugs and Fixes**:
+* **Colorscale Rendering Bug**: 
+    * **Before**: For loss/error metrics (where lower is better, like `MEAN_SQUARED_ERROR`), the code literally reversed the colorscale array list (`colorscale[::-1]`). This decoupled the colors from their Plotly mapping stops, often outputting a completely blank, broken, or single-color heatmap grid.
+    * **Now**: Plotly's native `reversescale=True` attribute is utilized instead. **Output**: Beautiful, rendered heatmaps where lowest errors natively map to dark Green and highest errors to dark Red.
+
+### 3. `dashi/unsupervised_characterization/data_source_map/data_source_map.py`
+**Lines Edited**: `106-113` (Modifications), `756-793` (Modifications)
+
+**Bugs and Fixes**:
+* **Index Out of Bounds Error**: 
+    * **Before**: `len(self.probability_map[1])` crashed if the matrix was 1-dimensional or evaluated the wrong axis.
+    * **Now**: Safely uses `[0]` allowing stable matrix dimension comparison.
+* **Data Source Count Misalignment**: 
+    * **Before**: `value_counts()` was generated in "first-appearance" order. If Source B appeared in the DataFrame before Source A, but the Kernel Density Estimation maps were generated in alphabetical sorted order, Source A's KDE got Source B's absolute counts multiplied into it. The output was heavily skewed and statistically incorrect counts matrices.
+    * **Now**: Extracts `ordered_counts = sources_info['value_counts'].reindex(sources_info['sources'])`. The count mapping strictly enforces identical order. Output matrices now correctly reflect source densities scaled by exact source appearance frequencies.
+
+### 4. `dashi/unsupervised_characterization/data_source_map/data_source_map_plotter.py`
+**Lines Edited**: `455-478` (Additions/Modifications)
+
+**Bugs and Fixes**:
+* **Input Validation Bypass**: 
+    * **Before**: A flawed conditional `not isinstance(dict) and not all(...)` allowed lists or invalid arrays to bypass the input check silently. The code would later crash deep in the plotting stack trying to run dictionary methods like `.items()` on a list.
+    * **Now**: It is corrected to `or not all(...)`, immediately catching the invalid type and raising a clean `TypeError`.
+* **Robust Dimensions Check**:
+    * **Before**: Submitting maps with varying dimensions or missing supports failed obscurely during visualization generation.
+    * **Now**: Will explicitly raise `ValueError('All MultiVariateDataSourceMap objects must have the same number of dimensions.')` before wasting cycles attempting to plot.
+
+### 5. `dashi/unsupervised_characterization/data_temporal_map/data_temporal_map.py`
+**Lines Edited**: `113-119` (Modifications), `1075-1092` (Modifications)
+
+**Bugs and Fixes**:
+* **Chronological Temporal Alignment Bug**: 
+    * **Before**: Similar to the spatial source map bug, temporal batches had their counts multiplied into KDE surfaces in first-appearance order. This meant the counts for 'January 2023' could be erroneously mapped onto the statistical surface of 'July 2023' if July's data happened to physically appear first in the CSV file.
+    * **Now**: Creates `ordered_counts` explicitly synchronized with `dates_info['unique_dates']`. The output guarantees absolute chronological integrity in the data temporal maps.
+
+### 6. `dashi/unsupervised_characterization/utils.py`
+**Lines Edited**: `239-247` (Additions), `269-277` (Additions), `658-675` (Modifications), `790` (Modification)
+
+**Bugs and Fixes**:
+* **Constant Variable Crash**: 
+    * **Before**: If a column contained a constant value (e.g., `Patient_Age` was always `55.0` in a certain batch), creating `np.linspace(min, max, resolution)` produced duplicate points leading to Kernel Density Estimator division-by-zero NaN matrices.
+    * **Now**: Recognizes `is_constant = minimums == maximums`. Constant columns correctly output a discrete support representing just that single value (`[55.0]`), allowing mapping to continue cleanly without undefined math.
+* **Multivariate Dimensional Checks**:
+    * **Before**: Comparing shape `len()` against matrices led to false positives or crashes if a tensor had more than 2 dimensions.
+    * **Now**: Validates against `np.shape` enforcing total integrity of axes.
+
+### 7. `dashi/unsupervised_characterization/variability_metrics/igt_plotting.py`
+**Lines Edited**: `184-188` (Modifications), `253-257` (Modifications)
+
+**Bugs and Fixes**:
+* **Plotting Color Mapping Bug**: 
+    * **Before**: The trajectory plotting function used `dates[i].isoweekday() - 1` (a number between 0 and 6 representing Monday-Sunday) as the index to grab a color from the palette. Over a 52-week period, the scatter plot dots would randomly cycle the same 7 colors based on what specific weekday a batch landed on, destroying the visual representation of temporal drift.
+    * **Now**: Uses `dates[i].isocalendar().week - 1` (a number representing week 1 to 52). **Output**: The points in the graph now shift colors cleanly and continuously on a yearly gradient gradient map representing true chronological progression.
+
+### 8. `dashi/unsupervised_characterization/variability_metrics/igt_trajectory_estimator.py`
+**Lines Edited**: `32-40` (Additions), `54` (Modification)
+
+**Bugs and Fixes**:
+* **Spline Fitting Crash**: 
+    * **Before**: If a user tried to evaluate an IGT projection consisting of only 2 or 3 chronological batches, the `UnivariateSpline` hard-coded to degree 3 (`k=3`) would crash throwing `ValueError: m > k must hold`, effectively forcing users to have at least 4 batches of data.
+    * **Now**: Added `spline_degree = min(3, batches - 1)`. If only 2 batches are provided, it dynamically drops to a linear trajectory (`spline_degree = 1`). **Output**: Trajectory models successfully fit short-timeframes without crashing.
+
+### 9. `dashi/utils.py`
+**Lines Edited**: `143-164` (Modifications), `446` (Modification)
+
+**Bugs and Fixes**:
+* **Date Formatting Edge Cases**: 
+    * **Before**: The code checked dates, returned out, then checked sources, returned out. Duplicate logic points made maintaining the data formatting tricky.
+    * **Now**: Centralizes the `return output_dataframe`, dropping invalid rows efficiently while retaining structural sanity.
+* **Date Formatting String Match**:
+    * **Before**: Used a complex set of nested double-comprehensions to check if any letters matched the date pattern. It was difficult to read and suboptimal.
+    * **Now**: Condensed down into a highly readable and pythonic generator expression `any(char in date_format for char in date_pattern)`.
