@@ -298,8 +298,6 @@ def _dict_to_conditional_univariate_value(data: Mapping[str, Any]) -> DataSource
 
 def _validate_reconstructed_source_map(data_map: DataSourceMap, context: str) -> None:
     if isinstance(data_map, MultiVariateDataSourceMap):
-        # The current multivariate check does not match the shape produced by Dashi's own
-        # multivariate source maps, so validate the shared DataSourceMap fields here.
         _validate_reconstructed_map(data_map, context, check_method=DataSourceMap.check)
     else:
         _validate_reconstructed_map(data_map, context)
