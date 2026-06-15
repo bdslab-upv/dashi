@@ -316,8 +316,6 @@ def _datetime_index_or_none(value: Any, field_name: str) -> pd.DatetimeIndex | N
 
 def _validate_reconstructed_temporal_map(data_map: DataTemporalMap, context: str) -> None:
     if isinstance(data_map, MultiVariateDataTemporalMap):
-        # The current multivariate check does not match the shape produced by Dashi's own
-        # multivariate temporal maps, so validate the shared DataTemporalMap fields here.
         _validate_reconstructed_map(data_map, context, check_method=DataTemporalMap.check)
     else:
         _validate_reconstructed_map(data_map, context)
