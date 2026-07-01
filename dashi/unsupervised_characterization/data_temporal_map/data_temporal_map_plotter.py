@@ -417,6 +417,14 @@ def plot_conditional_univariate_data_temporal_map(
             reference_support=reference_support
         )
 
+    shared_dates = sorted({
+        date
+        for _, dates, _, _, _, _ in prepared_maps.values()
+        for date in dates
+    })
+    x_axis_tickvals = shared_dates[::2] if len(shared_dates) > 2 else shared_dates
+    x_axis_range = [shared_dates[0], shared_dates[-1]] if shared_dates else None
+
     subplot = sp.make_subplots(
         rows=len(labels),
         cols=1,
@@ -427,7 +435,6 @@ def plot_conditional_univariate_data_temporal_map(
     font = dict(size=20, color='#7f7f7f')
     for row, label in enumerate(labels, start=1):
         data_temporal_map, dates, support, counts_subarray, row_start_value, row_end_value = prepared_maps[label]
-        x_axis_tickvals = dates[::2] if len(dates) > 2 else dates
 
         if mode == 'heatmap':
             subplot.add_trace(
@@ -474,6 +481,7 @@ def plot_conditional_univariate_data_temporal_map(
             title_font=font if row == len(labels) else None,
             row=row,
             col=1,
+            range=x_axis_range,
             ticks='outside',
             tickcolor='black'
         )
