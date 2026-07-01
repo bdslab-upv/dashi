@@ -42,7 +42,7 @@ def plot_IGT_projection(
         trajectory: bool = False
 ) -> go.Figure:
     """
-    Plots an interactive Information Geometric Temporal (IGT) plot from an \code{IGTProjection} object.
+    Plots an interactive Information Geometric Temporal (IGT) plot from an `IGTProjection` object.
     An IGT plot visualizes the variability among time batches in a data repository in a 2D or 3D plot.
     Time batches are positioned as points where the distance between them represents the probabilistic
     distance between their distributions (currently Jensen-Shannon distance).

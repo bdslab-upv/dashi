@@ -373,8 +373,8 @@ def _sort_support_and_map(
         sorting_method
 ):
     if variable_type in [VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE]:
-        if sorting_method in ['frequency', 'joint_frequency']:
-            support_order = np.argsort(np.sum(data_map, axis=0))[::-1]
+        if sorting_method in ['frequency']:
+            support_order = np.argsort(np.nansum(data_map, axis=0))[::-1]
         else:
             support_order = np.argsort(support)
 
