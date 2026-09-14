@@ -41,6 +41,7 @@ Getting Started
 
    guide/installation
    guide/quickstart
+   guide/regularized_kde
 
 .. toctree::
    :maxdepth: 2

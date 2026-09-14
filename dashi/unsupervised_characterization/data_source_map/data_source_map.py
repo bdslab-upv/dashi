@@ -22,6 +22,8 @@ from typing import Optional, List, Union, Dict
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
+from dashi.unsupervised_characterization.utils import (
+    _validate_regularization, _prepare_regularized_kde, _kde_failure_message)
 
 from dashi._constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, \
     VALID_TYPES_WITHOUT_DATE, VALID_DIM_REDUCTION_TYPES
@@ -449,7 +451,8 @@ def estimate_multivariate_data_source_map(
         dim_reduction: str = 'PCA',
         scale: bool = True,
         scatter_plot: bool = False,
-        verbose: bool = False
+        verbose: bool = False,
+        regularization_strength: float = 0.0
 ) -> MultiVariateDataSourceMap:
     """
     Estimates a MultiVariateDataSourceMap object from a DataFrame containing multiple variables (in columns) with a source
@@ -491,12 +494,24 @@ def estimate_multivariate_data_source_map(
     verbose: bool
         Whether to display additional information during the process. Defaults to `False`.
 
+    regularization_strength: float
+        Non-negative finite smoothing standard-deviation multiplier tau; default 0 disables
+        regularization. Positive values use kernel covariance H_s = h_s**2 S_s + tau**2 T,
+        where h_s is Silverman's factor, S_s is the site sample covariance, and T is the
+        diagonal of pooled reduced-coordinate variances. Thus 0.05 adds smoothing with
+        standard deviation 5% of each pooled component standard deviation, not variance 0.05.
+        The same additive covariance is applied to every site. Singleton covariance is zero;
+        empty sites remain missing. This changes densities and divergences. Check sensitivity
+        to strength and grid resolution; see the regularized KDE guide. With zero strength,
+        singular eligible sites raise an error suggesting regularization or fewer dimensions.
+
     Returns
     -------
     MultiVariateDataSourceMap
         A MultiVariateDataSourceMap object containing the estimated probability distributions for each source,
         along with the multivariate probability maps, counts maps, and supports for each dimension.
     """
+    _validate_regularization(regularization_strength)
     if data is None:
         raise ValueError('An input data frame is required')
 
@@ -550,6 +565,9 @@ def estimate_multivariate_data_source_map(
         source_column_name: sources
     })
 
+    additive_covariance, support_ranges = _prepare_regularized_kde(
+        reduced_data, [source_column_name], regularization_strength, kde_resolution)
+
     if scatter_plot:
         _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose,
                       color_column=source_column_name)
@@ -558,7 +576,7 @@ def estimate_multivariate_data_source_map(
 
     sources_info = {
         'sources': np.unique(sources),
-        'value_counts': value_counts[value_counts > dimensions],
+        'value_counts': value_counts if regularization_strength > 0 else value_counts[value_counts > dimensions],
         'source_column_name': source_column_name
     }
 
@@ -567,7 +585,9 @@ def estimate_multivariate_data_source_map(
         sources_info=sources_info,
         verbose=verbose,
         dimensions=dimensions,
-        kde_resolution=kde_resolution
+        kde_resolution=kde_resolution,
+        support_ranges=support_ranges,
+        additive_covariance=additive_covariance
     )
 
     return dsm
@@ -581,7 +601,8 @@ def estimate_conditional_data_source_map(
         dim_reduction: str = 'PCA',
         scale: bool = True,
         scatter_plot: bool = False,
-        verbose: bool = False
+        verbose: bool = False,
+        regularization_strength: float = 0.0
 ) -> Dict[str, MultiVariateDataSourceMap]:
     """
     Estimates a MultiVariateDataSourceMap object for the data corresponding to each label of a DataFrame
@@ -627,12 +648,24 @@ def estimate_conditional_data_source_map(
     verbose: bool
         Whether to display additional information during the process. Defaults to `False`.
 
+    regularization_strength: float
+        Non-negative finite smoothing standard-deviation multiplier tau; default 0 disables
+        regularization. Uses H_s = h_s**2 S_s + tau**2 T, with Silverman's factor h_s and
+        site-within-label covariance S_s. T contains pooled reduced-coordinate variances,
+        computed before splitting labels; the additive covariance and grid are shared across
+        labels. A value of 0.05 adds smoothing standard deviation 5% of each pooled component
+        standard deviation. Singleton covariance is zero; empty groups remain missing.
+        Positive values change densities and divergences. Check strength sensitivity and
+        grid convergence; see the regularized KDE guide. At zero, singular eligible groups
+        raise an informative error.
+
     Returns
     -------
     Dict[str, MultiVariateDataSourceMap]
         A dictionary where the keys are the labels in the dataset, and the values are
         `MultiVariateDataSourceMap` objects representing the multi-source maps generated for each label.
     """
+    _validate_regularization(regularization_strength)
     if data is None:
         raise ValueError('An input data frame is required')
 
@@ -704,6 +737,10 @@ def estimate_conditional_data_source_map(
         'xmin': reduced_values.min(axis=0),
         'xmax': reduced_values.max(axis=0)
     }
+    additive_covariance, regularized_support = _prepare_regularized_kde(
+        reduced_data, [label_column_name, source_column_name], regularization_strength, kde_resolution)
+    if regularized_support is not None:
+        support_ranges = regularized_support
 
     concept_maps_dict: dict = {}
     for label, concept_data in reduced_data_by_label.items():
@@ -713,7 +750,7 @@ def estimate_conditional_data_source_map(
         value_counts = concept_data[source_column_name].value_counts(sort=False)
         sources_info = {
             'sources': np.unique(sources),
-            'value_counts': value_counts[value_counts > dimensions],
+            'value_counts': value_counts if regularization_strength > 0 else value_counts[value_counts > dimensions],
             'source_column_name': source_column_name
         }
         dsm = _generate_multivariate_dsm(
@@ -722,7 +759,9 @@ def estimate_conditional_data_source_map(
             verbose=verbose,
             dimensions=dimensions,
             kde_resolution=kde_resolution,
-            support_ranges=support_ranges
+            support_ranges=support_ranges,
+            additive_covariance=additive_covariance,
+            context=f'label {label!r}, '
         )
 
         concept_maps_dict[label] = dsm
@@ -736,7 +775,9 @@ def _generate_multivariate_dsm(
         verbose,
         dimensions,
         kde_resolution,
-        support_ranges=None
+        support_ranges=None,
+        additive_covariance=None,
+        context=''
 ):
     if support_ranges is None:
         xmin = reduced_data.drop(columns=[sources_info['source_column_name']]).min(axis=0)
@@ -750,13 +791,17 @@ def _generate_multivariate_dsm(
 
     kde_list: list = []
     for source in sources_info['sources']:
-        if source in sources_info['value_counts'].index and sources_info['value_counts'][source] > dimensions:
-            kde = _compute_kde(
-                reduced_data[reduced_data[sources_info['source_column_name']] == source].drop(
-                    columns=[sources_info['source_column_name']]
-                ),
-                xmin[:dimensions], xmax[:dimensions], kde_resolution
-            )
+        minimum_count = 0 if additive_covariance is not None else dimensions
+        if source in sources_info['value_counts'].index and sources_info['value_counts'][source] > minimum_count:
+            subset = reduced_data[reduced_data[sources_info['source_column_name']] == source].drop(
+                columns=[sources_info['source_column_name']])
+            try:
+                kde = _compute_kde(subset, xmin[:dimensions], xmax[:dimensions], kde_resolution,
+                                   additive_covariance=additive_covariance)
+            except np.linalg.LinAlgError as exc:
+                raise np.linalg.LinAlgError(_kde_failure_message(
+                    subset, f'{context}source {source!r}', dimensions,
+                    additive_covariance is not None)) from exc
             kde_list.append(kde)
         else:
             if verbose:
@@ -765,7 +810,7 @@ def _generate_multivariate_dsm(
             kde = np.full(kde_shape, np.nan)
             kde_list.append(kde)
 
-    probability_map = np.row_stack([_normalize_kde(kde).flatten() for kde in kde_list])
+    probability_map = np.vstack([_normalize_kde(kde).flatten() for kde in kde_list])
     multivariate_probability_map = [_normalize_kde(kde) for kde in kde_list]
     multivariate_support = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin[:dimensions], xmax[:dimensions])]
     # Align the per-source counts to the sorted source order used to build the maps
@@ -776,7 +821,7 @@ def _generate_multivariate_dsm(
 
     non_nan_mask = ~np.isnan(probability_map).any(axis=1)
     non_nan_probability_map = probability_map[non_nan_mask]
-    non_nan_counts_map = np.round(non_nan_probability_map * ordered_counts.dropna().values[:, np.newaxis])
+    non_nan_counts_map = np.round(non_nan_probability_map * ordered_counts.values[non_nan_mask, np.newaxis])
     counts_map = np.full(probability_map.shape, np.nan)
     counts_map[non_nan_mask] = non_nan_counts_map
     multivariate_counts_map: list = []

@@ -816,13 +816,123 @@ def _scatter_plot(reduced_data: pd.DataFrame, dim_reduction: str, verbose: bool,
     fig.show()
     warnings.filterwarnings('default', category=FutureWarning)
 
-def _compute_kde(data_subset, xmin, xmax, kde_resolution):
+def _validate_regularization(regularization_strength):
+    if (not np.isscalar(regularization_strength)
+            or not isinstance(regularization_strength, (int, float, np.number))
+            or np.iscomplexobj(regularization_strength)
+            or not np.isfinite(regularization_strength)
+            or regularization_strength < 0):
+        raise ValueError('regularization_strength must be a finite non-negative number')
+
+
+def _regularized_kernel_covariance(values, additive_covariance):
+    n, d = values.shape
+    covariance = (np.atleast_2d(np.cov(values, rowvar=False)) if n > 1
+                  else np.zeros((d, d)))
+    factor = (n * (d + 2) / 4.0) ** (-1.0 / (d + 4))
+    return factor ** 2 * covariance + additive_covariance
+
+
+def _prepare_regularized_kde(reduced_data, group_columns, strength, resolution):
+    """Prepare one pooled ridge reference and tail-covering grid for all groups."""
+    _validate_regularization(strength)
+    if strength == 0:
+        return None, None
+    if not isinstance(resolution, (int, np.integer)) or resolution < 2:
+        raise ValueError('Regularized KDE requires an integer kde_resolution >= 2')
+    values = reduced_data.drop(columns=group_columns).to_numpy(dtype=float)
+    if len(values) < 2 or not np.isfinite(values).all():
+        raise ValueError('Regularized KDE requires at least two finite pooled observations')
+    variances = np.var(values, axis=0, ddof=1)
+    if (not np.isfinite(variances).all() or variances.max() <= 0
+            or np.any(variances <= np.finfo(float).eps * variances.max())):
+        raise ValueError('A reduced coordinate has effectively zero pooled variance. '
+                         'Use fewer dimensions where supported or review the input variables.')
+    with np.errstate(over='ignore', under='ignore', invalid='ignore'):
+        additive = np.diag(np.square(np.float64(strength)) * variances)
+    if not np.isfinite(additive).all() or np.any(np.diag(additive) <= 0):
+        raise ValueError('regularization_strength is too small or too large for the pooled scale')
+    lower, upper = values.min(axis=0), values.max(axis=0)
+    minimum_width = np.full(values.shape[1], np.inf)
+    sparse_groups = []
+    for key, group in reduced_data.groupby(group_columns, observed=True):
+        x = group.drop(columns=group_columns).to_numpy(dtype=float)
+        covariance = _regularized_kernel_covariance(x, additive)
+        try:
+            np.linalg.cholesky(covariance)
+            # Conditional widths account for narrow directions in correlated kernels.
+            widths = 1 / np.sqrt(np.diag(np.linalg.solve(covariance, np.eye(x.shape[1]))))
+        except np.linalg.LinAlgError as exc:
+            raise np.linalg.LinAlgError(
+                f'Regularized KDE covariance failed for group {key!r}; '
+                'increase regularization_strength or reduce dimensions where supported.'
+            ) from exc
+        padding = 4 * np.sqrt(np.diag(covariance))
+        lower = np.minimum(lower, x.min(axis=0) - padding)
+        upper = np.maximum(upper, x.max(axis=0) + padding)
+        minimum_width = np.minimum(minimum_width, widths)
+        rank = np.linalg.matrix_rank(x - x.mean(axis=0))
+        if len(x) <= x.shape[1] or rank < x.shape[1]:
+            sparse_groups.append(f'{key!r} (n={len(x)}, rank={rank})')
+    if sparse_groups:
+        warnings.warn('Regularized KDE estimates sparse or rank-deficient groups: '
+                      + ', '.join(sparse_groups) + f'; regularization_strength={strength}. '
+                      'Smoothing does not remove sampling uncertainty.', RuntimeWarning, stacklevel=3)
+    if np.any((upper - lower) / (resolution - 1) > minimum_width):
+        warnings.warn('kde_resolution is too coarse to resolve some regularized kernels. '
+                      'Increase kde_resolution and check divergence convergence; '
+                      'do not choose smoothing strength solely to fit the grid.',
+                      RuntimeWarning, stacklevel=3)
+    return additive, {'xmin': lower, 'xmax': upper}
+
+
+def _kde_failure_message(values, context, dimensions, regularized=False):
+    values = np.asarray(values)
+    rank = np.linalg.matrix_rank(values - values.mean(axis=0))
+    guidance = 'Try dimensions=2 if appropriate, or ' if dimensions == 3 else ''
+    return (f'Cannot estimate KDE for {context}: {len(values)} observations, '
+            f'{dimensions} retained dimensions, centered rank {rank}. '
+            'Covariance is singular or numerically non-positive-definite. '
+            + guidance + ('increase' if regularized else 'enable')
+            + ' regularization_strength > 0 (for example 0.05). '
+            'Regularization changes estimated densities and divergence values.')
+
+
+def _compute_kde(data_subset, xmin, xmax, kde_resolution, additive_covariance=None):
     """
     Performs a Gaussian Kernel Density Estimation (KDE) on a subset of the original data to estimate
     the probability density function over a specified range, using a grid resolution determined by
-    kde_resolution.
+    kde_resolution. With additive_covariance, returns density values up to a common
+    positive factor (removed by _normalize_kde), using log-space evaluation to
+    avoid underflow. With no additive covariance, preserves SciPy's density values.
     """
     data_subset = np.array(data_subset)
+    if additive_covariance is not None:
+        from scipy.linalg import solve_triangular
+        from scipy.special import logsumexp
+
+        covariance = _regularized_kernel_covariance(data_subset, additive_covariance)
+        chol = np.linalg.cholesky(covariance)
+        grid = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin, xmax)]
+        mesh = np.meshgrid(*grid, indexing='ij')
+        positions = np.vstack([m.ravel() for m in mesh])
+        origin = data_subset.mean(axis=0)
+        samples = solve_triangular(chol, (data_subset - origin).T, lower=True).T
+        points = solve_triangular(chol, positions - origin[:, None], lower=True).T
+        log_values = np.empty(len(points))
+        # Bound temporary pairwise arrays in both grid and observation dimensions.
+        for start in range(0, len(points), 256):
+            block = points[start:start + 256]
+            total = np.full(len(block), -np.inf)
+            for sample_start in range(0, len(samples), 1024):
+                delta = block[:, None, :] - samples[None, sample_start:sample_start + 1024, :]
+                total = np.logaddexp(total, logsumexp(-0.5 * np.sum(delta ** 2, axis=2), axis=1))
+            log_values[start:start + len(block)] = total
+        if not np.isfinite(log_values).all():
+            raise ValueError('Non-finite regularized KDE values; review data scale and regularization_strength')
+        # A common factor cancels in grid normalization; log scaling prevents underflow.
+        kde_values = np.exp(log_values - log_values.max())
+        return kde_values.reshape([kde_resolution] * len(xmin))
     kde = gaussian_kde(data_subset.T, bw_method='silverman')  # Transpose for data compatibility
     grid = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin, xmax)]
     mesh = np.meshgrid(*grid, indexing='ij')

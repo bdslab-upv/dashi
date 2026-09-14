@@ -25,6 +25,8 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
+from dashi.unsupervised_characterization.utils import (
+    _validate_regularization, _prepare_regularized_kde, _kde_failure_message)
 
 from dashi._constants import VALID_TEMPORAL_PERIODS, VALID_TYPES, VALID_STRING_TYPE, VALID_CATEGORICAL_TYPE, \
     TEMPORAL_PERIOD_WEEK, TEMPORAL_PERIOD_MONTH, TEMPORAL_PERIOD_YEAR, VALID_TYPES_WITHOUT_DATE, \
@@ -656,7 +658,8 @@ def estimate_multivariate_data_temporal_map(
         dim_reduction: str = 'PCA',
         scale: bool = True,
         scatter_plot: bool = False,
-        verbose: bool = False
+        verbose: bool = False,
+        regularization_strength: float = 0.0
 ) -> MultiVariateDataTemporalMap:
     """
     Estimates a MultiVariateDataTemporalMap object from a DataFrame containing multiple variables
@@ -711,12 +714,23 @@ def estimate_multivariate_data_temporal_map(
     verbose: bool
         Whether to display additional information during the process. Defaults to `False`.
 
+    regularization_strength: float
+        Non-negative finite smoothing standard-deviation multiplier tau; default 0 disables
+        regularization. Uses kernel covariance H_g = h_g**2 S_g + tau**2 T, with Silverman's
+        factor h_g, batch sample covariance S_g, and T the diagonal of pooled reduced-coordinate
+        variances. A value of 0.05 adds smoothing standard deviation 5% of each pooled component
+        standard deviation, not variance 0.05. The reference is shared across periods and uses
+        pooled data, not past-only data. Singleton covariance is zero; empty periods stay missing.
+        Positive values change densities and divergences. Check strength sensitivity and grid
+        convergence; see the regularized KDE guide. At zero, singular batches warn and yield NaNs.
+
     Returns
     -------
     MultiVariateDataTemporalMap
         A MultiVariateDataTemporalMap object containing the estimated probability and counts maps for each time period.
     """
     # Validation of parameters
+    _validate_regularization(regularization_strength)
     if data is None:
         raise ValueError('An input data frame is required.')
 
@@ -803,6 +817,8 @@ def estimate_multivariate_data_temporal_map(
     reduced_data[[date_column_name]] = pd.DataFrame({
         date_column_name: dates_for_batching.values
     })
+    additive_covariance, support_ranges = _prepare_regularized_kde(
+        reduced_data, [date_column_name], regularization_strength, kde_resolution)
 
     if scatter_plot:
         _scatter_plot(reduced_data=reduced_data, dim_reduction=dim_reduction, verbose=verbose,
@@ -812,12 +828,13 @@ def estimate_multivariate_data_temporal_map(
     dates_info = {
         'period': period,
         'unique_dates': unique_dates,
-        'value_counts': value_counts[value_counts > dimensions],
+        'value_counts': value_counts if regularization_strength > 0 else value_counts[value_counts > dimensions],
         'date_column_name': date_column_name
     }
 
     dtm = _generate_multivariate_dtm(reduced_data=reduced_data, dates_info=dates_info, verbose=verbose,
-                                     dimensions=dimensions, kde_resolution=kde_resolution)
+                                     dimensions=dimensions, kde_resolution=kde_resolution,
+                                     support_ranges=support_ranges, additive_covariance=additive_covariance)
     return dtm
 
 
@@ -833,7 +850,8 @@ def estimate_conditional_data_temporal_map(
         dim_reduction: str = 'PCA',
         scale: bool = True,
         scatter_plot: bool = False,
-        verbose: bool = False
+        verbose: bool = False,
+        regularization_strength: float = 0.0
 ) -> Dict[str, MultiVariateDataTemporalMap]:
     """
     Estimates a MultivariateDataTemporalMap object for the data corresponding to each label of a DataFrame
@@ -893,6 +911,17 @@ def estimate_conditional_data_temporal_map(
     verbose: bool
         Whether to display additional information during the process. Defaults to `False`.
 
+    regularization_strength: float
+        Non-negative finite smoothing standard-deviation multiplier tau; default 0 disables
+        regularization. Uses H_g = h_g**2 S_g + tau**2 T, with Silverman's factor h_g and
+        batch-within-label sample covariance S_g. T contains pooled reduced-coordinate variances
+        before splitting labels; additive covariance and grid are shared across labels and periods.
+        A value of 0.05 adds smoothing standard deviation 5% of each pooled component standard
+        deviation. Singleton covariance is zero; empty groups stay missing. This is retrospective
+        pooled smoothing, not past-only estimation. Positive values change densities and divergences.
+        Check strength sensitivity and grid convergence; see the regularized KDE guide.
+        At zero, singular batches warn and yield NaNs.
+
 
     Returns
     -------
@@ -902,6 +931,7 @@ def estimate_conditional_data_temporal_map(
     """
 
     # Validation of parameters
+    _validate_regularization(regularization_strength)
     if data is None:
         raise ValueError('An input data frame is required.')
 
@@ -1013,6 +1043,10 @@ def estimate_conditional_data_temporal_map(
         'xmin': reduced_values.min(axis=0),
         'xmax': reduced_values.max(axis=0)
     }
+    additive_covariance, regularized_support = _prepare_regularized_kde(
+        reduced_data, [label_column_name, date_column_name], regularization_strength, kde_resolution)
+    if regularized_support is not None:
+        support_ranges = regularized_support
 
     # Generate DTMs
     concept_maps_dict: dict = {}
@@ -1024,18 +1058,20 @@ def estimate_conditional_data_temporal_map(
         dates_info = {
             'period': period,
             'unique_dates': unique_dates,
-            'value_counts': value_counts[value_counts > dimensions],
+            'value_counts': value_counts if regularization_strength > 0 else value_counts[value_counts > dimensions],
             'date_column_name': date_column_name
         }
         dtm = _generate_multivariate_dtm(reduced_data=concept_data, dates_info=dates_info,
                                          verbose=verbose, dimensions=dimensions, kde_resolution=kde_resolution,
-                                         support_ranges=support_ranges)
+                                          support_ranges=support_ranges, additive_covariance=additive_covariance,
+                                          context=f'label {label!r}, ')
         concept_maps_dict[label] = dtm
 
     return concept_maps_dict
 
 
-def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kde_resolution, support_ranges=None):
+def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kde_resolution, support_ranges=None,
+                               additive_covariance=None, context=''):
     """
     Generates a MultiVariateDataTemporalMap object from the reduced multivariate data by applying Kernel
     Density Estimation (KDE) of the data over time. This function processes the data in
@@ -1054,22 +1090,27 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
 
     kde_list: list = []
     for date in dates_info['unique_dates']:
-        if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > dimensions:
+        minimum_count = 0 if additive_covariance is not None else dimensions
+        if date in dates_info['value_counts'].index and dates_info['value_counts'][date] > minimum_count:
+            subset = reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
+                columns=[dates_info['date_column_name']])
             # Compute KDE for this temporal batch. Degenerate covariance matrices may raise LinAlgError.
             try:
                 kde = _compute_kde(
-                    reduced_data[reduced_data[dates_info['date_column_name']] == date].drop(
-                        columns=[dates_info['date_column_name']]
-                    ),
+                    subset,
                     xmin[:dimensions],
                     xmax[:dimensions],
-                    kde_resolution
+                    kde_resolution,
+                    additive_covariance=additive_covariance
                 )
             except (ScipyLinAlgError, NpLinAlgError) as exc:
+                message = _kde_failure_message(subset, f'{context}date {date!r}', dimensions,
+                                               additive_covariance is not None)
+                if additive_covariance is not None:
+                    raise NpLinAlgError(message) from exc
                 # Robust behavior: skip only the failing batch, keep processing remaining dates/labels.
                 warnings.warn(
-                    f"Skipping KDE for date {date} due to singular covariance matrix "
-                    f"(dimensions={dimensions}). Original error: {exc}",
+                    f"Skipping KDE: {message}",
                     RuntimeWarning
                 )
                 kde_shape = (kde_resolution,) * dimensions
@@ -1083,7 +1124,7 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
             kde = np.full(kde_shape, np.nan)
             kde_list.append(kde)
 
-    probability_map = np.row_stack([_normalize_kde(kde).flatten() for kde in kde_list])
+    probability_map = np.vstack([_normalize_kde(kde).flatten() for kde in kde_list])
     multivariate_probability_map = [_normalize_kde(kde) for kde in kde_list]
     multivariate_support = [np.linspace(start, stop, kde_resolution) for start, stop in zip(xmin[:dimensions], xmax[:dimensions])]
     # Align the per-batch counts to the chronological order used to build the maps
@@ -1093,7 +1134,7 @@ def _generate_multivariate_dtm(reduced_data, dates_info, verbose, dimensions, kd
 
     non_nan_mask = ~np.isnan(probability_map).any(axis=1)
     non_nan_probability_map = probability_map[non_nan_mask]
-    non_nan_counts_map = np.round(non_nan_probability_map * ordered_counts.dropna().values[:, np.newaxis])
+    non_nan_counts_map = np.round(non_nan_probability_map * ordered_counts.values[non_nan_mask, np.newaxis])
     counts_map = np.full(probability_map.shape, np.nan)
     counts_map[non_nan_mask] = non_nan_counts_map
     multivariate_counts_map: list = []
