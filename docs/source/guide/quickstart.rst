@@ -18,9 +18,10 @@ Before any analysis, format your DataFrame so that dates and types are correct:
    df = ds.format_data(
        df,
        date_column_name='date',
+       source_column_name='hospital',
        date_format='%Y/%m/%d',
        numerical_column_names=['age', 'weight'],
-       categorical_column_names=['gender', 'diagnosis']
+       categorical_column_names=['gender', 'diagnosis', 'hospital']
    )
 
 2. Unsupervised Temporal Analysis
@@ -33,7 +34,7 @@ Estimate how variable distributions change over time:
    # Univariate analysis
    dtm = ds.estimate_univariate_data_temporal_map(
        data=df,
-       date_column='date',
+       date_column_name='date',
        period='month'
    )
 
@@ -45,7 +46,7 @@ Estimate how variable distributions change over time:
    plot.show()
 
    # Multivariate analysis with dimensionality reduction
-   mv_dtm = dashi.estimate_multivariate_data_temporal_map(
+   mv_dtm = ds.estimate_multivariate_data_temporal_map(
        data=df,
        date_column_name='date',
        period='month',
@@ -66,8 +67,8 @@ Compare distributions across different data sources:
 .. code-block:: python
 
    dsm = ds.estimate_univariate_data_source_map(
-       data=df,
-       source_column='hospital'
+        data=df,
+        source_column='hospital'
    )
 
    plot = ds.plot_univariate_data_source_map(
@@ -111,10 +112,10 @@ Evaluate model performance across temporal or source batches:
        model_type='histogram_gradient_boosting'
    )
 
-   plot = ds.plot_performance(
-       metrics,
-       metric_name='ROC-AUC_MACRO
-   )
+   plot = ds.plot_multibatch_performance(
+        metrics=metrics,
+        metric_name='AUC_MACRO'
+    )
    plot.show()
 
 6. Exporting Temporal Maps to JSON

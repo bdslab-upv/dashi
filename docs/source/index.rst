@@ -13,7 +13,10 @@ Getting Started
 
 .. code-block:: python
 
+   import pandas as pd
    import dashi as ds
+
+   df = pd.read_csv('my_data.csv')
 
    # Format your data
    df = ds.format_data(
@@ -27,12 +30,12 @@ Getting Started
    # Estimate a univariate Data Temporal Map
    dtm = ds.estimate_univariate_data_temporal_map(
        data=df,
-       date_column='date',
+       date_column_name='date',
        period='month'
    )
 
    # Plot the results
-   plot = ds.plot_data_temporal_map(dtm['weight'])
+   plot = ds.plot_univariate_data_temporal_map(dtm, variable_name='weight')
 
 
 .. toctree::
