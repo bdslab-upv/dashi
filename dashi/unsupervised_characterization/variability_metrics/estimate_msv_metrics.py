@@ -43,6 +43,23 @@ def _distc(n: int) -> float:
     return result
 
 
+def _source_counts_for_msv(data_source_map: DataSourceMap) -> np.ndarray:
+    """Get sizing counts, excluding unavailable distributions from marker sizing."""
+    source_counts = getattr(data_source_map, 'source_counts', None)
+    if source_counts is None:
+        return np.asarray(data_source_map.counts_map).sum(axis=1)
+
+    counts = np.asarray(source_counts, dtype=float)
+    if counts.shape != (len(data_source_map.sources),):
+        raise ValueError('source_counts must be one-dimensional and aligned with sources.')
+    if not np.all(np.isfinite(counts) & (counts >= 0)):
+        raise ValueError('source_counts must be finite and non-negative.')
+    probabilities = np.asarray(data_source_map.probability_map)
+    # Conditional maps can contain missing label blocks alongside valid blocks.
+    available = np.any(np.isfinite(probabilities) & (probabilities > 0), axis=1)
+    return np.where(available, counts, 0.0)
+
+
 def _combine_conditional_source_maps(conditional_maps: Dict[str, Union[DataSourceMap, MultiVariateDataSourceMap]]
                                      ) -> DataSourceMap:
     probability_map_list: list = []
@@ -81,6 +98,14 @@ def _combine_conditional_source_maps(conditional_maps: Dict[str, Union[DataSourc
     np.divide(concatenated_matrix, row_sums, out=normalized_matrix, where=valid_mask)
 
     counts_map = np.nansum(aligned_counts_maps, axis=0)
+    source_counts = None
+    if any(getattr(m, 'source_counts', None) is not None for m in conditional_maps.values()):
+        source_counts = np.zeros(len(sources), dtype=float)
+        for conditional_map in conditional_maps.values():
+            counts = _source_counts_for_msv(conditional_map)
+            for source, count in zip(conditional_map.sources, counts):
+                if np.isfinite(count):
+                    source_counts[sources == source] += count
 
     variable_name = 'Conditional DSM'
     if not all_multivariate and len(variable_names) == 1:
@@ -89,6 +114,7 @@ def _combine_conditional_source_maps(conditional_maps: Dict[str, Union[DataSourc
     return DataSourceMap(
         probability_map=normalized_matrix,
         counts_map=counts_map,
+        source_counts=source_counts,
         sources=sources,
         support=None,
         variable_name=variable_name,
@@ -190,6 +216,9 @@ def estimate_MSV_metrics(
     -------
     MSVMetrics
         An instance of MSVMetrics containing the GPD, SPO, vertices, sources, and counts by source.
+        Counts use actual source_counts metadata when available, with zero sizing
+        counts for unavailable distributions. Older maps fall back to summed grid
+        counts. Conditional sizing sums counts for available label distributions.
     """
 
     if data_source_map is None:
@@ -233,8 +262,7 @@ def estimate_MSV_metrics(
         SPO=sposmetrics,
         vertices=vertices,
         sources=data_source_map.sources,
-        nBySource = data_source_map.counts_map.sum(axis=1)
+        nBySource = _source_counts_for_msv(data_source_map)
     )
 
     return msv
-

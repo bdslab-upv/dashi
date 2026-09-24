@@ -105,6 +105,7 @@ def dict_to_multivariate_data_source_map(data: dict | str) -> MultiVariateDataSo
     )
 
     mdsm = MultiVariateDataSourceMap(
+        source_counts=_array_or_none(parsed.get("source_counts"), "source_counts"),
         probability_map=_array_or_none(parsed["probability_map"], "probability_map"),
         counts_map=_array_or_none(parsed["counts_map"], "counts_map"),
         sources=_array_or_none(parsed["sources"], "sources"),
@@ -229,6 +230,7 @@ def _single_data_source_map_to_dict(dsm: DataSourceMap, allow_multivariate: bool
         _DASHI_TYPE_KEY: _TYPE_DATA_SOURCE_MAP,
         "probability_map": _encode_json_value(dsm.probability_map),
         "counts_map": _encode_json_value(dsm.counts_map),
+        "source_counts": _encode_json_value(getattr(dsm, "source_counts", None)),
         "sources": _encode_json_value(dsm.sources),
         "support": _encode_json_value(dsm.support),
         "variable_name": dsm.variable_name,
@@ -248,6 +250,7 @@ def _dict_to_single_data_source_map(data: Mapping[str, Any]) -> DataSourceMap:
     )
 
     dsm = DataSourceMap(
+        source_counts=_array_or_none(data.get("source_counts"), "source_counts"),
         probability_map=_array_or_none(data["probability_map"], "probability_map"),
         counts_map=_array_or_none(data["counts_map"], "counts_map"),
         sources=_array_or_none(data["sources"], "sources"),

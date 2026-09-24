@@ -16,7 +16,7 @@
 Data Source Map main module.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, List, Union, Dict
 
 import numpy as np
@@ -67,6 +67,11 @@ class DataSourceMap:
 
     variable_type: Union[str, None]
         Type of the variable (character).
+
+    source_counts: Optional[np.ndarray]
+        Actual observation counts aligned with sources, independent of rounded KDE
+        grid counts. None for maps without this metadata. A positive count does
+        not imply that a probability distribution could be estimated.
     """
 
     probability_map: Union[List[List[float]], None] = None
@@ -75,6 +80,7 @@ class DataSourceMap:
     support: Union[List[str], None] = None
     variable_name: Union[str, None] = None
     variable_type: Union[str, None] = None
+    source_counts: Optional[np.ndarray] = field(default=None, kw_only=True)
 
     def check (self) -> Union[List[str], bool]:
         """
@@ -88,6 +94,17 @@ class DataSourceMap:
             the object is valid.
         """
         errors = []
+
+        if self.source_counts is not None:
+            try:
+                source_counts = np.asarray(self.source_counts, dtype=float)
+                if (source_counts.ndim != 1 or self.sources is None
+                        or source_counts.shape != (len(self.sources),)):
+                    errors.append("source_counts must be one-dimensional and aligned with sources")
+                if not np.all(np.isfinite(source_counts) & (source_counts >= 0)):
+                    errors.append("source_counts must be finite and non-negative")
+            except (TypeError, ValueError):
+                errors.append("source_counts must contain numeric counts")
 
         # Check if the dimensions of probability_map and counts_map match
         if self.probability_map is not None and self.counts_map is not None:
@@ -833,6 +850,8 @@ def _generate_multivariate_dsm(
 
     dsm = MultiVariateDataSourceMap(
         probability_map=probability_map,
+        source_counts=reduced_data[sources_info['source_column_name']].value_counts(
+            sort=False).reindex(sources_info['sources'], fill_value=0).to_numpy(),
         multivariate_probability_map=multivariate_probability_map,
         counts_map=counts_map,
         multivariate_counts_map=multivariate_counts_map,
