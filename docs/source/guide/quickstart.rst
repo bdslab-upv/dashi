@@ -116,7 +116,38 @@ Evaluate model performance across temporal or source batches:
         metrics=metrics,
         metric_name='AUC_MACRO'
     )
-   plot.show()
+    plot.show()
+
+To try a simple neural network on the same batches, change ``model_type`` to
+``'multilayer_perceptron'`` and optionally configure the sklearn estimator:
+
+.. code-block:: python
+
+   mlp_metrics = ds.estimate_multibatch_models(
+       data=df,
+       inputs_numerical_column_names=['age', 'weight'],
+       inputs_categorical_column_names=['gender'],
+       output_classification_column_name='diagnosis',
+       date_column_name='date',
+       period='month',
+       model_type='multilayer_perceptron',
+       model_params={'hidden_layer_sizes': (32,), 'max_iter': 300},
+   )
+
+Other supported families are ``linear``, ``support_vector_machine``,
+``k_nearest_neighbors``, ``extra_trees``, ``random_forest`` and
+``histogram_gradient_boosting``. Each training batch fits a fresh sklearn
+pipeline; numerical scaling and categorical encoding are learned from that
+batch's training rows only, then reused without refitting for test batches.
+
+``model_params`` also configures the existing tree models. For example, use
+``model_params={'n_estimators': 200, 'max_depth': 6}`` with
+``model_type='random_forest'``, or ``model_params={'max_iter': 150}`` with
+``model_type='histogram_gradient_boosting'``. Existing ``n_estimators``,
+``max_depth`` and ``max_iter`` arguments still work; conflicting values across
+those arguments and ``model_params`` raise an error. Without overrides, the
+existing Random Forest (450 trees, depth 9) and HGB (100 iterations) defaults
+are unchanged.
 
 6. Exporting Temporal Maps to JSON
 -----------------------------------

@@ -29,13 +29,130 @@ from sklearn.ensemble import (
     RandomForestClassifier,
     RandomForestRegressor,
     HistGradientBoostingClassifier,
-    HistGradientBoostingRegressor
+    HistGradientBoostingRegressor,
+    ExtraTreesClassifier,
+    ExtraTreesRegressor,
 )
+from sklearn.compose import ColumnTransformer
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.model_selection import train_test_split, KFold
-from sklearn.preprocessing import LabelEncoder, RobustScaler, OneHotEncoder, OrdinalEncoder
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import LabelEncoder, RobustScaler, OneHotEncoder, OrdinalEncoder, FunctionTransformer
+from sklearn.svm import SVC, SVR
 from tqdm.auto import tqdm
 
 __all__ = ['estimate_multibatch_models']
+
+_NEW_MODEL_TYPES = (
+    'linear', 'support_vector_machine', 'k_nearest_neighbors',
+    'extra_trees', 'multilayer_perceptron',
+)
+_MODEL_TYPES = ('random_forest', 'histogram_gradient_boosting') + _NEW_MODEL_TYPES
+
+
+def _resolve_model_params(model_type: str, model_params: Optional[dict], *,
+                          max_iter: Optional[int], n_estimators: Optional[int],
+                          max_depth: Optional[int]) -> dict:
+    """Merge legacy arguments with estimator parameters without changing defaults."""
+    if model_params is not None:
+        if type(model_params) is not dict or any(type(key) is not str for key in model_params):
+            raise TypeError('model_params must be a dictionary with string keys.')
+    params = dict(model_params or {})
+
+    defaults = {'max_iter': 100, 'n_estimators': 450, 'max_depth': 9}
+    owners = {'max_iter': 'histogram_gradient_boosting',
+              'n_estimators': 'random_forest', 'max_depth': 'random_forest'}
+    for name, value in (('max_iter', max_iter), ('n_estimators', n_estimators), ('max_depth', max_depth)):
+        if value is not None:
+            if type(value) is not int:
+                raise TypeError(f'{name} must be an integer.')
+            if value <= 0:
+                raise ValueError(f'{name} must be greater than 0.')
+        if model_type == owners[name]:
+            if value is not None and name in params and params[name] != value:
+                raise ValueError(f'Conflicting values for {name}: legacy argument and model_params.')
+            params.setdefault(name, defaults[name] if value is None else value)
+        elif value is not None and value != defaults[name]:
+            raise ValueError(f'{name} is only valid when model_type is {owners[name]}; '
+                             'use model_params for other model families.')
+
+    # These parameters are calculated separately for each training batch.
+    if model_type == 'histogram_gradient_boosting':
+        protected = {'categorical_features', 'early_stopping', 'scoring'} & params.keys()
+        if protected:
+            raise ValueError(f'HGB batch settings cannot be supplied in model_params: {sorted(protected)}.')
+    return params
+
+
+def _build_preprocessor(model_type: str, num_cols: List[str], cat_cols: List[str]) -> ColumnTransformer:
+    """Create an unfitted, training-only feature transformer for a model family."""
+    transformers = []
+    # Keep categorical positions first for HGB's native categorical splits.
+    if cat_cols:
+        if model_type == 'histogram_gradient_boosting':
+            encoder = OrdinalEncoder(
+                handle_unknown='use_encoded_value', unknown_value=np.nan,
+                encoded_missing_value=np.nan, dtype=np.float32,
+            )
+        else:
+            encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+        transformers.append(('categorical', encoder, cat_cols))
+    if num_cols:
+        transformers.append(('numerical', RobustScaler(), num_cols))
+    return ColumnTransformer(transformers, remainder='drop', sparse_threshold=0)
+
+
+def _build_model(model_type: str, *, is_classification: bool, y_train: ndarray,
+                 batch_id: str, n_categorical: int, model_params: dict):
+    """Create a fresh estimator; HGB's internal validation uses training rows only."""
+    random_seed = 42
+    if model_type == 'histogram_gradient_boosting':
+        early_stopping = _hgb_early_stopping_is_safe(y_train, is_classification=is_classification)
+        if not early_stopping:
+            split_type = 'stratified validation' if is_classification else 'internal validation'
+            warnings.warn(f"Disabling early stopping for batch '{batch_id}' because it is too "
+                          f'small to form a valid {split_type} split.')
+        common = dict(max_iter=100, random_state=random_seed, early_stopping=early_stopping,
+                      scoring='loss', categorical_features=list(range(n_categorical)) if n_categorical else None)
+        if is_classification:
+            estimator = HistGradientBoostingClassifier(class_weight='balanced', **common)
+        else:
+            estimator = HistGradientBoostingRegressor(**common)
+    elif model_type == 'random_forest':
+        common = dict(n_estimators=450, max_depth=9,
+                      random_state=random_seed, n_jobs=-1)
+        if is_classification:
+            estimator = RandomForestClassifier(class_weight='balanced', **common)
+        else:
+            estimator = RandomForestRegressor(**common)
+    else:
+        constructors = {
+            'linear': (LogisticRegression, Ridge),
+            'support_vector_machine': (SVC, SVR),
+            'k_nearest_neighbors': (KNeighborsClassifier, KNeighborsRegressor),
+            'extra_trees': (ExtraTreesClassifier, ExtraTreesRegressor),
+            'multilayer_perceptron': (MLPClassifier, MLPRegressor),
+        }
+        classifier, regressor = constructors[model_type]
+        defaults = {
+            'linear': (dict(max_iter=1000, random_state=random_seed), {}),
+            'support_vector_machine': (dict(random_state=random_seed), {}),
+            'k_nearest_neighbors': (dict(n_neighbors=min(5, len(y_train))),
+                                    dict(n_neighbors=min(5, len(y_train)))),
+            'extra_trees': (dict(random_state=random_seed, n_jobs=-1),
+                            dict(random_state=random_seed, n_jobs=-1)),
+            'multilayer_perceptron': (dict(random_state=random_seed), dict(random_state=random_seed)),
+        }
+        estimator = (classifier if is_classification else regressor)(
+            **defaults[model_type][0 if is_classification else 1])
+    estimator.set_params(**model_params)
+    if model_type == 'support_vector_machine' and is_classification:
+        # Calibration folds are drawn exclusively from the current training batch.
+        return CalibratedClassifierCV(estimator, cv=2, ensemble=False)
+    return estimator
 
 
 def _hgb_early_stopping_is_safe(y_train: ndarray, *, is_classification: bool,
@@ -79,9 +196,10 @@ def estimate_multibatch_models(
     source_column_name: Optional[str] = None,
     learning_strategy: Optional[str] = "from_scratch",
     model_type: Optional[str] = 'histogram_gradient_boosting',
-    max_iter: int = 100,
-    n_estimators: int = 450,
-    max_depth: int = 9,
+    max_iter: Optional[int] = None,
+    n_estimators: Optional[int] = None,
+    max_depth: Optional[int] = None,
+    model_params: Optional[dict] = None,
 ) -> Dict[Tuple, Dict[str, float]]:
     """
     Estimates models across multiple batches, based on either time (temporal) or source.
@@ -130,21 +248,45 @@ def estimate_multibatch_models(
         can only be applied to temporal analyses, not multi-source analyses.
 
     model_type : Optional[str], default='histogram_gradient_boosting'
-        Defines the model family to use: either 'random_forest' or 'histogram_gradient_boosting'.
-        When 'random_forest' is selected, categorical features are one-hot encoded and a
-        ``RandomForestClassifier``/``RandomForestRegressor`` is used.
-        When 'histogram_gradient_boosting' is selected, categorical features are ordinal encoded
-        (with native categorical support) and a
-        ``HistGradientBoostingClassifier``/``HistGradientBoostingRegressor`` is used.
+        Model family, selecting the corresponding scikit-learn estimator for the
+        requested task:
 
-    max_iter : int, default=100
-        Maximum number of boosting iterations. Used only when model_type='histogram_gradient_boosting'.
+        - ``'random_forest'``: ``RandomForestClassifier`` or ``RandomForestRegressor``
+        - ``'histogram_gradient_boosting'``: ``HistGradientBoostingClassifier`` or
+          ``HistGradientBoostingRegressor``
+        - ``'linear'``: ``LogisticRegression`` or ``Ridge``
+        - ``'support_vector_machine'``: calibrated ``SVC`` or ``SVR``
+        - ``'k_nearest_neighbors'``: ``KNeighborsClassifier`` or
+          ``KNeighborsRegressor``
+        - ``'extra_trees'``: ``ExtraTreesClassifier`` or ``ExtraTreesRegressor``
+        - ``'multilayer_perceptron'``: ``MLPClassifier`` or ``MLPRegressor``
 
-    n_estimators : int, default=450
-        Number of trees. Used only when model_type='random_forest'.
+        Each training batch fits its own preprocessing and model. HGB uses
+        ordinal-encoded native categorical features; other families use one-hot
+        encoding with unknown test categories ignored.
 
-    max_depth : int, default=9
-        Maximum tree depth. Used only when model_type='random_forest'.
+    max_iter : int, optional
+        Legacy HGB boosting-iteration setting (effective default 100). Use
+        ``model_params={'max_iter': ...}`` for new calls.
+
+    n_estimators : int, optional
+        Legacy Random Forest tree count (effective default 450). Use
+        ``model_params={'n_estimators': ...}`` for new calls.
+
+    max_depth : int, optional
+        Legacy Random Forest tree depth (effective default 9). Use
+        ``model_params={'max_depth': ...}`` for new calls.
+
+    model_params : dict, optional
+        sklearn estimator parameters for any model family. Keys must be valid
+        parameters of the selected estimator. Different values for the same
+        setting in a legacy argument and this dictionary raise ``ValueError``.
+        HGB's categorical features, early stopping and scoring are managed per
+        batch. SVC probabilities are calibrated
+        with two training-only folds; its ``probability`` parameter is managed
+        internally and cannot be passed here.
+        For the multilayer perceptron, sklearn's default architecture and
+        ``max_iter=200`` apply unless overridden; convergence warnings may occur.
 
     Returns
     -------
@@ -180,7 +322,7 @@ def estimate_multibatch_models(
             - 'F1-SCORE_WEIGHTED'
     """
 
-    _check_inputs(
+    resolved_model_params = _check_inputs(
         data=data,
         inputs_numerical_column_names=inputs_numerical_column_names,
         inputs_categorical_column_names=inputs_categorical_column_names,
@@ -194,11 +336,8 @@ def estimate_multibatch_models(
         max_iter=max_iter,
         n_estimators=n_estimators,
         max_depth=max_depth,
+        model_params=model_params,
     )
-
-    # Modeling settings
-    random_seed = 42
-    use_hgb = model_type == "histogram_gradient_boosting"
 
     # Shallow copy to avoid modifying the original DataFrame
     df_work = data.copy(deep=False)
@@ -244,75 +383,6 @@ def estimate_multibatch_models(
     if len(cat_cols) + len(num_cols) == 0:
         raise ValueError("No input features provided.")
 
-    # ---------- Preprocessing helpers per model type ----------
-
-    def _fit_transform_features(df_train: pd.DataFrame):
-        """
-        Fit encoder/scaler on training data and return (X_train, encoder, scaler, final_input_features).
-        """
-        final_input_features = []
-        encoder = None
-        scaler = None
-        df_out = df_train.copy()
-
-        # Categorical encoding
-        if cat_cols:
-            if use_hgb:
-                encoder = OrdinalEncoder(
-                    handle_unknown="use_encoded_value",
-                    unknown_value=np.nan,
-                    encoded_missing_value=np.nan,
-                    dtype=np.float32,
-                )
-                df_out[cat_cols] = encoder.fit_transform(df_out[cat_cols])
-                final_input_features.extend(cat_cols)
-            else:
-                encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
-                encoder.fit(df_out[cat_cols])
-                encoded_cols = encoder.get_feature_names_out(cat_cols).tolist()
-                encoded_df = pd.DataFrame(
-                    encoder.transform(df_out[cat_cols]),
-                    columns=encoded_cols,
-                    index=df_out.index,
-                )
-                df_out = df_out.drop(columns=cat_cols)
-                df_out = pd.concat([df_out, encoded_df], axis=1)
-                final_input_features.extend(encoded_cols)
-
-        # Numerical scaling
-        if num_cols:
-            scaler = RobustScaler()
-            df_out[num_cols] = scaler.fit_transform(df_out[num_cols])
-            final_input_features.extend(num_cols)
-
-        X = df_out[final_input_features].to_numpy(dtype=np.float32, copy=True)
-        return X, encoder, scaler, final_input_features
-
-    def _transform_features(df_test: pd.DataFrame, encoder, scaler, final_input_features):
-        """
-        Transform test data using already-fitted encoder/scaler.
-        """
-        df_out = df_test.copy()
-
-        if encoder is not None:
-            if use_hgb:
-                df_out[cat_cols] = encoder.transform(df_out[cat_cols])
-            else:
-                encoded_cols = encoder.get_feature_names_out(cat_cols).tolist()
-                encoded_df = pd.DataFrame(
-                    encoder.transform(df_out[cat_cols]),
-                    columns=encoded_cols,
-                    index=df_out.index,
-                )
-                df_out = df_out.drop(columns=cat_cols)
-                df_out = pd.concat([df_out, encoded_df], axis=1)
-
-        if scaler is not None:
-            df_out[num_cols] = scaler.transform(df_out[num_cols])
-
-        X = df_out[final_input_features].to_numpy(dtype=np.float32, copy=True)
-        return X
-
     # ---------- Main loop ----------
 
     metrics: Dict[Tuple, Dict[str, float]] = {}
@@ -326,101 +396,66 @@ def estimate_multibatch_models(
 
     for idx, batch_idf_train in train_loop:
 
-        # --- Resolve training indices (label-based) ---
+        # --- Resolve training row positions ---
         if learning_strategy == "from_scratch":
             current_train_batch_ids = (batch_idf_train,)
-            train_label_indices = split_indexes[batch_idf_train]["train_test"]["train_indexes"]
+            train_positions = split_indexes[batch_idf_train]["train_test"]["train_indexes"]
         elif learning_strategy == "cumulative":
             current_train_batch_ids = tuple(batch_identifiers[i] for i in range(0, idx + 1))
-            train_label_indices = np.concatenate(
+            train_positions = np.concatenate(
                 [split_indexes[bid]["train_test"]["train_indexes"] for bid in current_train_batch_ids]
             )
         else:
             raise ValueError("Unrecognized learning strategy.")
 
-        train_sub = df_work.loc[train_label_indices]
+        train_sub = df_work.iloc[train_positions]
+        is_classification = output_classification_column_name is not None
+        target = output_classification_column_name if is_classification else output_regression_column_name
+        y_train = train_sub[target].to_numpy(copy=False)
+        if (is_classification and model_type in ('linear', 'support_vector_machine')
+                and len(np.unique(y_train)) < 2):
+            raise ValueError(f"Training batch '{batch_idf_train}' must contain at least two classes.")
+        if is_classification and model_type == 'support_vector_machine':
+            _, class_counts = np.unique(y_train, return_counts=True)
+            if class_counts.min() < 2:
+                raise ValueError(f"Training batch '{batch_idf_train}' needs at least two samples "
+                                 'per class for SVC probability calibration.')
 
-        # --- Preprocessing (fit on train) ---
-        X_train, encoder, scaler, final_input_features = _fit_transform_features(train_sub)
-
-        # --- Build model ---
-        # HGB: mark categorical feature positions for native categorical splits
-        categorical_features = list(range(len(cat_cols))) if (cat_cols and use_hgb) else None
-
-        if output_regression_column_name is not None:
-            y_train = train_sub[output_regression_column_name].to_numpy(copy=False)
-            if use_hgb:
-                early_stopping = _hgb_early_stopping_is_safe(y_train, is_classification=False)
-                if not early_stopping:
-                    warnings.warn(
-                        f"Disabling early stopping for batch '{batch_idf_train}' because it is too "
-                        "small to form a valid internal validation split.")
-                model = HistGradientBoostingRegressor(
-                    max_iter=max_iter,
-                    random_state=random_seed,
-                    early_stopping=early_stopping,
-                    scoring="loss",
-                    categorical_features=categorical_features,
-                )
-            else:
-                model = RandomForestRegressor(
-                    n_estimators=n_estimators,
-                    max_depth=max_depth,
-                    random_state=random_seed,
-                    n_jobs=-1,
-                )
-        else:
-            y_train = train_sub[output_classification_column_name].to_numpy(copy=False)
-            if use_hgb:
-                early_stopping = _hgb_early_stopping_is_safe(y_train, is_classification=True)
-                if not early_stopping:
-                    warnings.warn(
-                        f"Disabling early stopping for batch '{batch_idf_train}' because it is too "
-                        "small to form a valid stratified validation split.")
-                model = HistGradientBoostingClassifier(
-                    max_iter=max_iter,
-                    random_state=random_seed,
-                    class_weight="balanced",
-                    early_stopping=early_stopping,
-                    scoring="loss",
-                    categorical_features=categorical_features,
-                )
-            else:
-                model = RandomForestClassifier(
-                    n_estimators=n_estimators,
-                    max_depth=max_depth,
-                    random_state=random_seed,
-                    class_weight="balanced",
-                    n_jobs=-1,
-                )
-
-        model.fit(X_train, y_train)
+        model = _build_model(
+            model_type, is_classification=is_classification, y_train=y_train,
+            batch_id=batch_idf_train, n_categorical=len(cat_cols),
+            model_params=resolved_model_params,
+        )
+        pipeline = Pipeline([
+            ('preprocess', _build_preprocessor(model_type, num_cols, cat_cols)),
+            ('float32', FunctionTransformer(np.asarray, kw_args={'dtype': np.float32})),
+            ('model', model),
+        ])
+        pipeline.fit(train_sub, y_train)
 
         # Free training buffers
-        del train_sub, X_train, y_train
+        del train_sub, y_train
         gc.collect()
 
         # --- Testing loop ---
         for batch_idf_test in batch_identifiers:
             test_key = (current_train_batch_ids, batch_idf_test, "test")
 
-            test_label_indices = split_indexes[batch_idf_test]["train_test"]["test_indexes"]
-            test_sub = df_work.loc[test_label_indices]
-
-            X_test = _transform_features(test_sub, encoder, scaler, final_input_features)
+            test_positions = split_indexes[batch_idf_test]["train_test"]["test_indexes"]
+            test_sub = df_work.iloc[test_positions]
 
             if output_regression_column_name is not None:
                 y_test = test_sub[output_regression_column_name].to_numpy(copy=False)
-                y_pred = model.predict(X_test)
+                y_pred = pipeline.predict(test_sub)
                 metrics[test_key] = _get_regression_metrics(y_true=y_test, y_pred=y_pred)
             else:
                 y_test = test_sub[output_classification_column_name].to_numpy(copy=False)
-                probs_hat = model.predict_proba(X_test)
-                labels_hat = model.predict(X_test)
+                probs_hat = pipeline.predict_proba(test_sub)
+                labels_hat = pipeline.predict(test_sub)
 
                 # Pad probabilities for missing classes
                 probs_hat_full = np.zeros((len(y_test), len(index2class_map)), dtype=np.float32)
-                for col_idx, cls_val in enumerate(model.classes_):
+                for col_idx, cls_val in enumerate(pipeline.classes_):
                     probs_hat_full[:, cls_val] = probs_hat[:, col_idx]
 
                 metrics_pre = _get_presaturation_classification_metrics(
@@ -435,11 +470,11 @@ def estimate_multibatch_models(
                 )
                 metrics[test_key] = {**metrics_pre, **metrics_post}
 
-            del test_sub, X_test
+            del test_sub
             gc.collect()
 
         # Free model + preprocessors
-        del model, scaler, encoder
+        del pipeline, model
         gc.collect()
 
     return metrics
@@ -457,10 +492,11 @@ def _check_inputs(
         source_column_name: Optional[str] = None,
         learning_strategy: Optional[str] = 'from_scratch',
         model_type: Optional[str],
-        max_iter: int = 100,
-        n_estimators: int = 450,
-        max_depth: int = 9,
-) -> None:
+        max_iter: Optional[int] = None,
+        n_estimators: Optional[int] = None,
+        max_depth: Optional[int] = None,
+        model_params: Optional[dict] = None,
+) -> dict:
     """
     Validate the inputs provided for model estimation.
 
@@ -494,16 +530,24 @@ def _check_inputs(
         Defines the learning strategy: 'from_scratch' or 'cumulative'.
 
     model_type : Optional[str], default='histogram_gradient_boosting'
-        Defines the model family: 'random_forest' or 'histogram_gradient_boosting'.
+        Model family selected for batched training and evaluation.
 
-    max_iter : int, default=100
-        Maximum number of boosting iterations. Used only when model_type='histogram_gradient_boosting'.
+    max_iter : int, optional
+        Legacy HGB boosting-iteration setting (effective default 100).
 
-    n_estimators : int, default=450
-        Number of trees. Used only when model_type='random_forest'.
+    n_estimators : int, optional
+        Legacy Random Forest tree count (effective default 450).
 
-    max_depth : int, default=9
-        Maximum tree depth. Used only when model_type='random_forest'.
+    max_depth : int, optional
+        Legacy Random Forest tree depth (effective default 9).
+
+    model_params : dict, optional
+        Estimator-specific parameters for all model families.
+
+    Returns
+    -------
+    dict
+        Resolved estimator parameters, including the existing RF/HGB defaults.
 
     Raises
     ------
@@ -602,6 +646,11 @@ def _check_inputs(
         raise ValueError('Just one task can be completed per function call. Leave output_regression or '
                          'output_classification as None.')
 
+    target_column = (output_classification_column_name if output_classification_column_name is not None
+                     else output_regression_column_name)
+    if target_column in (inputs_numerical_column_names or []) + (inputs_categorical_column_names or []):
+        raise ValueError('The target column cannot also be an input feature.')
+
     # Learning strategy
     if learning_strategy not in ('from_scratch', 'cumulative'):
         raise ValueError('Unrecognized learning strategy.')
@@ -610,30 +659,15 @@ def _check_inputs(
             raise ValueError('Cumulative learning can only be applied to temporal batches.')
 
     # Model type
-    if model_type not in ('random_forest', 'histogram_gradient_boosting'):
-        raise ValueError("Unrecognized model type. Supported values are 'random_forest' and "
-                         "'histogram_gradient_boosting'.")
+    if model_type not in _MODEL_TYPES:
+        raise ValueError(f'Unrecognized model type. Supported values are {_MODEL_TYPES}.')
 
-    if type(max_iter) is not int:
-        raise TypeError('max_iter must be an integer.')
-    if max_iter <= 0:
-        raise ValueError('max_iter must be greater than 0.')
+    if (model_type == 'support_vector_machine' and output_classification_column_name is not None
+            and isinstance(model_params, dict) and 'probability' in model_params):
+        raise ValueError('SVC probability is managed by training-only calibration.')
 
-    if type(n_estimators) is not int:
-        raise TypeError('n_estimators must be an integer.')
-    if n_estimators <= 0:
-        raise ValueError('n_estimators must be greater than 0.')
-
-    if type(max_depth) is not int:
-        raise TypeError('max_depth must be an integer.')
-    if max_depth <= 0:
-        raise ValueError('max_depth must be greater than 0.')
-
-    if model_type == 'histogram_gradient_boosting' and (n_estimators != 450 or max_depth != 9):
-        raise ValueError('n_estimators and max_depth are only valid when model_type is random_forest.')
-
-    if model_type == 'random_forest' and max_iter != 100:
-        raise ValueError('max_iter is only valid when model_type is histogram_gradient_boosting.')
+    return _resolve_model_params(model_type, model_params, max_iter=max_iter,
+                                 n_estimators=n_estimators, max_depth=max_depth)
 
 
 # SPLITTING INDEXES OBTAINING
@@ -652,8 +686,7 @@ def _generate_split_indexes(*, data: DataFrame, batching_column_name: str) -> di
     Returns
     -------
     dict:
-        A dictionary containing the split indexes for each batch. The keys are batch identifiers,
-        and the values are dictionaries with 'train' and 'test' indexes.
+        A dictionary containing positional row indices for each batch.
     """
 
     # Splitting settings
@@ -675,19 +708,15 @@ def _generate_split_indexes(*, data: DataFrame, batching_column_name: str) -> di
         # Memory allocation
         split_indexes_map[idf] = {'train_test': {}, 'puretrain_validation': {}}
 
-        # Data batch extraction
-        data_batch = data[data[batching_column_name] == idf]
+        # Positions, not index labels: repeated DataFrame indices must not select
+        # rows from other batches (or from the held-out test portion).
+        batch_positions = np.flatnonzero(data[batching_column_name].to_numpy() == idf)
 
         # Training and test split
         # train and test sets extraction
-        data_batch_train, data_batch_test = train_test_split(
-            data_batch, test_size=test_ratio, random_state=random_seed, shuffle=False
+        indexes_batch_train, indexes_batch_test = train_test_split(
+            batch_positions, test_size=test_ratio, random_state=random_seed, shuffle=False
         )
-        # indexes extraction
-        #   training
-        indexes_batch_train = data_batch_train.index.to_numpy()
-        #   test
-        indexes_batch_test = data_batch_test.index.to_numpy()
 
         # Pure training and validation split
         # initialization
