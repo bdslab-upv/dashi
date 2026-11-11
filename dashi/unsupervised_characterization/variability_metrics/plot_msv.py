@@ -229,6 +229,7 @@ def plot_MSV(
         )
         fig.update_layout(
             title=title,
+            template='plotly_white',
             plot_bgcolor='white',
             paper_bgcolor='white',
             scene=dict(
