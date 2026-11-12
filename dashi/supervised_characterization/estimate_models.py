@@ -200,6 +200,7 @@ def estimate_multibatch_models(
     n_estimators: Optional[int] = None,
     max_depth: Optional[int] = None,
     model_params: Optional[dict] = None,
+    shuffle: bool = False,
 ) -> Dict[Tuple, Dict[str, float]]:
     """
     Estimates models across multiple batches, based on either time (temporal) or source.
@@ -288,6 +289,16 @@ def estimate_multibatch_models(
         For the multilayer perceptron, sklearn's default architecture and
         ``max_iter=200`` apply unless overridden; convergence warnings may occur.
 
+    shuffle : bool, default=False
+        How the held-out test set of each batch (20% of its rows) is chosen.
+
+        - ``False`` (default): the last 20% of the batch rows, after sorting by date for temporal
+          batching or in the input order for source batching. With dates finer than the batching
+          period, the test set therefore holds only the latest dates of each batch (for example,
+          October to December with yearly batches of monthly data).
+        - ``True``: a random 20% of the batch rows (fixed seed 42). For classification, the split
+          is stratified by label when every class of the batch has at least two rows.
+
     Returns
     -------
     Dict[Tuple, Dict[str, float]]
@@ -321,6 +332,9 @@ def estimate_multibatch_models(
             - 'F1-SCORE_MICRO'
             - 'F1-SCORE_WEIGHTED'
     """
+
+    if not isinstance(shuffle, bool):
+        raise TypeError('shuffle must be a boolean.')
 
     resolved_model_params = _check_inputs(
         data=data,
@@ -373,7 +387,12 @@ def estimate_multibatch_models(
         )
 
     # Generate split indexes based on batching
-    split_indexes = _generate_split_indexes(data=df_work, batching_column_name=batching_column_name)
+    split_indexes = _generate_split_indexes(
+        data=df_work,
+        batching_column_name=batching_column_name,
+        shuffle=shuffle,
+        stratify_column_name=output_classification_column_name,
+    )
     # Extract batch identifiers
     batch_identifiers = list(split_indexes.keys())
 
@@ -671,7 +690,8 @@ def _check_inputs(
 
 
 # SPLITTING INDEXES OBTAINING
-def _generate_split_indexes(*, data: DataFrame, batching_column_name: str) -> dict:
+def _generate_split_indexes(*, data: DataFrame, batching_column_name: str, shuffle: bool = False,
+                            stratify_column_name: Optional[str] = None) -> dict:
     """
     Generate split indexes based on a specified batching column (e.g., time, source).
 
@@ -682,6 +702,13 @@ def _generate_split_indexes(*, data: DataFrame, batching_column_name: str) -> di
 
     batching_column_name : str
         The column in the data used for creating splits (e.g., time, source).
+
+    shuffle : bool, default=False
+        If False, the last rows of each batch form the test set. If True, a random subset does.
+
+    stratify_column_name : str, optional
+        Label column used to stratify the shuffled split, when every class of the batch has at
+        least two rows. Ignored when ``shuffle`` is False.
 
     Returns
     -------
@@ -713,9 +740,17 @@ def _generate_split_indexes(*, data: DataFrame, batching_column_name: str) -> di
         batch_positions = np.flatnonzero(data[batching_column_name].to_numpy() == idf)
 
         # Training and test split
+        # optional stratification of the shuffled split
+        stratify = None
+        if shuffle and stratify_column_name is not None:
+            batch_labels = data[stratify_column_name].to_numpy()[batch_positions]
+            _, class_counts = np.unique(batch_labels, return_counts=True)
+            if class_counts.min() >= 2:
+                stratify = batch_labels
         # train and test sets extraction
         indexes_batch_train, indexes_batch_test = train_test_split(
-            batch_positions, test_size=test_ratio, random_state=random_seed, shuffle=False
+            batch_positions, test_size=test_ratio, random_state=random_seed, shuffle=shuffle,
+            stratify=stratify
         )
 
         # Pure training and validation split
