@@ -189,3 +189,5 @@ docs/build/
 
 .DS_Store
 .claude/
+examples/abide2_phenotypic.csv
+examples/ABIDEII_Composite_Phenotypic.csv
